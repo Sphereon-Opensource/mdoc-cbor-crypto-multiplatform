@@ -73,5 +73,7 @@ calling `toJson()` on them to make them easier for developers to deal with. So t
 There is one caveat for certain JSON properties. Whenever we use polymorphic values, there typically is a need to
 provide the CDDL value as well. This has to do with the fact that we otherwise would lose information when going from
 JSON to CBOR. For instance dates in CBOR can be expressed using strings and numbers. Then there are long and short
-dates. So whenever we encounter a JSON number, we would now know how to map that to Cbor. Of course this is only
-applicable to where polymorphism is possible for a property.
+dates. So whenever we encounter a JSON number or string, we would not know how to map that to Cbor. Of course this is
+only
+applicable to where polymorphism is possible for a property. In these cases the CDDL value is made mandatory. These are
+the only places where the CBOR types seep into the JSON types.
