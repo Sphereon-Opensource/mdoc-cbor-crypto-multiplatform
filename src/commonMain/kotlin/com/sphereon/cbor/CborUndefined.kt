@@ -3,7 +3,7 @@ package com.sphereon.cbor
 import kotlin.js.JsExport
 
 @JsExport
-class CborUndefined(value: cddl_undefined? = Unit) : CborSimple<cddl_null>(value ?: Unit, CDDL.undefined) {
+class CborUndefined : CborSimple<cddl_null>(Unit, CDDL.undefined) {
 
     init {
         if (value != Unit) {

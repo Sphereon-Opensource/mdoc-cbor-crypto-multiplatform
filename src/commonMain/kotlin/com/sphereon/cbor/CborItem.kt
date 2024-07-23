@@ -20,12 +20,6 @@ abstract class CborItem<Type>(
 
     internal abstract fun encode(builder: ByteStringBuilder)
 
-    /*
-        open fun encode(builder: ByteStringBuilder) {
-            TODO("Encode not yet implemented for ${this.cddl}")
-        }
-    */
-
     val majorType = cddl.majorType
     val info = cddl.info
 
@@ -150,6 +144,7 @@ abstract class CborItem<Type>(
     }
 
 }
+@JsExport
 abstract class CborCollectionItem<Type>(value: Type, cddl: CDDLType) : CborItem<Type>(value, cddl)
 
 typealias AnyCborItem = CborItem<*>

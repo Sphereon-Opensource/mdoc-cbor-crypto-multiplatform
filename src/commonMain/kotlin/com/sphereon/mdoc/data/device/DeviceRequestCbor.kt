@@ -9,8 +9,6 @@ import com.sphereon.cbor.CborString
 import com.sphereon.cbor.CborView
 import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.cborSerializer
-import com.sphereon.cbor.cborViewListToCborItem
-import com.sphereon.cbor.cddl_list
 import com.sphereon.cbor.cddl_tstr
 import com.sphereon.cbor.cose.StringLabel
 import kotlin.js.JsExport
@@ -70,7 +68,7 @@ data class DeviceRequestCbor(
     override fun cborBuilder(): CborBuilder<DeviceRequestCbor> =
         CborMap.builder(this).put(VERSION, version, optional = false).put(
             DOC_REQUESTS,
-            CborArray(docRequests.value.map { it.toCborItem() }.toMutableList()),
+            CborArray(docRequests.value.map { it.toCbor() }.toMutableList()),
             optional = false
         )
             .end()

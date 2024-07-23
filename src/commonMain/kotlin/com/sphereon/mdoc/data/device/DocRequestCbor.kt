@@ -83,9 +83,9 @@ data class DocRequestCbor(
         return CborMap.builder(this).putTagged(
             ITEMS_REQUEST,
             CborTagged.ENCODED_CBOR,
-            CborByteString(cborSerializer.encode(itemsRequest.toCborItem()))
+            CborByteString(cborSerializer.encode(itemsRequest.toCbor()))
         )
-            .put(READER_AUTH, readerAuth?.toCborItem(), true)
+            .put(READER_AUTH, readerAuth?.toCbor(), true)
             .end()
     }
 

@@ -41,7 +41,7 @@ class CborStringIndefLength(value: List<cddl_tstr>) : CborItem<List<cddl_tstr>>(
 }
 
 @JsExport
-class CborNil(value: cddl_nil = null) : CborSimple<cddl_nil>(null, CDDL.nil) {
+class CborNil : CborSimple<cddl_nil>(null, CDDL.nil) {
     init {
         if (value != null) {
             throw IllegalArgumentException("Nil requires value ${null}")
@@ -50,7 +50,7 @@ class CborNil(value: cddl_nil = null) : CborSimple<cddl_nil>(null, CDDL.nil) {
 }
 
 @JsExport
-class CborNull(value: cddl_null = null) : CborSimple<cddl_null>(null, CDDL.Null) {
+class CborNull : CborSimple<cddl_null>(null, CDDL.Null) {
 
     init {
         if (value != null) {

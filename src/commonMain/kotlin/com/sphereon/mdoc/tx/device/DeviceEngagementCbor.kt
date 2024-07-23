@@ -77,13 +77,13 @@ data class DeviceEngagementCbor(
     override fun cborBuilder(): CborBuilder<DeviceEngagementCbor> {
         val mapBuilder = CborMap.builder(this)
             .put(VERSION, version)
-            .put(SECURITY, security.toCborItem())
+            .put(SECURITY, security.toCbor())
             .put(
                 DEVICE_RETRIEVAL_METHODS,
                 deviceRetrievalMethods?.cborViewArrayToCborItem(),
                 true
             )
-            .put(SERVER_RETRIEVAL_METHOD, serverRetrievalMethod?.toCborItem(), true)
+            .put(SERVER_RETRIEVAL_METHOD, serverRetrievalMethod?.toCbor(), true)
             .put(PROTOCOL_INFO, protocolInfo, true)
         if (additionalItems?.value?.isNotEmpty() == true) {
             additionalItems.value.map { mapBuilder.put(it.key, it.value) }
@@ -198,7 +198,7 @@ data class DeviceEngagementSecurityCbor(val cypherSuite: CborUInt, val eDeviceKe
     override fun cborBuilder(): CborBuilder<DeviceEngagementSecurityCbor> {
         return CborArray.builder(this)
             .add(cypherSuite)
-            .add(CborEncodedItem(eDeviceKeyBytes.toCborItem(), CborByteString(eDeviceKeyBytes.cborEncode())))
+            .add(CborEncodedItem(eDeviceKeyBytes.toCbor(), CborByteString(eDeviceKeyBytes.cborEncode())))
             .end()
     }
 
@@ -257,7 +257,7 @@ data class DeviceRetrievalMethodCbor(
         return CborArray.builder(this)
             .add(type)
             .add(version)
-            .add(retrievalOptions.toCborItem())
+            .add(retrievalOptions.toCbor())
             .end()
     }
 

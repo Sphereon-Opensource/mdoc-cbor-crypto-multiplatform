@@ -5,6 +5,7 @@ import kotlinx.io.bytestring.ByteStringBuilder
 import kotlin.js.JsExport
 import kotlin.math.abs
 
+@Suppress("NON_EXPORTABLE_TYPE")
 @JsExport
 abstract class AbstractCborInt<Type : Number>(value: Type, cddl: CDDL) : CborNumber<Type>(value, cddl)
 

@@ -31,8 +31,8 @@ data class ReaderAuthenticationCbor(
     val itemsRequest: DeviceItemsRequestCbor
 ) : CborView<ReaderAuthenticationCbor, ReaderAuthenticationJson, CborArray<AnyCborItem>>(CDDL.list) {
     override fun cborBuilder(): CborBuilder<ReaderAuthenticationCbor> {
-        return CborArray.builder(this).add(READER_AUTHENTICATION).add(sessionTranscript.toCborItem())
-            .add(itemsRequest.toCborItem()).end()
+        return CborArray.builder(this).add(READER_AUTHENTICATION).add(sessionTranscript.toCbor())
+            .add(itemsRequest.toCbor()).end()
     }
 
     override fun toJson(): ReaderAuthenticationJson {
@@ -72,9 +72,9 @@ data class SessionTranscriptCbor(
 ) : CborView<SessionTranscriptCbor, SessionTranscriptJson, CborArray<AnyCborItem>>(CDDL.list) {
     override fun cborBuilder(): CborBuilder<SessionTranscriptCbor> {
         return CborArray.builder(this)
-            .add(CborByteString.fromCborItem(deviceEngagement.toCborItem()))
-            .add(CborByteString.fromCborItem(eReaderKey.toCborItem()))
-            .add(handover.toCborItem())
+            .add(CborByteString.fromCborItem(deviceEngagement.toCbor()))
+            .add(CborByteString.fromCborItem(eReaderKey.toCbor()))
+            .add(handover.toCbor())
             .end()
     }
 

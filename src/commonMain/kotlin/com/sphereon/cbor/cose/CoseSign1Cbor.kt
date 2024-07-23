@@ -10,9 +10,7 @@ import com.sphereon.cbor.CborNull
 import com.sphereon.cbor.CborView
 import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.cborSerializer
-import com.sphereon.cbor.cddl_bstr
 import com.sphereon.cbor.toCborByteString
-import com.sphereon.cbor.toCborString
 import kotlin.js.JsExport
 
 
@@ -78,7 +76,7 @@ data class CoseSign1InputCbor<CborType, JsonType>(
 
     override fun cborBuilder(): CborBuilder<CoseSign1InputCbor<CborType, JsonType>> {
         return CborArray.builder(this).add(CborByteString(protectedHeader.cborEncode()))
-            .add(unprotectedHeader?.toCborItem()).add(payload ?: CborNull())
+            .add(unprotectedHeader?.toCbor()).add(payload ?: CborNull())
             .end()
     }
 
@@ -126,7 +124,7 @@ data class CoseSign1Cbor<CborType, JsonType>(
 
     override fun cborBuilder(): CborBuilder<CoseSign1Cbor<CborType, JsonType>> {
         return CborArray.builder(this).add(CborByteString(protectedHeader.cborEncode()))
-            .add(unprotectedHeader?.toCborItem()).add(payload ?: CborNull())
+            .add(unprotectedHeader?.toCbor()).add(payload ?: CborNull())
             .add(signature)
             .end()
     }

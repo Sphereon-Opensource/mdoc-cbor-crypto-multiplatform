@@ -39,9 +39,9 @@ data class MobileSecurityObjectCbor(
 ) : CborView<MobileSecurityObjectCbor, MobileSecurityObjectJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
     override fun cborBuilder(): CborBuilder<MobileSecurityObjectCbor> {
         return CborMap.builder(this).put(VERSION, version).put(DIGEST_ALGORITHM, digestAlgorithm)
-            .put(VALUE_DIGESTS, valueDigests).put(DEVICE_KEY_INFO, deviceKeyInfo.toCborItem()).put(DOC_TYPE, docType)
+            .put(VALUE_DIGESTS, valueDigests).put(DEVICE_KEY_INFO, deviceKeyInfo.toCbor()).put(DOC_TYPE, docType)
             .put(
-                VALIDITY_INFO, validityInfo.toCborItem()
+                VALIDITY_INFO, validityInfo.toCbor()
             ).end()
 
         TODO("Not yet implemented")

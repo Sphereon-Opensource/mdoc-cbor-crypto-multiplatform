@@ -4,7 +4,6 @@ import com.sphereon.cbor.AnyCborItem
 import com.sphereon.cbor.CDDL
 import com.sphereon.cbor.CDDLType
 import com.sphereon.cbor.Cbor
-import com.sphereon.cbor.CborAny
 import com.sphereon.cbor.CborArray
 import com.sphereon.cbor.CborBuilder
 import com.sphereon.cbor.CborByteString
@@ -99,7 +98,7 @@ data class IssuerSignedCbor(
     override fun cborBuilder(): CborBuilder<IssuerSignedCbor> {
         val builder = CborMap.builder(this)
             .put(NAME_SPACES, nameSpaces, true)
-            .put(ISSUER_AUTH, issuerAuth.toCborItem(), false)
+            .put(ISSUER_AUTH, issuerAuth.toCbor(), false)
         return builder.end()
     }
 

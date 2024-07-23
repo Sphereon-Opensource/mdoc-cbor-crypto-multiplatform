@@ -8,7 +8,7 @@ abstract class CborBool(value: cddl_bool, cddl: CDDL) : CborSimple<cddl_bool>(va
 @JsExport
 class CborTrue : CborBool(true, CDDL.True) {
     init {
-        if (value != true) {
+        if (!value) {
             throw IllegalArgumentException("True requires value ${true}")
         }
     }
@@ -17,7 +17,7 @@ class CborTrue : CborBool(true, CDDL.True) {
 @JsExport
 class CborFalse : CborBool(false, CDDL.False) {
     init {
-        if (value != false) {
+        if (value) {
             throw IllegalArgumentException("False requires value ${false}")
         }
     }

@@ -12,23 +12,6 @@ class CborHexEncodedItem(hex: String) : CborByteString(
     hex.decodeHex()
 )
 
-/*
-
-@JsExport
-class CborCoseKey(deserializedValue: COSE_Key? = null, value: ByteArray? = null) : CborEncodedItem<CoseKeyCbor>(
-    (deserializedValue ?: value?.let { cborSerializer.decode(it) })
-        ?: throw IllegalArgumentException("Either a bytearray or deserialized value is required"),
-    value ?: deserializedValue?.let { cborSerializer.encode(it) }
-    ?: throw IllegalArgumentException("Either a bytearray or deserialized value is required")
-) {
-
-    override fun encode(builder: ByteStringBuilder) {
-        TODO("Not yet implemented")
-    }
-
-}
-*/
-
 /**
  * CBOR Tag 24 support (CBOR data item)
  *
@@ -48,7 +31,7 @@ open class CborEncodedItem<Type>(
 
     fun <Type : AnyCborItem> cborDecode(): Type {
         return when (decodedValue) {
-            is CborView<*,*,*> -> decodedValue.toCborItem() as Type
+            is CborView<*,*,*> -> decodedValue.toCbor() as Type
             is AnyCborItem -> decodedValue as Type
             else -> throw IllegalArgumentException("A CborEncoded item or CborView is required")
         }
