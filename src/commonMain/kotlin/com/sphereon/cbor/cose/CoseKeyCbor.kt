@@ -21,7 +21,13 @@ class CoseKeyJson(
 
     val key_ops: Array<CoseKeyOperations>? = null,
 
-    val baseIV: BaseIV? = null
+    val baseIV: BaseIV? = null,
+
+    val crv: CborUInt? = null,
+    val x: String? = null,
+    val y: String? = null,
+    val x5chain: Array<String>? = null,
+    val additional: MutableMap<Any, Any> = mutableMapOf()
 ) : JsonView<CoseKeyCbor>() {
     override fun toCbor(): CoseKeyCbor {
         TODO("Not yet implemented")

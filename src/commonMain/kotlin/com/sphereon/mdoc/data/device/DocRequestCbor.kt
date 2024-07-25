@@ -16,6 +16,7 @@ import com.sphereon.cbor.cddl_bstr
 import com.sphereon.cbor.cddl_tstr
 import com.sphereon.cbor.cose.COSE_Sign1
 import com.sphereon.cbor.cose.CoseSign1Cbor
+import com.sphereon.cbor.cose.CoseSign1Json
 import com.sphereon.cbor.cose.StringLabel
 import com.sphereon.mdoc.data.RequestInfo
 import com.sphereon.mdoc.tx.device.ReaderAuthenticationCbor
@@ -38,11 +39,10 @@ data class DocRequestJson(
     /**
      * ReaderAuth is used for mdoc reader authentication as defined in 9.1.4.
      */
-    val readerAuth: COSE_Sign1<ReaderAuthenticationJson, ReaderAuthenticationCbor>? = null
+    val readerAuth: CoseSign1Json<ReaderAuthenticationJson, ReaderAuthenticationCbor>? = null
 ) : JsonView<DocRequestCbor>() {
-    override fun toCbor(): DocRequestCbor {
-        TODO("Not yet implemented")
-    }
+    override fun toCbor(): DocRequestCbor =
+        DocRequestCbor(itemsRequest = itemsRequest.toCbor(), readerAuth = readerAuth?.toCbor())
 }
 
 /**
@@ -89,9 +89,9 @@ data class DocRequestCbor(
             .end()
     }
 
-    override fun toJson(): DocRequestJson {
-        TODO("Not yet implemented")
-    }
+    override fun toJson(): DocRequestJson =
+        DocRequestJson(itemsRequest = itemsRequest.toJson(), readerAuth = readerAuth?.toJson())
+
 
     data class Builder(
         var deviceItemsRequestBuilder: DeviceItemsRequestCbor.Builder? = null,
@@ -112,7 +112,8 @@ data class DocRequestCbor(
 
         }
 
-        fun withReaderAuth(readerAuth: COSE_Sign1<ReaderAuthenticationCbor, ReaderAuthenticationJson>) = apply { this.readerAuth = readerAuth }
+        fun withReaderAuth(readerAuth: COSE_Sign1<ReaderAuthenticationCbor, ReaderAuthenticationJson>) =
+            apply { this.readerAuth = readerAuth }
 
 
         fun build(): DocRequestCbor {

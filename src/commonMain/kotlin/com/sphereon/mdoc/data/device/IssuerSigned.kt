@@ -13,6 +13,7 @@ import com.sphereon.cbor.CborItem
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborUInt
 import com.sphereon.cbor.CborView
+import com.sphereon.cbor.HexString
 import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.cose.COSE_Sign1
@@ -169,7 +170,7 @@ data class IssuerSignedCbor(
 @JsExport
 data class IssuerSignedItemJson<Type : Any>(
     val digestID: LongKMP,
-    val random: String, //todo: also add hex validation
+    val random: HexString, //todo: also add hex validation
     val elementIdentifier: String,
     val elementValue: Type,
     val elementCDDL: CDDLType // We need this as otherwise we would lose type info. Strings can be (full)dates, tstr and text etc.
