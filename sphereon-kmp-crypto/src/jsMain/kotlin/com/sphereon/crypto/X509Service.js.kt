@@ -30,11 +30,17 @@ external object MdocJSApi {
  */
 @JsExport
 interface X509CallbacksJS {
-    fun verifyCertificateChain(
+    fun <KeyType> verifyCertificateChainJS(
         chainDER: Array<ByteArray>? = null,
         chainPEM: Array<String>? = null,
-        trustedPEM: Array<String>
-    ): Promise<VerifyResult>
+        trustedCerts: Array<String>?,
+        verificationProfile: X509VerificationProfile = X509VerificationProfile.RFC_5280
+    ): Promise<X509VerificationResult<KeyType>>
+
+    /**
+     * A function returning trusted Certificates in PEM format. Most functions use this as a default in case trusted certificates are not passed in
+     */
+    fun getTrustedCerts(): Array<String>?
 }
 
 /**
@@ -43,7 +49,9 @@ interface X509CallbacksJS {
 @JsExport
 object X509ServiceJS : CallbackService<X509CallbacksJS>, X509CallbacksJS {
     private lateinit var platformCallback: X509CallbacksJS
+    private var trustedCerts: Set<String>? = null
     private var disabled = false
+
 
     override fun disable(): X509CallbacksJS {
         this.disabled = true
@@ -64,15 +72,16 @@ object X509ServiceJS : CallbackService<X509CallbacksJS>, X509CallbacksJS {
         return this
     }
 
-    override fun verifyCertificateChain(
+    override fun <KeyType> verifyCertificateChainJS(
         chainDER: Array<ByteArray>?,
         chainPEM: Array<String>?,
-        trustedPEM: Array<String>
-    ): Promise<VerifyResult> {
+        trustedCerts: Array<String>?,
+        verificationProfile: X509VerificationProfile
+    ): Promise<X509VerificationResult<KeyType>> {
         if (!isEnabled()) {
             CryptoConst.LOG.info("Verify Certificate Chain (JS) has been disabled. Returning success result")
             return Promise.resolve(
-                VerifyResult(
+                X509VerificationResult(
                     name = CryptoConst.X509_LITERAL,
                     message = "X509 verification has been disabled",
                     error = false,
@@ -86,7 +95,20 @@ object X509ServiceJS : CallbackService<X509CallbacksJS>, X509CallbacksJS {
             ) // Yes this is logs-exception anti pattern, but we are a lib with no knowledge about platform integration
             throw IllegalStateException("X509Callbacks have not been initialized. Please register your X509CallbacksJS implementation, or register a default implementaion")
         }
-        return this.platformCallback.verifyCertificateChain(chainDER, chainPEM, trustedPEM)
+        return this.platformCallback.verifyCertificateChainJS(
+            chainDER,
+            chainPEM,
+            trustedCerts = trustedCerts ?: this.getTrustedCerts(),
+            verificationProfile
+        )
+    }
+
+    fun setTrustedCerts(trustedCerts: Array<String>? = null) {
+        this.trustedCerts = trustedCerts?.toSet()
+    }
+
+    override fun getTrustedCerts(): Array<String>? {
+        return this.trustedCerts?.toTypedArray()
     }
 }
 
@@ -102,6 +124,7 @@ object X509ServiceJS : CallbackService<X509CallbacksJS>, X509CallbacksJS {
  */
 internal object X509ServiceJSAdapter : X509CallbackService {
     private val x509CallbackJS = X509ServiceJS
+    private var trustedCerts: Set<String>? = null
 
     override fun disable(): X509Service {
         this.x509CallbackJS.disable()
@@ -121,14 +144,23 @@ internal object X509ServiceJSAdapter : X509CallbackService {
         throw Error("Register function should not be used on the adapter. It depends on the Javascript x509Service object")
     }
 
-    override suspend fun verifyCertificateChain(
+    fun setTrustedCerts(trustedCerts: Array<String>?) {
+        this.trustedCerts = trustedCerts?.toSet()
+    }
+
+    override fun getTrustedCerts(): Array<String>? {
+        return this.trustedCerts?.toTypedArray()
+    }
+
+    override suspend fun <KeyType> verifyCertificateChain(
         chainDER: Array<ByteArray>?,
         chainPEM: Array<String>?,
-        trustedPEM: Array<String>
-    ): VerifyResult {
+        trustedCerts: Array<String>?,
+        verificationProfile: X509VerificationProfile
+    ): X509VerificationResult<KeyType> {
         CryptoConst.LOG.debug("Verifying certificate chain...")
         if (chainDER == null && chainPEM == null) {
-            return VerifyResult(
+            return X509VerificationResult(
                 name = CryptoConst.X509_LITERAL,
                 error = true,
                 message = "Please provide either a chain in DER format or PEM format",
@@ -139,11 +171,22 @@ internal object X509ServiceJSAdapter : X509CallbackService {
             val certificate = pkijs.Certificate.fromBER(chainDER[0])
             println(certificate)
         }
+        val assertedCerts = trustedCerts ?: this.getTrustedCerts()
+        if (assertedCerts.isNullOrEmpty()) {
+            return X509VerificationResult(
+                error = true,
+                message = "No trusted certificates have been provided.",
+                critical = true,
+                name = CryptoConst.X509_LITERAL
+            )
+        }
+
         return try {
-            x509CallbackJS.verifyCertificateChain(chainDER, chainPEM, trustedPEM).await()
+            x509CallbackJS.verifyCertificateChainJS<KeyType>(chainDER, chainPEM, assertedCerts, verificationProfile)
+                .await()
         } catch (e: Exception) {
             CryptoConst.LOG.error(e.message ?: "X509 validation failed", e)
-            VerifyResult(
+            X509VerificationResult(
                 name = CryptoConst.X509_LITERAL,
                 error = true,
                 message = "Certificate chain verification failed ${e.message}",

@@ -24,7 +24,7 @@ interface CoseCryptoService {
     suspend fun <CborType, JsonType> verify1(
         input: CoseSign1Cbor<CborType, JsonType>,
         keyInfo: KeyInfo<CoseKeyCbor>? = null
-    ): VerifyResults<CoseKeyCbor>
+    ): VerifySignatureResult<CoseKeyCbor>
 }
 
 /**
@@ -66,18 +66,17 @@ object CoseCryptoServiceObject : CoseCryptoCallbackService {
     override suspend fun <CborType, JsonType> verify1(
         input: CoseSign1Cbor<CborType, JsonType>,
         keyInfo: KeyInfo<CoseKeyCbor>?
-    ): VerifyResults<CoseKeyCbor> {
+    ): VerifySignatureResult<CoseKeyCbor> {
         if (!this.isEnabled()) {
-            return VerifyResults(
-                keyInfo = keyInfo, error = false, verifications = arrayOf(
-                    VerifyResult(
-                        name = CryptoConst.COSE_LITERAL,
-                        message = "COSE signing/verification has been disabled!",
-                        error = false,
-                        critical = false
-                    )
-                )
+            return VerifySignatureResult(
+                keyInfo = keyInfo,
+                name = CryptoConst.COSE_LITERAL,
+                message = "COSE signing/verification has been disabled!",
+                error = false,
+                critical = false
             )
+
+
         } else if (!CoseCryptoServiceObject::platformCallback.isInitialized) {
             throw IllegalStateException("COSE signing/verification has not been initialized. Please register your COSE implementation, or register a default implementation")
         }
@@ -85,17 +84,12 @@ object CoseCryptoServiceObject : CoseCryptoCallbackService {
         val keyAlg = sigAlg?.keyType
             ?: if (keyInfo?.key?.alg != null) CoseKeyType.entries.first { it.value == keyInfo.key.alg?.value?.toInt() } else null
         if (keyAlg == null) {
-            return VerifyResults(
+            return VerifySignatureResult(
+                keyInfo = keyInfo,
+                name = CryptoConst.COSE_LITERAL,
                 error = true,
-                verifications = arrayOf(
-                    VerifyResult(
-                        name = CryptoConst.COSE_LITERAL,
-                        error = true,
-                        message = "No Key algorithm found or provided",
-                        critical = true
-                    )
-                ),
-                keyInfo = keyInfo
+                message = "No Key algorithm found or provided",
+                critical = true
             )
         }
 

@@ -2,6 +2,8 @@ package com.sphereon.kmp
 
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -41,6 +43,10 @@ class LocalDateTimeKMP(
 
     override fun toString(): String {
         return delegate.toString()
+    }
+
+    fun toEpochSeconds(timeZoneId: String? = TimeZone.UTC.id): LongKMP {
+        return LongKMP(delegate.toInstant(DateTimeUtils.DEFAULT.timeZone(timeZoneId)).epochSeconds)
     }
 
     companion object {

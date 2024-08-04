@@ -19,7 +19,7 @@ class DateTimeUtils(
     var clock: Clock = Clock.System,
     var timeZoneId: String = TimeZone.currentSystemDefault().id
 ) {
-    // Let's hope we can properly use Longs in 2038, when the epoch would run out of max int
+    // TODO: Let's hope we can properly use Longs in a KMP project in 2038, when the epoch would run out of max int
     fun epochSeconds() = now().epochSeconds.toInt()
     fun dateTimeUTC(epochSeconds: Int? = epochSeconds()) = dateTime(TimeZone.UTC.id, epochSeconds)
     fun dateTimeLocal(epochSeconds: Int? = epochSeconds()) = dateTime(timeZoneId, epochSeconds)
@@ -37,7 +37,8 @@ class DateTimeUtils(
 
 
     private fun now() = clock.now()
-    private fun timeZone(timeZoneId: String?): TimeZone = timeZoneId?.let { TimeZone.of(it) } ?: defaultTimeZone.value
+    @JsExport.Ignore
+    fun timeZone(timeZoneId: String?): TimeZone = timeZoneId?.let { TimeZone.of(it) } ?: defaultTimeZone.value
     private val defaultTimeZone = lazy { TimeZone.of(this.timeZoneId) }
 }
 

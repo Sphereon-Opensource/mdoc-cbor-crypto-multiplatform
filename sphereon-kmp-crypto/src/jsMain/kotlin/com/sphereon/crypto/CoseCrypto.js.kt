@@ -20,7 +20,7 @@ interface CoseCryptoCallbackJS {
     fun <CborType, JsonType> verify1(
         input: CoseSign1Cbor<CborType, JsonType>,
         keyInfo: KeyInfo<CoseKeyCbor>? = null
-    ): Promise<VerifyResults<CoseKeyCbor>>
+    ): Promise<VerifySignatureResult<CoseKeyCbor>>
 }
 
 /**
@@ -85,19 +85,16 @@ object CoseCryptoServiceJS : CallbackService<CoseCryptoCallbackJS>, CoseCryptoCa
     override fun <CborType, JsonType> verify1(
         input: CoseSign1Cbor<CborType, JsonType>,
         keyInfo: KeyInfo<CoseKeyCbor>?
-    ): Promise<VerifyResults<CoseKeyCbor>> {
+    ): Promise<VerifySignatureResult<CoseKeyCbor>> {
         if (!isEnabled()) {
             CryptoConst.LOG.info("COSE service (JS) has been disabled")
             return Promise.resolve(
-                VerifyResults(
-                    error = false, keyInfo = keyInfo, verifications = arrayOf(
-                        VerifyResult(
-                            name = CryptoConst.COSE_LITERAL,
-                            message = "COSE signature creation/verification has been disabled",
-                            error = false,
-                            critical = false
-                        )
-                    )
+                VerifySignatureResult(
+                    keyInfo = keyInfo,
+                    name = CryptoConst.COSE_LITERAL,
+                    message = "COSE signature creation/verification has been disabled",
+                    error = false,
+                    critical = false
                 )
             )
         } else if (!this::platformCallback.isInitialized) {
@@ -122,8 +119,8 @@ object CoseCryptoServiceJS : CallbackService<CoseCryptoCallbackJS>, CoseCryptoCa
  * also the coroutines would not export nicely anyway.
  *
  */
-internal object CoseCryptoServiceJSAdapter : CoseCryptoCallbackService {
-    private val x509CallbackJS = CoseCryptoServiceJS
+open class CoseCryptoServiceJSAdapter(val x509CallbackJS: CoseCryptoServiceJS = CoseCryptoServiceJS) :
+    CoseCryptoCallbackService {
 
     override fun disable(): CoseCryptoService {
         this.x509CallbackJS.disable()
@@ -162,21 +159,18 @@ internal object CoseCryptoServiceJSAdapter : CoseCryptoCallbackService {
     override suspend fun <CborType, JsonType> verify1(
         input: CoseSign1Cbor<CborType, JsonType>,
         keyInfo: KeyInfo<CoseKeyCbor>?
-    ): VerifyResults<CoseKeyCbor> {
+    ): VerifySignatureResult<CoseKeyCbor> {
         CryptoConst.LOG.debug("Verifying COSE_Sign1 signature...")
         return try {
             x509CallbackJS.verify1(input = input, keyInfo = keyInfo).await()
         } catch (e: Exception) {
             CryptoConst.LOG.error(e.message ?: "COSE_Sign1 signature verification failed", e)
-            VerifyResults(
-                keyInfo = keyInfo, error = true, verifications = arrayOf(
-                    VerifyResult(
-                        name = CryptoConst.COSE_LITERAL,
-                        error = true,
-                        message = "COSE_Sign1 signature verification failed ${e.message}",
-                        critical = true
-                    )
-                )
+            VerifySignatureResult(
+                keyInfo = keyInfo,
+                name = CryptoConst.COSE_LITERAL,
+                error = true,
+                message = "COSE_Sign1 signature verification failed ${e.message}",
+                critical = true
             )
         }.also {
             CryptoConst.LOG.info("COSE_Sign1 signature result: $it")
@@ -184,7 +178,10 @@ internal object CoseCryptoServiceJSAdapter : CoseCryptoCallbackService {
     }
 }
 
+object CoseCryptoServiceJSAdapterObject : CoseCryptoServiceJSAdapter(CoseCryptoServiceJS)
+
 /**
- * The actual implementation is using the internal object above, which is hidden from external developers
+ * The actual implementation is using the internal class above, which is hidden from external developers
  */
-actual fun coseService(): CoseCryptoCallbackService = CoseCryptoServiceJSAdapter
+
+actual fun coseService(): CoseCryptoCallbackService = CoseCryptoServiceJSAdapterObject

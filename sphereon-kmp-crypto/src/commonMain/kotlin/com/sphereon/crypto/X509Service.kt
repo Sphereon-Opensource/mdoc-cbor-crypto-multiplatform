@@ -1,6 +1,13 @@
 package com.sphereon.crypto
 
+import kotlin.js.JsExport
 import kotlin.jvm.JvmStatic
+
+@JsExport
+enum class X509VerificationProfile {
+    ISO_18013_5,
+    RFC_5280
+}
 
 /**
  * The main interface used for the platform specific callback. Has to be implemented by external developers.
@@ -8,11 +15,26 @@ import kotlin.jvm.JvmStatic
  * Not exported to JS as it has a similar interface exported using Promises instead of coroutines
  */
 interface X509Service {
-    suspend fun verifyCertificateChain(
+    fun getTrustedCerts(): Array<String>?
+    suspend fun <KeyType> verifyCertificateChain(
         chainDER: Array<ByteArray>? = null,
         chainPEM: Array<String>? = null,
-        trustedPEM: Array<String>
-    ): VerifyResult
+        trustedCerts: Array<String>? = getTrustedCerts(),
+        verificationProfile: X509VerificationProfile = X509VerificationProfile.RFC_5280
+    ): X509VerificationResult<KeyType>
+}
+
+@JsExport
+class X509VerificationResult<KeyType>(
+    val publicKey: KeyType? = null,
+    val publicKeyAlgorithm: String? = null,
+    val publicKeyParams: Any? = null,
+    name: String = CryptoConst.X509_LITERAL,
+    critical: Boolean,
+    message: String?,
+    error: Boolean
+) : VerifyResult(name = name, critical = critical, message = message, error = error) {
+
 }
 
 /**
@@ -33,6 +55,7 @@ object X509ServiceObject : X509CallbackService {
     private lateinit var platformCallback: X509Service
 
     private var disabled = false
+    private var trustedCerts: Set<String>? = null
 
 
     override fun isEnabled(): Boolean {
@@ -54,13 +77,18 @@ object X509ServiceObject : X509CallbackService {
         return this
     }
 
-    override suspend fun verifyCertificateChain(
+    override fun getTrustedCerts(): Array<String>? {
+        return this.trustedCerts?.toTypedArray()
+    }
+
+    override suspend fun <KeyType> verifyCertificateChain(
         chainDER: Array<ByteArray>?,
         chainPEM: Array<String>?,
-        trustedPEM: Array<String>
-    ): VerifyResult {
+        trustedCerts: Array<String>?,
+        verificationProfile: X509VerificationProfile
+    ): X509VerificationResult<KeyType> {
         if (!this.isEnabled()) {
-            return VerifyResult(
+            return X509VerificationResult<KeyType>(
                 name = "x509",
                 message = "X509 verification has been disabled",
                 error = false,
@@ -71,6 +99,16 @@ object X509ServiceObject : X509CallbackService {
         if (!X509ServiceObject::platformCallback.isInitialized) {
             throw IllegalStateException("X509Callbacks have not been initialized. Please register your X509Service implementation, or register a default implementation")
         }
-        return platformCallback.verifyCertificateChain(chainDER, chainPEM, trustedPEM)
+
+        val assertedCerts = trustedCerts ?: this.getTrustedCerts()
+        if (assertedCerts.isNullOrEmpty()) {
+            return X509VerificationResult(
+                error = true,
+                message = "No trusted certificates have been provided.",
+                critical = true,
+                name = CryptoConst.X509_LITERAL
+            )
+        }
+        return platformCallback.verifyCertificateChain(chainDER, chainPEM, trustedCerts = assertedCerts, verificationProfile)
     }
 }

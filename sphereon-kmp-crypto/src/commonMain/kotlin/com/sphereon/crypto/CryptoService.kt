@@ -1,19 +1,16 @@
 package com.sphereon.crypto
 
 import kotlin.js.JsExport
-import kotlin.jvm.JvmStatic
 
 /**
  * The main object used by code to be calling into the platform specific callbacks for X509 Certificates and signature creation/verification
  *
  * Non Kotlin code could still extend their implementations. This object is available directly as well except for JS, which has to use its actual implementations this service depends on
  */
-object CryptoService {
-    @JvmStatic
-    val X509 = x509Service()
-    @JvmStatic
-    val COSE = coseService()
 
+object CryptoService {
+    val X509 = x509Service()
+    val COSE = coseService()
     // TODO: JOSE
 }
 
