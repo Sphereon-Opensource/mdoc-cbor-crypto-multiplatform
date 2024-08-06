@@ -29,7 +29,7 @@ external object MdocJSApi {
  * A version that resembles the internal X509Callbacks interface, but then using promises instead of coroutines to make it fit the JS world
  */
 @JsExport
-interface X509CallbacksJS {
+interface X509ServiceJS {
     fun <KeyType> verifyCertificateChainJS(
         chainDER: Array<ByteArray>? = null,
         chainPEM: Array<String>? = null,
@@ -47,18 +47,18 @@ interface X509CallbacksJS {
  * You can register your own X.509 JS implementation with this object using the register function
  */
 @JsExport
-object X509ServiceJS : CallbackService<X509CallbacksJS>, X509CallbacksJS {
-    private lateinit var platformCallback: X509CallbacksJS
+object X509ServiceObjectJS : CallbackService<X509ServiceJS>, X509ServiceJS {
+    private lateinit var platformCallback: X509ServiceJS
     private var trustedCerts: Set<String>? = null
     private var disabled = false
 
 
-    override fun disable(): X509CallbacksJS {
+    override fun disable(): X509ServiceJS {
         this.disabled = true
         return this
     }
 
-    override fun enable(): X509CallbacksJS {
+    override fun enable(): X509ServiceJS {
         this.disabled = false
         return this
     }
@@ -67,7 +67,7 @@ object X509ServiceJS : CallbackService<X509CallbacksJS>, X509CallbacksJS {
         return !this.disabled
     }
 
-    override fun register(platformCallback: X509CallbacksJS): X509ServiceJS {
+    override fun register(platformCallback: X509ServiceJS): X509ServiceObjectJS {
         this.platformCallback = platformCallback
         return this
     }
@@ -123,7 +123,7 @@ object X509ServiceJS : CallbackService<X509CallbacksJS>, X509CallbacksJS {
  *
  */
 internal object X509ServiceJSAdapter : X509CallbackService {
-    private val x509CallbackJS = X509ServiceJS
+    private val x509CallbackJS = X509ServiceObjectJS
     private var trustedCerts: Set<String>? = null
 
     override fun disable(): X509Service {

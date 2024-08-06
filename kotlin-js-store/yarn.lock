@@ -90,11 +90,6 @@
     tslib "^2.6.2"
     webcrypto-core "^1.8.0"
 
-"@sphereon-internal/mdoc-js-api@file:../../sphereon-kmp-crypto/src/jsMain/resources/mdoc-js-api":
-  version "0.0.1"
-  dependencies:
-    pkijs "^3.2.4"
-
 ansi-colors@4.1.1:
   version "4.1.1"
   resolved "https://registry.yarnpkg.com/ansi-colors/-/ansi-colors-4.1.1.tgz#cbb9ae256bf750af1eab344f229aa27fe94ba348"
@@ -520,7 +515,7 @@ picomatch@^2.0.4, picomatch@^2.2.1:
   resolved "https://registry.yarnpkg.com/picomatch/-/picomatch-2.3.1.tgz#3ba3833733646d9d3e4995946c1365a67fb07a42"
   integrity sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA==
 
-pkijs@3.2.4, pkijs@^3.0.15, pkijs@^3.2.4:
+pkijs@3.2.4, pkijs@^3.0.15:
   version "3.2.4"
   resolved "https://registry.yarnpkg.com/pkijs/-/pkijs-3.2.4.tgz#55ed72b363a20fbd42b139ee3b72e54483635171"
   integrity sha512-Et9V5QpvBilPFgagJcaKBqXjKrrgF5JL2mSDELk1vvbOTt4fuBhSSsGn9Tcz0TQTfS5GCpXQ31Whrpqeqp0VRg==

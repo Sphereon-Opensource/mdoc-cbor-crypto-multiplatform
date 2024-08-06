@@ -1,5 +1,6 @@
 package com.sphereon.crypto
 
+import kotlin.js.ExperimentalJsCollectionsApi
 import kotlin.js.JsExport
 
 
@@ -102,7 +103,8 @@ class VerifySignatureResult<KeyType>(
 
 
 @JsExport
-data class KeyInfo<KeyType>(val kid: String?, /*val jwk: JWK,*/ val key: KeyType?, val opts: Map<*, *>?) {
+@ExperimentalJsCollectionsApi
+data class KeyInfo<KeyType>(val kid: String?, /*val jwk: JWK,*/ val key: KeyType?, val opts:  Map<*, *>?) {
 
     override fun hashCode(): Int {
         var result = kid?.hashCode() ?: 0
