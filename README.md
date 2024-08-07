@@ -20,6 +20,12 @@ this to not make to many assumptions on crypto libraries. The library does suppo
 for transport, not for signing/verification. For these operation we delegate to a service you will need to provide.
 Having said that we provide some implementations you could register/use on your platform.
 
+# Crypto JOSE/COSE
+
+A multi-platform JOSE/COSE library. The goal is that this library can be used natively on Android, iOS,
+apple, linux, windows as well as in JVMs and Javascript/Typescript. See
+the [crypto README](./sphereon-kmp-crypto/README.md) for more information.
+
 # CBOR and Json views explained
 
 You will notice that we have primitive CBOR objects like `CborString`, `CborInt`, representing their programming
