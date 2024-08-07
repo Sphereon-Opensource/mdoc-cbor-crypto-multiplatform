@@ -143,9 +143,9 @@ kotlin {
         val jsMain by getting {
             dependencies {
                 implementation(projects.sphereonKmpCommon)
+                implementation(npm("@js-joda/core", "5.6.3"))
+                implementation(npm("@js-joda/timezone", "2.3.0"))
                 implementation("dev.whyoleg.cryptography:cryptography-provider-webcrypto:0.3.1")
-
-
             }
         }
 
@@ -156,11 +156,11 @@ kotlin {
                 implementation(libs.kotest.framework.datatest)
                 implementation(libs.kotest.property)
                 implementation(npm("@auth0/cose", "1.0.2"))
-                implementation(npm("pkijs", "3.2.4"))
+                implementation(npm("@js-joda/core", "5.6.3"))
                 implementation(npm("@js-joda/timezone", "2.3.0"))
-                // Internal mock test JS API. Uses the exposed Crypto interfaces of this module
-                val pathToLocalNpmModule = projectDir.resolve("src/jsMain/resources/crypto-mock-js").canonicalPath
-                implementation(npm("@sphereon-internal/crypto-mock-js", "file:$pathToLocalNpmModule"))
+                /*// Internal mock test JS API. Uses the exposed Crypto interfaces of this module
+                val pathToLocalNpmModule = projectDir.resolve("src/jsMain/resources/crypto-x509-example-js").canonicalPath
+                implementation(npm("@sphereon-internal/crypto-x509-example-js", "file:$pathToLocalNpmModule"))*/
 
 
             }

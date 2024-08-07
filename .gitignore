@@ -43,3 +43,4 @@ bin/
 .DS_Store
 **/node_modules/*
 /src/jsMain/resources/mdoc-js-api/node_modules/
+/sphereon-kmp-crypto/src/jsTest/resources/crypto-x509-example-js/node_modules/

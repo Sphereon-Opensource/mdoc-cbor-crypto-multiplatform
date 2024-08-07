@@ -1,30 +1,17 @@
-const {Certificate, CertificateChainValidationEngine, setEngine} = require('pkijs');
 const {com} = require('@sphereon/kmp-crypto')
-const pvutils = require('pvutils')
+const {validateX509CertificateChain} = require('@sphereon/ssi-sdk-ext.x509-utils')
 
-
-class X509MockService {
+/**
+ * Example implementation for Javascript using a package provided by @sphereon.
+ */
+class X509ExampleService {
 
     async verifyCertificateChainJS(chainDER = null, chainPEM = null, trustedCerts = null, verificationProfile = null) {
-        const certs = chainPEM.map(pem => decodePemToCert(pem))
-        const chainEngine = new CertificateChainValidationEngine({
-            certs,
-            crls: [],
-            // crls: [crl1],
-            // ocsps: [ocsp1],
-            // checkDate: new Date("2015-07-13"), // optional
-            trustedCerts: (trustedCerts ?? this.getTrustedCerts()).map(pem => decodePemToCert(pem)),
-        });
-        setEngine("global", crypto)
-
-        const verification = await chainEngine.verify()
-        const message = verification.resultMessage && verification.resultMessage.length > 0 ? verification.resultMessage : `Chain validation was ${verification.result ? '' : 'un'}successful`
-        console.log(JSON.stringify(verification, null, 2))
-        return {
-            error: !verification.result,
-            critical: true,
-            message
-        }
+        return await validateX509CertificateChain({
+            chain: chainDER ?? chainPEM,
+            trustAnchors: trustedCerts ?? this.getTrustedCerts(),
+            opts: {trustRootWhenNoAnchors: true}
+        })
     }
 
     getTrustedCerts() {
@@ -32,19 +19,7 @@ class X509MockService {
     }
 }
 
-function decodePemToCert(pem) {
-    if (typeof pem !== 'string') {
-        throw new Error('Expected PEM as string');
-    }
 
-    // Load certificate in PEM encoding (base64 encoded DER)
-    const b64 = pem.replace(/(-----(BEGIN|END) CERTIFICATE-----|[\n\r])/g, '');
-    console.log('----\r\n' + b64 + '\r\n----');
-
-    // And massage the cert into a BER encoded one
-    const ber = pvutils.stringToArrayBuffer(pvutils.fromBase64(b64))
-    return Certificate.fromBER(ber);
-}
 
 const sphereonCA = "-----BEGIN CERTIFICATE-----\n" +
     "MIICCDCCAa6gAwIBAgITAPMgqwtYzWPBXaobHhxG9iSydTAKBggqhkjOPQQDAjBa\n" +
@@ -85,9 +60,8 @@ const walletPEM = "-----BEGIN CERTIFICATE-----\n" +
     "KZxmdxeoew==\n" +
     "-----END CERTIFICATE-----"
 
-
 const x509ServiceObjectJS = com.sphereon.crypto.X509ServiceObjectJS
-x509ServiceObjectJS.register(new X509MockService())
-console.log(com.sphereon.crypto.CryptoServiceJS.X509.verifyCertificateChainJS(null, [walletPEM, sphereonCA], [sphereonCA]))
+x509ServiceObjectJS.register(new X509ExampleService())
+com.sphereon.crypto.CryptoServiceJS.X509.verifyCertificateChainJS(null, [walletPEM, sphereonCA], [sphereonCA]).then(result => console.log(JSON.stringify(result, null, 2)));
 
 module.exports.x509ServiceObjectJS = x509ServiceObjectJS;

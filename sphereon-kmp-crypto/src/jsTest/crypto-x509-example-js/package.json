@@ -1,0 +1,19 @@
+{
+  "name": "@sphereon-internal/crypto-example-x509-js",
+  "version": "0.0.1",
+  "description": "Internal Crypto Example x509 API for testing purposes. Does show the actual interfaces/APIs for integration",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Sphereon International B.V.",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "pkijs": "^3.2.4",
+    "format-util": "^1.0.5",
+    "@js-joda/core": "^5.6.3",
+    "@js-joda/timezone": "2.3.0",
+    "@sphereon/ssi-sdk-ext.x509-utils": "^0.24.1-unstable.9",
+    "@sphereon/kmp-crypto": "../../../build/dist/js/productionLibrary"
+  }
+}
