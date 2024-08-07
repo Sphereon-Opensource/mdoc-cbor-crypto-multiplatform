@@ -2,11 +2,14 @@ package com.sphereon.mdoc.data
 
 import com.sphereon.cbor.cose.COSE_Sign1
 import com.sphereon.cbor.cose.CoseKeyCbor
-import com.sphereon.crypto.CoseCryptoService
+import com.sphereon.cbor.cose.ICoseKeyCbor
+import com.sphereon.crypto.ICoseCryptoService
 import com.sphereon.crypto.CryptoService
+import com.sphereon.crypto.IKeyInfo
+import com.sphereon.crypto.IVerifyResults
 import com.sphereon.crypto.VerifyResult
 import com.sphereon.crypto.VerifyResults
-import com.sphereon.crypto.X509Service
+import com.sphereon.crypto.IX509Service
 import com.sphereon.kmp.DateTimeUtils
 import com.sphereon.kmp.getDateTime
 import com.sphereon.mdoc.MdocConst
@@ -39,9 +42,9 @@ object Validations {
 
     suspend fun fromDocument(
         document: DocumentCbor,
-        x509Service: X509Service = CryptoService.X509,
-        coseCryptoService: CoseCryptoService = CryptoService.COSE,
-        keyInfo: com.sphereon.crypto.KeyInfo<CoseKeyCbor>? = null,
+        x509Service: IX509Service = CryptoService.X509,
+        coseCryptoService: ICoseCryptoService = CryptoService.COSE,
+        keyInfo: IKeyInfo<ICoseKeyCbor>? = null,
         trustedCerts: Array<String>? = x509Service.getTrustedCerts(),
         dateTimeUtils: DateTimeUtils = getDateTime(),
         timeZoneId: String? = null,
@@ -61,9 +64,9 @@ object Validations {
 
     suspend fun fromIssuerAuth(
         issuerAuth: COSE_Sign1<MobileSecurityObjectCbor, MobileSecurityObjectJson>,
-        x509Service: X509Service = CryptoService.X509,
-        coseCryptoService: CoseCryptoService = CryptoService.COSE,
-        keyInfo: com.sphereon.crypto.KeyInfo<CoseKeyCbor>? = null,
+        x509Service: IX509Service = CryptoService.X509,
+        coseCryptoService: ICoseCryptoService = CryptoService.COSE,
+        keyInfo: IKeyInfo<ICoseKeyCbor>? = null,
         trustedCerts: Array<String>? = x509Service.getTrustedCerts(),
         dateTimeUtils: DateTimeUtils = getDateTime(),
         timeZoneId: String? = null,
@@ -85,14 +88,14 @@ object Validations {
         issuerAuth: COSE_Sign1<MobileSecurityObjectCbor, MobileSecurityObjectJson>? = null,
         document: DocumentCbor? = null,
         mdocVerificationTypes: MdocVerificationTypes = MdocVerification.all,
-        x509Service: X509Service = CryptoService.X509,
-        coseCryptoService: CoseCryptoService = CryptoService.COSE,
-        keyInfo: com.sphereon.crypto.KeyInfo<CoseKeyCbor>? = null,
+        x509Service: IX509Service = CryptoService.X509,
+        coseCryptoService: ICoseCryptoService = CryptoService.COSE,
+        keyInfo: IKeyInfo<ICoseKeyCbor>? = null,
         trustedCerts: Array<String>? = x509Service.getTrustedCerts(),
         dateTimeUtils: DateTimeUtils = getDateTime(),
         timeZoneId: String? = null,
         clockSkewAllowedInSec: Int = 120,
-    ): VerifyResults<CoseKeyCbor> {
+    ): IVerifyResults<ICoseKeyCbor> {
         if (issuerAuth === null && document == null) {
             return VerifyResults(
                 error = true,

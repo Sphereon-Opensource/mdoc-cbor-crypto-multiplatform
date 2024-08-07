@@ -1,7 +1,5 @@
 package com.sphereon.crypto
 
-import kotlin.js.JsExport
-
 /**
  * The main object used by code to be calling into the platform specific callbacks for X509 Certificates and signature creation/verification
  *
@@ -18,8 +16,8 @@ object CryptoService {
 /**
  * The main entry point for platform validation, delegating to a platform specific callback implemented by external developers
  */
-@JsExport
-interface CallbackService<PlatformCallbackType> {
+
+interface ICallbackService<PlatformCallbackType> {
     /**
      * Disable callback verification (be careful!)
      */
@@ -41,5 +39,5 @@ interface CallbackService<PlatformCallbackType> {
      *
      * External developers use this as an entry point for their platform code
      */
-    fun register(platformCallback: PlatformCallbackType): CallbackService<PlatformCallbackType>
+    fun register(platformCallback: PlatformCallbackType): ICallbackService<PlatformCallbackType>
 }

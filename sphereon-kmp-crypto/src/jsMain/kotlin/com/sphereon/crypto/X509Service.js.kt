@@ -1,41 +1,21 @@
 package com.sphereon.crypto
 
+import com.sphereon.cbor.cose.IKey
 import kotlinx.coroutines.await
 import kotlin.js.Promise
-
-@JsModule("pkijs")
-@JsNonModule
-external object pkijs {
-    class CertificateChainValidationEngine(certs: Array<Certificate>, trustedCerts: Array<Certificate>)
-    class Certificate {
-        companion object {
-            fun fromBER(externalArgument: ByteArray = definedExternally): Certificate
-        }
-    }
-}
-
-@JsModule("@sphereon-internal/mdoc-js-api")
-@JsNonModule
-external object MdocJSApi {
-    fun verifyCertificateChain(
-        chainDER: Array<ByteArray>? = definedExternally,
-        chainPEM: Array<String>? = definedExternally,
-        trustedPEM: Array<String>
-    ): Promise<VerifyResult>
-}
 
 
 /**
  * A version that resembles the internal X509Callbacks interface, but then using promises instead of coroutines to make it fit the JS world
  */
 @JsExport
-interface X509ServiceJS {
-    fun <KeyType> verifyCertificateChainJS(
-        chainDER: Array<ByteArray>? = null,
-        chainPEM: Array<String>? = null,
+external interface IX509ServiceJS {
+    fun <KeyType:IKey> verifyCertificateChainJS(
+        chainDER: Array<ByteArray>?,
+        chainPEM: Array<String>?,
         trustedCerts: Array<String>?,
-        verificationProfile: X509VerificationProfile = X509VerificationProfile.RFC_5280
-    ): Promise<X509VerificationResult<KeyType>>
+        verificationProfile: X509VerificationProfile?
+    ): Promise<IX509VerificationResult<KeyType>>
 
     /**
      * A function returning trusted Certificates in PEM format. Most functions use this as a default in case trusted certificates are not passed in
@@ -47,18 +27,18 @@ interface X509ServiceJS {
  * You can register your own X.509 JS implementation with this object using the register function
  */
 @JsExport
-object X509ServiceObjectJS : CallbackService<X509ServiceJS>, X509ServiceJS {
-    private lateinit var platformCallback: X509ServiceJS
+object X509ServiceObjectJS : ICallbackServiceJS<IX509ServiceJS>, IX509ServiceJS {
+    private lateinit var platformCallback: IX509ServiceJS
     private var trustedCerts: Set<String>? = null
     private var disabled = false
 
 
-    override fun disable(): X509ServiceJS {
+    override fun disable(): IX509ServiceJS {
         this.disabled = true
         return this
     }
 
-    override fun enable(): X509ServiceJS {
+    override fun enable(): IX509ServiceJS {
         this.disabled = false
         return this
     }
@@ -67,17 +47,17 @@ object X509ServiceObjectJS : CallbackService<X509ServiceJS>, X509ServiceJS {
         return !this.disabled
     }
 
-    override fun register(platformCallback: X509ServiceJS): X509ServiceObjectJS {
+    override fun register(platformCallback: IX509ServiceJS): X509ServiceObjectJS {
         this.platformCallback = platformCallback
         return this
     }
 
-    override fun <KeyType> verifyCertificateChainJS(
+    override fun <KeyType: IKey> verifyCertificateChainJS(
         chainDER: Array<ByteArray>?,
         chainPEM: Array<String>?,
         trustedCerts: Array<String>?,
-        verificationProfile: X509VerificationProfile
-    ): Promise<X509VerificationResult<KeyType>> {
+        verificationProfile: X509VerificationProfile?
+    ): Promise<IX509VerificationResult<KeyType>> {
         if (!isEnabled()) {
             CryptoConst.LOG.info("Verify Certificate Chain (JS) has been disabled. Returning success result")
             return Promise.resolve(
@@ -126,12 +106,12 @@ internal object X509ServiceJSAdapter : X509CallbackService {
     private val x509CallbackJS = X509ServiceObjectJS
     private var trustedCerts: Set<String>? = null
 
-    override fun disable(): X509Service {
+    override fun disable(): IX509Service {
         this.x509CallbackJS.disable()
         return this
     }
 
-    override fun enable(): X509Service {
+    override fun enable(): IX509Service {
         this.x509CallbackJS.enable()
         return this
     }
@@ -140,7 +120,7 @@ internal object X509ServiceJSAdapter : X509CallbackService {
         return this.x509CallbackJS.isEnabled()
     }
 
-    override fun register(platformCallback: X509Service): X509CallbackService {
+    override fun register(platformCallback: IX509Service): X509CallbackService {
         throw Error("Register function should not be used on the adapter. It depends on the Javascript x509Service object")
     }
 
@@ -152,12 +132,12 @@ internal object X509ServiceJSAdapter : X509CallbackService {
         return this.trustedCerts?.toTypedArray()
     }
 
-    override suspend fun <KeyType> verifyCertificateChain(
+    override suspend fun <KeyType:IKey> verifyCertificateChain(
         chainDER: Array<ByteArray>?,
         chainPEM: Array<String>?,
         trustedCerts: Array<String>?,
         verificationProfile: X509VerificationProfile
-    ): X509VerificationResult<KeyType> {
+    ): IX509VerificationResult<KeyType> {
         CryptoConst.LOG.debug("Verifying certificate chain...")
         if (chainDER == null && chainPEM == null) {
             return X509VerificationResult(
@@ -166,10 +146,6 @@ internal object X509ServiceJSAdapter : X509CallbackService {
                 message = "Please provide either a chain in DER format or PEM format",
                 critical = true
             )
-        }
-        if (chainDER != null) {
-            val certificate = pkijs.Certificate.fromBER(chainDER[0])
-            println(certificate)
         }
         val assertedCerts = trustedCerts ?: this.getTrustedCerts()
         if (assertedCerts.isNullOrEmpty()) {

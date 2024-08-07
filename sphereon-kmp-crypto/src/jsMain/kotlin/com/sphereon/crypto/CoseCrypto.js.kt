@@ -1,9 +1,9 @@
 package com.sphereon.crypto
 
-import com.sphereon.cbor.cose.CoseKeyCbor
 import com.sphereon.cbor.cose.CoseKeyType
 import com.sphereon.cbor.cose.CoseSign1Cbor
 import com.sphereon.cbor.cose.CoseSign1InputCbor
+import com.sphereon.cbor.cose.ICoseKeyCbor
 import kotlinx.coroutines.await
 import kotlin.js.Promise
 
@@ -11,16 +11,16 @@ import kotlin.js.Promise
  * A version that resembles the internal CoseCrypto interface, but then using promises instead of coroutines to make it fit the JS world
  */
 @JsExport
-interface CoseCryptoCallbackJS {
+external interface ICoseCryptoCallbackJS {
     fun <CborType, JsonType> sign1(
         input: CoseSign1InputCbor<CborType, JsonType>,
-        keyInfo: KeyInfo<CoseKeyCbor>? = null
+        keyInfo: IKeyInfo<ICoseKeyCbor>?
     ): Promise<CoseSign1Cbor<CborType, JsonType>>
 
     fun <CborType, JsonType> verify1(
         input: CoseSign1Cbor<CborType, JsonType>,
-        keyInfo: KeyInfo<CoseKeyCbor>? = null
-    ): Promise<VerifySignatureResult<CoseKeyCbor>>
+        keyInfo: IKeyInfo<ICoseKeyCbor>?
+    ): Promise<IVerifySignatureResult<ICoseKeyCbor>>
 }
 
 /**
@@ -35,8 +35,8 @@ interface CoseCryptoCallbackJS {
  * We do provide some defaults and examples
  */
 @JsExport
-object CoseCryptoServiceJS : CallbackService<CoseCryptoCallbackJS>, CoseCryptoCallbackJS {
-    private lateinit var platformCallback: CoseCryptoCallbackJS
+object CoseCryptoServiceJS : ICallbackServiceJS<ICoseCryptoCallbackJS>, ICoseCryptoCallbackJS {
+    private lateinit var platformCallback: ICoseCryptoCallbackJS
     private var disabled = false
 
     override fun disable(): CoseCryptoServiceJS {
@@ -53,14 +53,14 @@ object CoseCryptoServiceJS : CallbackService<CoseCryptoCallbackJS>, CoseCryptoCa
         return !this.disabled
     }
 
-    override fun register(platformCallback: CoseCryptoCallbackJS): CoseCryptoServiceJS {
+    override fun register(platformCallback: ICoseCryptoCallbackJS): CoseCryptoServiceJS {
         this.platformCallback = platformCallback
         return this
     }
 
     override fun <CborType, JsonType> sign1(
         input: CoseSign1InputCbor<CborType, JsonType>,
-        keyInfo: KeyInfo<CoseKeyCbor>?
+        keyInfo: IKeyInfo<ICoseKeyCbor>?
     ): Promise<CoseSign1Cbor<CborType, JsonType>> {
         if (!isEnabled()) {
             CryptoConst.LOG.info("COSE sign1 (JS) has been disabled")
@@ -75,7 +75,7 @@ object CoseCryptoServiceJS : CallbackService<CoseCryptoCallbackJS>, CoseCryptoCa
         // Let's do some validations, so the platform callback can be sure there is a signature and key alg available
         val sigAlg = input.protectedHeader.alg ?: input.unprotectedHeader?.alg
         val keyAlg = sigAlg?.keyType
-            ?: if (keyInfo?.key?.alg != null) CoseKeyType.entries.first { it.value == keyInfo.key.alg?.value?.toInt() } else null
+            ?: if (keyInfo?.key?.alg != null) CoseKeyType.entries.first { it.value == keyInfo.key?.alg?.value?.toInt() } else null
         if (keyAlg == null) {
             throw IllegalStateException("No Key algorithm found or provided")
         }
@@ -84,8 +84,8 @@ object CoseCryptoServiceJS : CallbackService<CoseCryptoCallbackJS>, CoseCryptoCa
 
     override fun <CborType, JsonType> verify1(
         input: CoseSign1Cbor<CborType, JsonType>,
-        keyInfo: KeyInfo<CoseKeyCbor>?
-    ): Promise<VerifySignatureResult<CoseKeyCbor>> {
+        keyInfo: IKeyInfo<ICoseKeyCbor>?
+    ): Promise<IVerifySignatureResult<ICoseKeyCbor>> {
         if (!isEnabled()) {
             CryptoConst.LOG.info("COSE service (JS) has been disabled")
             return Promise.resolve(
@@ -122,12 +122,12 @@ object CoseCryptoServiceJS : CallbackService<CoseCryptoCallbackJS>, CoseCryptoCa
 open class CoseCryptoServiceJSAdapter(val x509CallbackJS: CoseCryptoServiceJS = CoseCryptoServiceJS) :
     CoseCryptoCallbackService {
 
-    override fun disable(): CoseCryptoService {
+    override fun disable(): ICoseCryptoService {
         this.x509CallbackJS.disable()
         return this
     }
 
-    override fun enable(): CoseCryptoService {
+    override fun enable(): ICoseCryptoService {
         this.x509CallbackJS.enable()
         return this
     }
@@ -136,13 +136,13 @@ open class CoseCryptoServiceJSAdapter(val x509CallbackJS: CoseCryptoServiceJS = 
         return this.x509CallbackJS.isEnabled()
     }
 
-    override fun register(platformCallback: CoseCryptoService): CoseCryptoCallbackService {
+    override fun register(platformCallback: ICoseCryptoService): CoseCryptoCallbackService {
         throw Error("Register function should not be used on the adapter. It depends on the Javascript coseCryptoService object")
     }
 
     override suspend fun <CborType, JsonType> sign1(
         input: CoseSign1InputCbor<CborType, JsonType>,
-        keyInfo: KeyInfo<CoseKeyCbor>?
+        keyInfo: IKeyInfo<ICoseKeyCbor>?
     ): CoseSign1Cbor<CborType, JsonType> {
         CryptoConst.LOG.debug("Creating COSE_Sign1 signature...")
 
@@ -158,8 +158,8 @@ open class CoseCryptoServiceJSAdapter(val x509CallbackJS: CoseCryptoServiceJS = 
 
     override suspend fun <CborType, JsonType> verify1(
         input: CoseSign1Cbor<CborType, JsonType>,
-        keyInfo: KeyInfo<CoseKeyCbor>?
-    ): VerifySignatureResult<CoseKeyCbor> {
+        keyInfo: IKeyInfo<ICoseKeyCbor>?
+    ): IVerifySignatureResult<ICoseKeyCbor> {
         CryptoConst.LOG.debug("Verifying COSE_Sign1 signature...")
         return try {
             x509CallbackJS.verify1(input = input, keyInfo = keyInfo).await()

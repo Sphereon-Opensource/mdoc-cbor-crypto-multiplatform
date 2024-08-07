@@ -7,11 +7,8 @@ import com.sphereon.cbor.CborArray
 import com.sphereon.cbor.CborBuilder
 import com.sphereon.cbor.CborByteString
 import com.sphereon.cbor.CborMap
-import com.sphereon.cbor.CborNumber
 import com.sphereon.cbor.CborString
-import com.sphereon.cbor.CborUInt
 import com.sphereon.cbor.CborView
-import com.sphereon.cbor.HexString
 import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.toCborByteArray
@@ -36,10 +33,10 @@ data class CoseHeaderJson(
     val alg: CoseSignatureAlgorithm? = null,
     val crit: Array<String>? = null,
     val contentType: String? = null,
-    val kid: HexString? = null,
-    val iv: HexString? = null,
-    val partialIv: HexString? = null,
-    val x5chain: Array<HexString>? = null,
+    val kid: String? = null,
+    val iv: String? = null,
+    val partialIv: String? = null,
+    val x5chain: Array<String>? = null,
 ) : JsonView<CoseHeaderCbor>() {
     override fun toCbor(): CoseHeaderCbor = CoseHeaderCbor(
         alg = alg,

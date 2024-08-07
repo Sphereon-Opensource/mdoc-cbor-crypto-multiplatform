@@ -1,5 +1,6 @@
 package com.sphereon.cbor.cose
 
+import com.sphereon.cbor.CborUInt
 import com.sphereon.cbor.cddl_int
 import kotlinx.serialization.Serializable
 import kotlin.js.JsExport
@@ -22,4 +23,15 @@ enum class CoseKeyOperations(val paramName: String, val value: Int, val descript
     ),
     MAC_CREATE("MAC create", 9, "The key is used for creating MACs. "),
     MAC_VERIFY("MAC verify", 10, "The key is used for validating MACs.");
+
+    fun toCbor(): CborUInt {
+        return CborUInt(this.value)
+    }
+
+    companion object {
+        fun fromValue(value: Int): CoseKeyOperations {
+            return entries.find { entry -> entry.value == value }
+                ?: throw IllegalArgumentException("Unknown value $value")
+        }
+    }
 }

@@ -1,15 +1,23 @@
 package com.sphereon.crypto
 
+import com.sphereon.cbor.cose.IKey
 import kotlin.js.ExperimentalJsCollectionsApi
 import kotlin.js.JsExport
 
 
+expect interface IVerifyResults<out KeyType : IKey> {
+    val error: Boolean
+    val verifications: Array<IVerifyResult>
+    val keyInfo: IKeyInfo<KeyType>?
+}
+
+@Suppress("NON_EXPORTABLE_TYPE") // We are really exporting them because of the expect/actual
 @JsExport
-data class VerifyResults<KeyType>(
-    val error: Boolean,
-    val verifications: Array<VerifyResult>,
-    val keyInfo: KeyInfo<KeyType>?
-) {
+data class VerifyResults<out KeyType : IKey>(
+    override val error: Boolean,
+    override val verifications: Array<IVerifyResult>,
+    override val keyInfo: IKeyInfo<KeyType>?
+) : IVerifyResults<KeyType> {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is VerifyResults<*>) return false
@@ -36,13 +44,20 @@ data class VerifyResults<KeyType>(
 }
 
 
+expect interface IVerifyResult {
+    val name: String
+    val error: Boolean
+    val message: String?
+    val critical: Boolean
+}
+
 @JsExport
 open class VerifyResult(
-    val name: String,
-    val error: Boolean,
-    val message: String? = null,
-    val critical: Boolean = true
-) {
+    override val name: String,
+    override val error: Boolean,
+    override val message: String? = null,
+    override val critical: Boolean = true
+) : IVerifyResult {
 
     override fun toString(): String {
         return "VerifyResult(name='$name', error=$error, message=$message, critical=$critical)"
@@ -69,14 +84,19 @@ open class VerifyResult(
     }
 }
 
+
+expect interface IVerifySignatureResult<out KeyType : IKey> : IVerifyResult {
+    val keyInfo: IKeyInfo<KeyType>?
+}
+
 @JsExport
-class VerifySignatureResult<KeyType>(
+class VerifySignatureResult<out KeyType : IKey>(
     error: Boolean,
     name: String,
     critical: Boolean,
     message: String?,
-    val keyInfo: KeyInfo<KeyType>?
-) : VerifyResult(error = error, name = name, critical = critical, message = message) {
+    override val keyInfo: IKeyInfo<KeyType>?
+) : IVerifySignatureResult<KeyType>, VerifyResult(error = error, name = name, critical = critical, message = message) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is VerifySignatureResult<*>) return false
@@ -101,10 +121,22 @@ class VerifySignatureResult<KeyType>(
 }
 
 
+expect interface IKeyInfo<out KeyType : IKey> {
+    val kid: String?
+
+    /*val jwk: JWK,*/
+    val key: KeyType?
+    val opts: Map<*, *>?
+}
+
 
 @JsExport
 @ExperimentalJsCollectionsApi
-data class KeyInfo<KeyType>(val kid: String?, /*val jwk: JWK,*/ val key: KeyType?, val opts:  Map<*, *>?) {
+data class KeyInfo<out KeyType : IKey>(
+    override val kid: String?, /*val jwk: JWK,*/
+    override val key: KeyType?,
+    override val opts: Map<*, *>?
+) : IKeyInfo<KeyType> {
 
     override fun hashCode(): Int {
         var result = kid?.hashCode() ?: 0

@@ -1,8 +1,9 @@
 package com.sphereon.mdoc
 
 import com.sphereon.cbor.cose.COSE_Sign1
-import com.sphereon.cbor.cose.CoseKeyCbor
-import com.sphereon.crypto.VerifyResults
+import com.sphereon.cbor.cose.ICoseKeyCbor
+import com.sphereon.crypto.IKeyInfo
+import com.sphereon.crypto.IVerifyResults
 import com.sphereon.kmp.DateTimeUtils
 import com.sphereon.kmp.getDateTime
 import com.sphereon.mdoc.data.MdocVerification
@@ -44,8 +45,8 @@ object ValidationsJS {
     fun fromDocumentAsync(
         document: DocumentCbor,
         /*x509Service: X509Service = CryptoService.X509,
-        coseCryptoService: CoseCryptoService = CryptoService.COSE,*/
-        keyInfo: com.sphereon.crypto.KeyInfo<CoseKeyCbor>? = null,
+        coseCryptoService: ICoseCryptoService = CryptoService.COSE,*/
+        keyInfo: IKeyInfo<ICoseKeyCbor>? = null,
         trustedCerts: Array<String>? = null,
         dateTimeUtils: DateTimeUtils = getDateTime(),
         timeZoneId: String? = null,
@@ -67,7 +68,7 @@ object ValidationsJS {
         issuerAuth: COSE_Sign1<MobileSecurityObjectCbor, MobileSecurityObjectJson>,
         /*x509Service: X509Service = CryptoService.X509,
         coseCryptoService: CoseCryptoService = CryptoService.COSE,*/
-        keyInfo: com.sphereon.crypto.KeyInfo<CoseKeyCbor>? = null,
+        keyInfo: IKeyInfo<ICoseKeyCbor>? = null,
         trustedCerts: Array<String>? = null,
         dateTimeUtils: DateTimeUtils = getDateTime(),
         timeZoneId: String? = null,
@@ -91,12 +92,12 @@ object ValidationsJS {
         mdocVerificationTypes: MdocVerificationTypes = MdocVerification.all,
         /*x509Service: X509Service = CryptoService.X509,
         coseCryptoService: CoseCryptoService = CryptoService.COSE,*/
-        keyInfo: com.sphereon.crypto.KeyInfo<CoseKeyCbor>? = null,
+        keyInfo: IKeyInfo<ICoseKeyCbor>? = null,
         trustedCerts: Array<String>? = null,
         dateTimeUtils: DateTimeUtils = getDateTime(),
         timeZoneId: String? = null,
         clockSkewAllowedInSec: Int = 120,
-    ): Promise<VerifyResults<CoseKeyCbor>> = CoroutineScope(context = CoroutineName(NAME)).promise {
+    ): Promise<IVerifyResults<ICoseKeyCbor>> = CoroutineScope(context = CoroutineName(NAME)).promise {
         Validations.withParams(
             issuerAuth = issuerAuth,
             document = document,

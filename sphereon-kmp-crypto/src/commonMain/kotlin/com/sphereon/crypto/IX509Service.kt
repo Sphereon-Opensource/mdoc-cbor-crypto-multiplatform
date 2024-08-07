@@ -1,5 +1,7 @@
 package com.sphereon.crypto
 
+import com.sphereon.cbor.CborItem
+import com.sphereon.cbor.cose.IKey
 import kotlin.js.JsExport
 import kotlin.jvm.JvmStatic
 
@@ -9,38 +11,45 @@ enum class X509VerificationProfile {
     RFC_5280
 }
 
+
 /**
  * The main interface used for the platform specific callback. Has to be implemented by external developers.
  *
  * Not exported to JS as it has a similar interface exported using Promises instead of coroutines
  */
-interface X509Service {
+interface IX509Service {
     fun getTrustedCerts(): Array<String>?
-    suspend fun <KeyType> verifyCertificateChain(
+    suspend fun <KeyType: IKey> verifyCertificateChain(
         chainDER: Array<ByteArray>? = null,
         chainPEM: Array<String>? = null,
         trustedCerts: Array<String>? = getTrustedCerts(),
         verificationProfile: X509VerificationProfile = X509VerificationProfile.RFC_5280
-    ): X509VerificationResult<KeyType>
+    ): IX509VerificationResult<KeyType>
+}
+
+expect interface IX509VerificationResult<out KeyType: IKey>: IVerifyResult {
+    val publicKey: KeyType?
+    val publicKeyAlgorithm: String?
+    val publicKeyParams: Any?
 }
 
 @JsExport
-class X509VerificationResult<KeyType>(
-    val publicKey: KeyType? = null,
-    val publicKeyAlgorithm: String? = null,
-    val publicKeyParams: Any? = null,
+class X509VerificationResult<KeyType: IKey>(
+    override val publicKey: KeyType? = null,
+    override val publicKeyAlgorithm: String? = null,
+    override val publicKeyParams: Any? = null,
     name: String = CryptoConst.X509_LITERAL,
     critical: Boolean,
     message: String?,
     error: Boolean
-) : VerifyResult(name = name, critical = critical, message = message, error = error) {
+) : VerifyResult(name = name, critical = critical, message = message, error = error), IX509VerificationResult<KeyType> {
 
 }
 
 /**
  * The main entry point for X509 Certificate validation, delegating to a platform specific callback implemented by external developers
  */
-interface X509CallbackService : CallbackService<X509Service>, X509Service
+interface X509CallbackService : ICallbackService<IX509Service>, IX509Service
 
 // The JSExport is on the actual JS impl which has an adaptor to Promises
 expect fun x509Service(): X509CallbackService
@@ -52,7 +61,7 @@ expect fun x509Service(): X509CallbackService
  */
 object X509ServiceObject : X509CallbackService {
     @JvmStatic
-    private lateinit var platformCallback: X509Service
+    private lateinit var platformCallback: IX509Service
 
     private var disabled = false
     private var trustedCerts: Set<String>? = null
@@ -62,17 +71,17 @@ object X509ServiceObject : X509CallbackService {
         return !this.disabled
     }
 
-    override fun disable(): X509Service {
+    override fun disable(): IX509Service {
         this.disabled = true
         return this
     }
 
-    override fun enable(): X509Service {
+    override fun enable(): IX509Service {
         this.disabled = false
         return this
     }
 
-    override fun register(platformCallback: X509Service): X509CallbackService {
+    override fun register(platformCallback: IX509Service): X509CallbackService {
         this.platformCallback = platformCallback
         return this
     }
@@ -81,12 +90,12 @@ object X509ServiceObject : X509CallbackService {
         return this.trustedCerts?.toTypedArray()
     }
 
-    override suspend fun <KeyType> verifyCertificateChain(
+    override suspend fun <KeyType: IKey> verifyCertificateChain(
         chainDER: Array<ByteArray>?,
         chainPEM: Array<String>?,
         trustedCerts: Array<String>?,
         verificationProfile: X509VerificationProfile
-    ): X509VerificationResult<KeyType> {
+    ): IX509VerificationResult<KeyType> {
         if (!this.isEnabled()) {
             return X509VerificationResult<KeyType>(
                 name = "x509",

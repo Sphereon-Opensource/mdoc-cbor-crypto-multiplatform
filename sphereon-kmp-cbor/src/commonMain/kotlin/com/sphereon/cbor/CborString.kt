@@ -2,6 +2,7 @@ package com.sphereon.cbor
 
 import kotlinx.io.bytestring.ByteStringBuilder
 import kotlin.js.JsExport
+import kotlin.uuid.Uuid
 
 @JsExport
 class CborString(value: cddl_tstr) : CborItem<cddl_tstr>(value, CDDL.tstr) {
@@ -24,5 +25,14 @@ class CborString(value: cddl_tstr) : CborItem<cddl_tstr>(value, CDDL.tstr) {
 fun cddl_tstr.toCborString() = CborString(this)
 fun Array<String>.toCborStringArray() = CborArray(this.map { it.toCborString() }.toMutableList())
 fun CborArray<CborString>.toStringArray() = this.value.map { it.value }.toTypedArray()
+
+val HEX_ALPHABET = charArrayOf('A','B')
 @OptIn(ExperimentalStdlibApi::class)
-fun cddl_tstr.toCborByteString() = CborByteString(this.hexToByteArray())
+fun cddl_tstr.toCborByteString(): CborByteString  {
+    if (this.length % 2 == 0) {
+        if (this.lowercase().filter { it ->  HEX_ALPHABET.contains(it)} === this.lowercase()) {
+            return CborByteString(this.hexToByteArray())
+        }
+    }
+    return CborByteString(this.encodeToByteArray())
+}

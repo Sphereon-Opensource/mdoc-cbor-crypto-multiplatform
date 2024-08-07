@@ -2,9 +2,14 @@ package com.sphereon.mdoc
 
 import com.sphereon.cbor.cose.COSE_Sign1
 import com.sphereon.cbor.cose.CoseKeyCbor
+import com.sphereon.cbor.cose.ICoseKeyCbor
 import com.sphereon.crypto.CoseCryptoServiceJS
 import com.sphereon.crypto.CoseCryptoServiceJSAdapter
 import com.sphereon.crypto.CryptoServiceJS
+import com.sphereon.crypto.IKeyInfo
+import com.sphereon.crypto.IVerifyResult
+import com.sphereon.crypto.IVerifySignatureResult
+import com.sphereon.crypto.IX509VerificationResult
 import com.sphereon.crypto.VerifyResult
 import com.sphereon.crypto.VerifySignatureResult
 import com.sphereon.crypto.X509VerificationResult
@@ -54,7 +59,7 @@ object IssuerAuthValidationJS {
         issuerAuth: COSE_Sign1<MobileSecurityObjectCbor, MobileSecurityObjectJson>,
 //        x509Service: X509Service = CryptoService.X509, // todo, look into this. Do we want to expose it here anyway?
         trustedCerts: Array<String>?// = x509Service.getTrustedCerts()
-    ): Promise<X509VerificationResult<CoseKeyCbor>> = CoroutineScope(context = CoroutineName(NAME)).promise {
+    ): Promise<IX509VerificationResult<ICoseKeyCbor>> = CoroutineScope(context = CoroutineName(NAME)).promise {
         IssuerAuthValidation.verifyCertificateChain(
             issuerAuth = issuerAuth,
 //            x509Service = x509Service,
@@ -71,8 +76,8 @@ object IssuerAuthValidationJS {
     fun verifySign1Async(
         issuerAuth: COSE_Sign1<MobileSecurityObjectCbor, MobileSecurityObjectJson>,
         coseCryptoService: CoseCryptoServiceJS = CryptoServiceJS.COSE, // TODO: Test this with other services
-        keyInfo: com.sphereon.crypto.KeyInfo<CoseKeyCbor>?
-    ): Promise<VerifySignatureResult<CoseKeyCbor>> =
+        keyInfo: IKeyInfo<ICoseKeyCbor>?
+    ): Promise<IVerifySignatureResult<ICoseKeyCbor>> =
         CoroutineScope(context = CoroutineName(NAME)).promise {
             IssuerAuthValidation.verifySign1(issuerAuth = issuerAuth, coseCryptoService = if (coseCryptoService === CryptoServiceJS.COSE) coseService() else CoseCryptoServiceJSAdapter(coseCryptoService) , keyInfo = keyInfo) }
 
@@ -87,7 +92,7 @@ object IssuerAuthValidationJS {
     fun verifyDigestsAsync(
         issuerAuth: COSE_Sign1<MobileSecurityObjectCbor, MobileSecurityObjectJson>,
 //        deviceResponse: DeviceResponseCbor
-    ): Promise<VerifyResult> = CoroutineScope(context = CoroutineName(NAME)).promise {
+    ): Promise<IVerifyResult> = CoroutineScope(context = CoroutineName(NAME)).promise {
         IssuerAuthValidation.verifyDigests(issuerAuth/*, deviceResponse*/)
     }
 
@@ -97,7 +102,7 @@ object IssuerAuthValidationJS {
      *
      *  This is a READER method.
      */
-    fun verifyDocTypeAsync(issuerAuth: COSE_Sign1<MobileSecurityObjectCbor, MobileSecurityObjectJson>): Promise<VerifyResult> =
+    fun verifyDocTypeAsync(issuerAuth: COSE_Sign1<MobileSecurityObjectCbor, MobileSecurityObjectJson>): Promise<IVerifyResult> =
         CoroutineScope(context = CoroutineName(NAME)).promise {
             IssuerAuthValidation.verifyDocType(issuerAuth)
         }
@@ -113,7 +118,7 @@ object IssuerAuthValidationJS {
         dateTimeUtils: DateTimeUtils = getDateTime(),
         timeZoneId: String? = null,
         clockSkewAllowedInSec: Int = 120,
-    ): Promise<VerifyResult> = CoroutineScope(context = CoroutineName(NAME)).promise {
+    ): Promise<IVerifyResult> = CoroutineScope(context = CoroutineName(NAME)).promise {
         IssuerAuthValidation.verifyValidityInfo(issuerAuth, dateTimeUtils, timeZoneId, clockSkewAllowedInSec)
     }
 

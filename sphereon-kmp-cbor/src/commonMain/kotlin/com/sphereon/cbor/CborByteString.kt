@@ -16,6 +16,7 @@ open class CborByteString(value: cddl_bstr) :
     @OptIn(ExperimentalStdlibApi::class)
     fun toHexString(): String = this.value.toHexString()
 
+
     override fun equals(other: Any?): Boolean = other is CborByteString && value.contentEquals(other.value)
 
     override fun hashCode(): Int = value.contentHashCode()
@@ -84,5 +85,5 @@ class CborByteStringIndefLength(value: List<cddl_bstr>) : CborItem<List<cddl_bst
 
 fun CborArray<CborByteString>.toHexStringArray() = this.value.map { it.toHexString() }.toTypedArray()
 
-fun Array<HexString>.toCborByteArray() = CborArray(this.map { it.toCborByteString() }.toMutableList())
-typealias HexString = String
+fun Array<String>.toCborByteArray() = CborArray(this.map { it.toCborByteString() }.toMutableList())
+

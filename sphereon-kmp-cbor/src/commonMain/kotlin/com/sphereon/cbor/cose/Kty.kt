@@ -1,5 +1,6 @@
 package com.sphereon.cbor.cose
 
+import com.sphereon.cbor.CborUInt
 import kotlin.js.JsExport
 
 
@@ -16,5 +17,16 @@ enum class CoseKeyType(val value: Int, val description: String) {
     OKP(1, "Octet Key Pair"),
     EC2(2, "Elliptic Curve Keys w/ x- and y-coordinate pair"),
     Symmetric(4, "Symmetric Keys"),
-    Reserved(0, "Reserved")
+    Reserved(0, "Reserved");
+
+    fun toCbor(): CborUInt {
+        return CborUInt(this.value)
+    }
+
+    companion object {
+        fun fromValue(value: Int): CoseKeyType {
+            return CoseKeyType.entries.find { entry -> entry.value == value }
+                ?: throw IllegalArgumentException("Unknown value $value")
+        }
+    }
 }

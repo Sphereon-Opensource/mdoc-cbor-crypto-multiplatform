@@ -1,7 +1,9 @@
 @file:OptIn(ExperimentalJsExport::class)
 @file:JsExport
 
-import com.sphereon.cbor.cose.NumberLabel
+package com.sphereon.cbor.cose
+
+import com.sphereon.cbor.CborUInt
 import kotlin.js.ExperimentalJsExport
 import kotlin.js.JsExport
 
@@ -13,11 +15,24 @@ import kotlin.js.JsExport
  *
  * @since 0.1.0
  */
-enum class CoseCurve(val curveName: String, val label: NumberLabel) {
-    P_256("P-256", NumberLabel(1)),
-    P_384("P-384", NumberLabel(2)),
-    P_521("P-521", NumberLabel(3)),
+@JsExport
+enum class CoseCurve(val curveName: String, val value: Int) {
+    P_256("P-256", 1),
+    P_384("P-384", 2),
+    P_521("P-521", 3)
     /*Ed25519("Ed25519"),
     X25519("X25519"),
     Secp256k1("secp256k1");*/
+    ;
+
+    fun toCbor(): CborUInt {
+        return CborUInt(this.value)
+    }
+
+    companion object {
+        fun fromValue(value: Int): CoseCurve {
+            return CoseCurve.entries.find { entry -> entry.value == value }
+                ?: throw IllegalArgumentException("Unknown value $value")
+        }
+    }
 }

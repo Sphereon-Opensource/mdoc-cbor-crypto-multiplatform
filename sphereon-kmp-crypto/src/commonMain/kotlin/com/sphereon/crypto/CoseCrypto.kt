@@ -1,13 +1,9 @@
 package com.sphereon.crypto
 
-import com.sphereon.cbor.cose.CoseKeyCbor
 import com.sphereon.cbor.cose.CoseKeyType
 import com.sphereon.cbor.cose.CoseSign1Cbor
 import com.sphereon.cbor.cose.CoseSign1InputCbor
-import dev.whyoleg.cryptography.serialization.asn1.BitArray
-import dev.whyoleg.cryptography.serialization.asn1.ObjectIdentifier
-import kotlinx.serialization.Polymorphic
-import kotlinx.serialization.Serializable
+import com.sphereon.cbor.cose.ICoseKeyCbor
 import kotlin.jvm.JvmStatic
 
 /**
@@ -15,34 +11,34 @@ import kotlin.jvm.JvmStatic
  *
  * Not exported to JS as it has a similar interface exported using Promises instead of coroutines
  */
-interface CoseCryptoService {
+interface ICoseCryptoService {
     suspend fun <CborType, JsonType> sign1(
         input: CoseSign1InputCbor<CborType, JsonType>,
-        keyInfo: KeyInfo<CoseKeyCbor>? = null
+        keyInfo: IKeyInfo<ICoseKeyCbor>? = null
     ): CoseSign1Cbor<CborType, JsonType>
 
     suspend fun <CborType, JsonType> verify1(
         input: CoseSign1Cbor<CborType, JsonType>,
-        keyInfo: KeyInfo<CoseKeyCbor>? = null
-    ): VerifySignatureResult<CoseKeyCbor>
+        keyInfo: IKeyInfo<ICoseKeyCbor>? = null
+    ): IVerifySignatureResult<ICoseKeyCbor>
 }
 
 /**
  * The main entry point for COSE signature creation/validation, delegating to a platform specific callback implemented by external developers
  */
-interface CoseCryptoCallbackService : CallbackService<CoseCryptoService>, CoseCryptoService
+interface CoseCryptoCallbackService : ICallbackService<ICoseCryptoService>, ICoseCryptoService
 
 expect fun coseService(): CoseCryptoCallbackService
 
 object CoseCryptoServiceObject : CoseCryptoCallbackService {
     @JvmStatic
-    private lateinit var platformCallback: CoseCryptoService
+    private lateinit var platformCallback: ICoseCryptoService
 
     private var disabled = false
 
     override suspend fun <CborType, JsonType> sign1(
         input: CoseSign1InputCbor<CborType, JsonType>,
-        keyInfo: KeyInfo<CoseKeyCbor>?
+        keyInfo: IKeyInfo<ICoseKeyCbor>?
     ): CoseSign1Cbor<CborType, JsonType> {
         if (!isEnabled()) {
             CryptoConst.LOG.info("COSE sign1 has been disabled")
@@ -56,7 +52,7 @@ object CoseCryptoServiceObject : CoseCryptoCallbackService {
         }
         val sigAlg = input.protectedHeader.alg ?: input.unprotectedHeader?.alg
         val keyAlg = sigAlg?.keyType
-            ?: if (keyInfo?.key?.alg != null) CoseKeyType.entries.first { it.value == keyInfo.key.alg?.value?.toInt() } else null
+            ?: if (keyInfo?.key?.alg != null) CoseKeyType.entries.first { it.value == keyInfo.key?.alg?.value?.toInt() } else null
         if (keyAlg == null) {
             throw IllegalStateException("No Key algorithm found or provided")
         }
@@ -65,8 +61,8 @@ object CoseCryptoServiceObject : CoseCryptoCallbackService {
 
     override suspend fun <CborType, JsonType> verify1(
         input: CoseSign1Cbor<CborType, JsonType>,
-        keyInfo: KeyInfo<CoseKeyCbor>?
-    ): VerifySignatureResult<CoseKeyCbor> {
+        keyInfo: IKeyInfo<ICoseKeyCbor>?
+    ): IVerifySignatureResult<ICoseKeyCbor> {
         if (!this.isEnabled()) {
             return VerifySignatureResult(
                 keyInfo = keyInfo,
@@ -82,7 +78,7 @@ object CoseCryptoServiceObject : CoseCryptoCallbackService {
         }
         val sigAlg = input.protectedHeader.alg ?: input.unprotectedHeader?.alg
         val keyAlg = sigAlg?.keyType
-            ?: if (keyInfo?.key?.alg != null) CoseKeyType.entries.first { it.value == keyInfo.key.alg?.value?.toInt() } else null
+            ?: if (keyInfo?.key?.alg != null) CoseKeyType.entries.first { it.value == keyInfo.key?.alg?.value?.toInt() } else null
         if (keyAlg == null) {
             return VerifySignatureResult(
                 keyInfo = keyInfo,
@@ -100,33 +96,19 @@ object CoseCryptoServiceObject : CoseCryptoCallbackService {
         return !this.disabled
     }
 
-    override fun disable(): CoseCryptoService {
+    override fun disable(): ICoseCryptoService {
         this.disabled = true
         return this
     }
 
-    override fun enable(): CoseCryptoService {
+    override fun enable(): ICoseCryptoService {
         this.disabled = false
         return this
     }
 
-    override fun register(platformCallback: CoseCryptoService): CoseCryptoCallbackService {
+    override fun register(platformCallback: ICoseCryptoService): CoseCryptoCallbackService {
         this.platformCallback = platformCallback
         return this
     }
 
 }
-
-
-@Serializable
-class Certificate(
-    val tbsCertificate: @Polymorphic Any,
-    val signatureAlgorithm: SimpleAlgorithmIdentifier,
-    val signature: BitArray
-)
-
-@Serializable
-class SimpleAlgorithmIdentifier(
-    val algorithm: ObjectIdentifier,
-    val parameters: Nothing?,
-)

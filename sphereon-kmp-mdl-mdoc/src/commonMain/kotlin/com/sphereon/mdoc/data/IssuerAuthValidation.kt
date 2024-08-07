@@ -3,13 +3,17 @@ package com.sphereon.mdoc.data
 import com.sphereon.cbor.cborTDateToEpochSeconds
 import com.sphereon.cbor.cose.COSE_Sign1
 import com.sphereon.cbor.cose.CoseKeyCbor
+import com.sphereon.cbor.cose.ICoseKeyCbor
 import com.sphereon.cbor.localDateToDateStringISO
-import com.sphereon.crypto.CoseCryptoService
+import com.sphereon.crypto.ICoseCryptoService
 import com.sphereon.crypto.CryptoConst
 import com.sphereon.crypto.CryptoService
+import com.sphereon.crypto.IKeyInfo
+import com.sphereon.crypto.IVerifyResult
+import com.sphereon.crypto.IVerifySignatureResult
+import com.sphereon.crypto.IX509VerificationResult
 import com.sphereon.crypto.VerifyResult
-import com.sphereon.crypto.VerifySignatureResult
-import com.sphereon.crypto.X509Service
+import com.sphereon.crypto.IX509Service
 import com.sphereon.crypto.X509VerificationProfile
 import com.sphereon.crypto.X509VerificationResult
 import com.sphereon.kmp.DateTimeUtils
@@ -46,9 +50,9 @@ object IssuerAuthValidation {
      */
     suspend fun verifyCertificateChain(
         issuerAuth: COSE_Sign1<MobileSecurityObjectCbor, MobileSecurityObjectJson>,
-        x509Service: X509Service = CryptoService.X509,
+        x509Service: IX509Service = CryptoService.X509,
         trustedCerts: Array<String>? = x509Service.getTrustedCerts()
-    ): X509VerificationResult<CoseKeyCbor> {
+    ): IX509VerificationResult<ICoseKeyCbor> {
         val x5chain =
             issuerAuth.protectedHeader.x5chain ?: issuerAuth.unprotectedHeader?.x5chain
         if (x5chain === null || x5chain.value.isEmpty()) {
@@ -71,9 +75,9 @@ object IssuerAuthValidation {
      */
     suspend fun verifySign1(
         issuerAuth: COSE_Sign1<MobileSecurityObjectCbor, MobileSecurityObjectJson>,
-        coseCryptoService: CoseCryptoService = CryptoService.COSE,
-        keyInfo: com.sphereon.crypto.KeyInfo<CoseKeyCbor>?
-    ): VerifySignatureResult<CoseKeyCbor> = coseCryptoService.verify1(issuerAuth, keyInfo)
+        coseCryptoService: ICoseCryptoService = CryptoService.COSE,
+        keyInfo: IKeyInfo<ICoseKeyCbor>?
+    ): IVerifySignatureResult<ICoseKeyCbor> = coseCryptoService.verify1(issuerAuth, keyInfo)
 
 
     /**
@@ -86,7 +90,7 @@ object IssuerAuthValidation {
     suspend fun verifyDigests(
         issuerAuth: COSE_Sign1<MobileSecurityObjectCbor, MobileSecurityObjectJson>,
 //        deviceResponse: DeviceResponseCbor
-    ): VerifyResult = VerifyResult(
+    ): IVerifyResult = VerifyResult(
         error = true,
         critical = true,
         message = "Device signed verification validation not implemented yet",
@@ -99,7 +103,7 @@ object IssuerAuthValidation {
      *
      *  This is a READER method. FIXME: Implement
      */
-    suspend fun verifyDocType(issuerAuth: COSE_Sign1<MobileSecurityObjectCbor, MobileSecurityObjectJson>): VerifyResult =
+    suspend fun verifyDocType(issuerAuth: COSE_Sign1<MobileSecurityObjectCbor, MobileSecurityObjectJson>): IVerifyResult =
         VerifyResult(
             error = true,
             critical = true,
@@ -118,7 +122,7 @@ object IssuerAuthValidation {
         dateTimeUtils: DateTimeUtils = getDateTime(),
         timeZoneId: String? = null,
         clockSkewAllowedInSec: Int = 120,
-    ): VerifyResult {
+    ): IVerifyResult {
         val mso = issuerAuth.cborDecodePayload()
         if (mso === null) {
             return VerifyResult(
