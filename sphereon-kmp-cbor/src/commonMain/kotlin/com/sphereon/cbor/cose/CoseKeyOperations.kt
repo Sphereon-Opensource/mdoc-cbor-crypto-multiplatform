@@ -1,11 +1,8 @@
 package com.sphereon.cbor.cose
 
 import com.sphereon.cbor.CborUInt
-import com.sphereon.cbor.cddl_int
-import kotlinx.serialization.Serializable
 import kotlin.js.JsExport
 
-@Serializable
 @JsExport
 enum class CoseKeyOperations(val paramName: String, val value: Int, val description: String) {
 

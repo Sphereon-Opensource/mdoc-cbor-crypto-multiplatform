@@ -3,14 +3,14 @@
 package com.sphereon.cbor
 
 
-import com.sphereon.kmp.decodeHex
+import com.sphereon.kmp.decodeFromHex
 import kotlinx.io.bytestring.ByteStringBuilder
 import kotlin.js.JsExport
 
 
 @JsExport
 class CborHexEncodedItem(hex: String) : CborByteString(
-    hex.decodeHex()
+    hex.decodeFromHex()
 )
 
 /**

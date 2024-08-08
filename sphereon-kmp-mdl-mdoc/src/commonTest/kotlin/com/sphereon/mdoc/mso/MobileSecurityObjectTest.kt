@@ -5,7 +5,7 @@ import com.sphereon.cbor.CborUInt
 import com.sphereon.cbor.cose.COSE_Key
 import com.sphereon.cbor.toCborBool
 import com.sphereon.kmp.bigIntFromNumber
-import com.sphereon.kmp.decodeHex
+import com.sphereon.kmp.decodeFromHex
 import com.sphereon.mdoc.tx.device.BleOptionsCbor
 import com.sphereon.mdoc.tx.device.DeviceEngagementCbor
 import com.sphereon.mdoc.tx.device.DeviceEngagementSecurityCbor
@@ -35,12 +35,12 @@ class MobileSecurityObjectTest {
     @Test
     fun shouldEncodeRawDeviceEngagement() {
 
-        val decoded = DeviceEngagementCbor.cborDecode(isoTestVector.decodeHex())
+        val decoded = DeviceEngagementCbor.cborDecode(isoTestVector.decodeFromHex())
         assertNotNull(decoded)
         assertNotNull(decoded.security)
 
 
-        val coseKey = COSE_Key.cborDecode(coseKeyBytes.decodeHex())
+        val coseKey = COSE_Key.cborDecode(coseKeyBytes.decodeFromHex())
         assertEquals(coseKey.kty, decoded.security.eDeviceKeyBytes.kty)
         assertEquals(coseKey.crv, decoded.security.eDeviceKeyBytes.crv)
         assertEquals(coseKey.x, decoded.security.eDeviceKeyBytes.x)

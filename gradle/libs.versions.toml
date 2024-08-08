@@ -11,6 +11,7 @@ io = "0.3.4"
 datetime = "0.6.0"
 whyoleg-cryptography = "0.3.1"
 kermit = "2.0.4"
+base64 = "2.2.1"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -33,6 +34,7 @@ whyoleg-cryptography-serialization-asn1 = { module = "dev.whyoleg.cryptography:c
 whyoleg-cryptography-serialization-asn1-modules = { module = "dev.whyoleg.cryptography:cryptography-serialization-asn1-modules", version.ref = "whyoleg-cryptography" }
 whyoleg-cryptography-random = { module = "dev.whyoleg.cryptography:cryptography-random", version.ref = "whyoleg-cryptography" }
 kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
+encoding-base64 = { module = "io.matthewnelson.encoding:base64", version.ref = "base64" }
 
 
 [plugins]

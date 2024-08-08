@@ -119,6 +119,7 @@ kotlin {
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.kotlinx.io.core)
                 implementation(libs.kermit)
+                implementation(libs.encoding.base64)
             }
         }
         val commonTest by getting {

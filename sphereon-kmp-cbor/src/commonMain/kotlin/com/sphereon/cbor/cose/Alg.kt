@@ -19,6 +19,7 @@ interface CoseAlgorithm {
     val keyType: CoseKeyType?
     val hash: HashAlgorithm?
     val tagLength: Int?
+    val curve: CoseCurve?
     val description: String
 }
 
@@ -26,6 +27,8 @@ interface CoseAlgorithm {
  * @see CoseAlgorithm
  */
 
+
+//todo: Add curve
 @Serializable
 @JsExport
 sealed class CoseSignatureAlgorithm(
@@ -34,19 +37,103 @@ sealed class CoseSignatureAlgorithm(
     override val keyType: CoseKeyType?,
     override val hash: HashAlgorithm?,
     override val tagLength: Int?,
+    override val curve: CoseCurve?,
     override val description: String
 ) : CoseAlgorithm {
-    object ES256 : CoseSignatureAlgorithm("ES256", -7, CoseKeyType.EC2, HashAlgorithm.SHA256, null, "ECDSA w/ SHA-256")
-    object ES384 : CoseSignatureAlgorithm("ES384", -35, CoseKeyType.EC2, HashAlgorithm.SHA384, null, "ECDSA w/ SHA-384")
-    object ES512 : CoseSignatureAlgorithm("ES512", -36, CoseKeyType.EC2, HashAlgorithm.SHA512, null, "ECDSA w/ SHA-512")
-    object EdDSA : CoseSignatureAlgorithm("EdDSA", -8, CoseKeyType.OKP, null, null, "EdDSA")
+    object ES256 : CoseSignatureAlgorithm(
+        "ES256",
+        -7,
+        CoseKeyType.EC2,
+        HashAlgorithm.SHA256,
+        null,
+        CoseCurve.P_256,
+        "ECDSA w/ SHA-256"
+    )
+
+    object ES256K : CoseSignatureAlgorithm(
+        "ES256K",
+        -47,
+        CoseKeyType.EC2,
+        HashAlgorithm.SHA256,
+        null,
+        CoseCurve.secp256k1,
+        "ECDSA secp256k1 curve w/ SHA-256"
+    )
+
+    object ES384 : CoseSignatureAlgorithm(
+        "ES384",
+        -35,
+        CoseKeyType.EC2,
+        HashAlgorithm.SHA384,
+        null,
+        CoseCurve.P_384,
+        "ECDSA w/ SHA-384"
+    )
+
+    object ES512 : CoseSignatureAlgorithm(
+        "ES512",
+        -36,
+        CoseKeyType.EC2,
+        HashAlgorithm.SHA512,
+        null,
+        CoseCurve.P_521,
+        "ECDSA w/ SHA-512"
+    )
+
+    object EdDSA : CoseSignatureAlgorithm("EdDSA", -8, CoseKeyType.OKP, null, null, CoseCurve.P_521, "EdDSA")
 
     object HS256_64 :
-        CoseSignatureAlgorithm("HS256/64", 4, null, HashAlgorithm.SHA256, 64, "HMAC w/ SHA-256 truncated to 64 bits")
+        CoseSignatureAlgorithm(
+            "HS256/64",
+            4,
+            null,
+            HashAlgorithm.SHA256,
+            64,
+            null,
+            "HMAC w/ SHA-256 truncated to 64 bits"
+        )
 
-    object HS256 : CoseSignatureAlgorithm("HS256", 5, null, HashAlgorithm.SHA256, 256, "HMAC w/ SHA-256")
-    object HS384 : CoseSignatureAlgorithm("HS384", 6, null, HashAlgorithm.SHA384, 384, "HMAC w/ SHA-384")
-    object HS512 : CoseSignatureAlgorithm("HS512", 7, null, HashAlgorithm.SHA512, 512, "HMAC w/ SHA-512")
+    object HS256 :
+        CoseSignatureAlgorithm("HS256", 5, CoseKeyType.Symmetric, HashAlgorithm.SHA256, 256, null, "HMAC w/ SHA-256")
+
+    object HS384 :
+        CoseSignatureAlgorithm("HS384", 6, CoseKeyType.Symmetric, HashAlgorithm.SHA384, 384, null, "HMAC w/ SHA-384")
+
+    object HS512 :
+        CoseSignatureAlgorithm("HS512", 7, CoseKeyType.Symmetric, HashAlgorithm.SHA512, 512, null, "HMAC w/ SHA-512")
+
+    object PS256 :
+        CoseSignatureAlgorithm(
+            "PS256",
+            -37,
+            CoseKeyType.RSA,
+            HashAlgorithm.SHA256,
+            256,
+            CoseCurve.P_256,
+            "RSASSA-PSS w/ SHA-256"
+        )
+
+    object PS384 :
+        CoseSignatureAlgorithm(
+            "PS384",
+            -38,
+            CoseKeyType.RSA,
+            HashAlgorithm.SHA384,
+            384,
+            CoseCurve.P_384,
+            "RSASSA-PSS w/ SHA-384"
+        )
+
+    object PS512 :
+        CoseSignatureAlgorithm(
+            "PS512",
+            -39,
+            CoseKeyType.RSA,
+            HashAlgorithm.SHA512,
+            512,
+            CoseCurve.P_521,
+            "RSASSA-PSS w/ SHA-512"
+        )
 
 
     companion object {

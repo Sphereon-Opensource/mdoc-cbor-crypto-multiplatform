@@ -2,13 +2,12 @@ package com.sphereon.mdoc.tx.device
 
 //import com.sphereon.cbor.cborSerializer
 
-import com.sphereon.cbor.CborByteString
 import com.sphereon.cbor.CborHexEncodedItem
 import com.sphereon.cbor.CborUInt
 import com.sphereon.cbor.cose.COSE_Key
 import com.sphereon.cbor.toCborBool
 import com.sphereon.kmp.bigIntFromNumber
-import com.sphereon.kmp.decodeHex
+import com.sphereon.kmp.decodeFromHex
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -36,7 +35,7 @@ class DeviceEngagementTest {
     @Test
     fun shouldEncodeRawDeviceEngagement() {
 
-        val decoded = DeviceEngagementCbor.cborDecode(isoTestVector.decodeHex())
+        val decoded = DeviceEngagementCbor.cborDecode(isoTestVector.decodeFromHex())
         assertNotNull(decoded)
         assertNotNull(decoded.security)
 
@@ -46,7 +45,7 @@ class DeviceEngagementTest {
         assertNotNull(decoded2.security)
 */
 
-        val coseKey = COSE_Key.cborDecode(coseKeyBytes.decodeHex())
+        val coseKey = COSE_Key.cborDecode(coseKeyBytes.decodeFromHex())
         assertEquals(coseKey.kty, decoded.security.eDeviceKeyBytes.kty)
         assertEquals(coseKey.crv, decoded.security.eDeviceKeyBytes.crv)
         assertEquals(coseKey.x, decoded.security.eDeviceKeyBytes.x)

@@ -1,7 +1,7 @@
 package com.sphereon.mdoc.data.device
 
 import com.sphereon.cbor.CborArray
-import com.sphereon.kmp.decodeHex
+import com.sphereon.kmp.decodeFromHex
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -25,7 +25,7 @@ class IssuerSignedTest {
     @Test
     fun shouldDecodeAndEncodeSprindFunkeIssuerAuthTestVector() {
 
-        val decoded = IssuerSignedCbor.cborDecode(sprindFunkeTestVector.decodeHex())
+        val decoded = IssuerSignedCbor.cborDecode(sprindFunkeTestVector.decodeFromHex())
         assertNotNull(decoded)
         assertNotNull(decoded.issuerAuth)
         assertNotNull(decoded.issuerAuth.payload)
@@ -51,7 +51,7 @@ class IssuerSignedTest {
     @Test
     fun shouldConvertToJsonForSprindFunkeIssuerAuthTestVector() {
 
-        val issuerSignedCbor = IssuerSignedCbor.cborDecode(sprindFunkeTestVector.decodeHex())
+        val issuerSignedCbor = IssuerSignedCbor.cborDecode(sprindFunkeTestVector.decodeFromHex())
         assertNotNull(issuerSignedCbor)
         println(issuerSignedCbor)
         val issuerSignedJson = issuerSignedCbor.toJson()
@@ -68,7 +68,7 @@ class IssuerSignedTest {
 
     @Test
     fun shouldConvertToJsonAndBack() {
-        val issuerSignedCbor = IssuerSignedCbor.cborDecode(sprindFunkeTestVector.decodeHex())
+        val issuerSignedCbor = IssuerSignedCbor.cborDecode(sprindFunkeTestVector.decodeFromHex())
         val issuerSignedJson = issuerSignedCbor.toJson()
         assertEquals(issuerSignedCbor, issuerSignedJson.toCbor())
     }

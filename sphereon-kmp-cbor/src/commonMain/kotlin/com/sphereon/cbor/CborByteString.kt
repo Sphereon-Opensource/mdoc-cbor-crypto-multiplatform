@@ -1,5 +1,7 @@
 package com.sphereon.cbor
 
+import com.sphereon.kmp.Encoding
+import com.sphereon.kmp.encodeTo
 import kotlinx.io.bytestring.ByteStringBuilder
 import kotlin.js.JsExport
 
@@ -13,8 +15,7 @@ open class CborByteString(value: cddl_bstr) :
 
     fun <T : AnyCborItem> cborDecode() = cborSerializer.decode<T>(value)
 
-    @OptIn(ExperimentalStdlibApi::class)
-    fun toHexString(): String = this.value.toHexString()
+    fun encodeTo(encoding: Encoding): String = this.value.encodeTo(encoding)
 
 
     override fun equals(other: Any?): Boolean = other is CborByteString && value.contentEquals(other.value)
@@ -78,12 +79,18 @@ class CborByteStringIndefLength(value: List<cddl_bstr>) : CborItem<List<cddl_bst
             }
             return Pair(cursor, CborByteStringIndefLength(chunks))
         }
-
-        private val HEX_DIGITS = "0123456789abcdef".toCharArray()
     }
 }
 
-fun CborArray<CborByteString>.toHexStringArray() = this.value.map { it.toHexString() }.toTypedArray()
+fun CborArray<CborByteString>.encodeToHexArray() = this.value.map { it.encodeTo(Encoding.HEX) }.toTypedArray()
+fun CborArray<CborByteString>.encodeToBase64Array(urlSafe: Boolean = false) =
+    this.value.map { if (urlSafe) it.encodeTo(Encoding.BASE64URL) else it.encodeTo(Encoding.BASE64) }.toTypedArray()
 
-fun Array<String>.toCborByteArray() = CborArray(this.map { it.toCborByteString() }.toMutableList())
+fun CborArray<CborByteString>.encodeToBase64UrlArray() =
+    this.value.map { it.encodeTo(Encoding.BASE64URL) }.toTypedArray()
+
+fun CborArray<CborByteString>.encodeToArray(encoding: Encoding) =
+    this.value.map { it.encodeTo(encoding) }.toTypedArray()
+
+fun Array<String>.encodeToCborByteArray() = CborArray(this.map { it.toCborByteString() }.toMutableList())
 

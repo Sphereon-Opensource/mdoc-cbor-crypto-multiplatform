@@ -11,12 +11,13 @@ import com.sphereon.cbor.CborString
 import com.sphereon.cbor.CborView
 import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.cborSerializer
-import com.sphereon.cbor.toCborByteArray
+import com.sphereon.cbor.encodeToCborByteArray
 import com.sphereon.cbor.toCborByteString
 import com.sphereon.cbor.toCborString
 import com.sphereon.cbor.toCborStringArray
-import com.sphereon.cbor.toHexStringArray
+import com.sphereon.cbor.encodeToHexArray
 import com.sphereon.cbor.toStringArray
+import com.sphereon.kmp.Encoding
 import com.sphereon.kmp.LongKMP
 import com.sphereon.kmp.bigIntFromNumber
 import kotlin.js.JsExport
@@ -45,7 +46,7 @@ data class CoseHeaderJson(
         kid = kid?.toCborByteString(),
         partialIv = partialIv?.toCborByteString(),
         iv = iv?.toCborByteString(),
-        x5chain = x5chain?.toCborByteArray()
+        x5chain = x5chain?.encodeToCborByteArray()
     )
 
     // TODO: To JOSE
@@ -123,10 +124,10 @@ data class CoseHeaderCbor(
         alg = alg,
         crit = crit?.toStringArray(),
         contentType = contentType?.toString(),
-        kid = kid?.toHexString(),
-        iv = iv?.toHexString(),
-        partialIv = partialIv?.toHexString(),
-        x5chain = x5chain?.toHexStringArray()
+        kid = kid?.encodeTo(Encoding.BASE64URL),
+        iv = iv?.encodeTo(Encoding.BASE64URL),
+        partialIv = partialIv?.encodeTo(Encoding.BASE64URL),
+        x5chain = x5chain?.encodeToHexArray()
     )
 
 

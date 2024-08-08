@@ -23,6 +23,7 @@ import com.sphereon.cbor.toCborByteString
 import com.sphereon.cbor.toCborString
 import com.sphereon.cbor.toCborUInt
 import com.sphereon.kmp.LongKMP
+import com.sphereon.kmp.encodeToBase64Url
 import com.sphereon.mdoc.data.DataElementIdentifier
 import com.sphereon.mdoc.data.DataElementValue
 import com.sphereon.mdoc.data.NameSpace
@@ -235,7 +236,7 @@ data class IssuerSignedItemCbor<Type : Any>(
         }
         return IssuerSignedItemJson(
             digestID = digestID.value,
-            random = random.value.toHexString(),
+            random = random.value.encodeToBase64Url(),
             elementIdentifier = elementIdentifier.value,
             elementValue = elementVal,
             // We need this as otherwise we would lose type info. Strings can be (full)dates, tstr and text etc.

@@ -5,6 +5,7 @@ package com.sphereon.jose.jwa
 import kotlin.js.ExperimentalJsExport
 import kotlin.js.JsExport
 
+@JsExport
 interface JwaAlgorithm {
     val algValue: String
 }
@@ -15,7 +16,7 @@ interface JwaAlgorithm {
  * @constructor Creates a JwaSignatureAlgorithm with the specified value.
  * @property algValue The value representing the algorithm.
  */
-
+@JsExport
 sealed class JwaSignatureAlgorithm(override val algValue: String): JwaAlgorithm {
     object HS256 : JwaSignatureAlgorithm("HS256")
     object HS384 : JwaSignatureAlgorithm("HS384")
@@ -39,6 +40,7 @@ sealed class JwaSignatureAlgorithm(override val algValue: String): JwaAlgorithm 
  *
  * @property algValue The string value representing the algorithm.
  */
+@JsExport
 sealed class JwaEncryptionAlgorithm(override val algValue: String): JwaAlgorithm {
     object RSA1_5 : JwaEncryptionAlgorithm("RSA1_5")
     object RSA_OAEP : JwaEncryptionAlgorithm("RSA-OAEP")

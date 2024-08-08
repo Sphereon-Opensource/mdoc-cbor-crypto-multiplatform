@@ -18,6 +18,7 @@ actual external interface IKey {
     actual val y: Any?
     actual val x5chain: Any?
     actual val additional: Any?
+    actual val d: Any?
 
 }
 
@@ -31,6 +32,7 @@ actual external interface ICoseKeyJson : IKey {
     actual abstract override val crv: CoseCurve?
     actual abstract override val x: String?
     actual abstract override val y: String?
+    actual abstract override val d: String?
     actual abstract override val x5chain: Array<String>?
     actual abstract override val additional: MutableMap<*, *>?
 
@@ -60,6 +62,7 @@ actual external interface ICoseKeyCbor : IKey {
     actual abstract override val crv: CborUInt?
     actual abstract override val x: CborByteString?
     actual abstract override val y: CborByteString?
+    actual abstract override val d: CborByteString?
     actual abstract override val x5chain: CborArray<CborByteString>?
     actual abstract override val additional: CborMap<NumberLabel, CborItem<*>>?
 }

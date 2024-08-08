@@ -11,10 +11,14 @@ import com.sphereon.cbor.CborUInt
 import com.sphereon.cbor.CborView
 import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.cborSerializer
+import com.sphereon.cbor.encodeToBase64UrlArray
 import com.sphereon.cbor.toCborByteString
-import com.sphereon.cbor.toHexStringArray
+import com.sphereon.kmp.Encoding
 import com.sphereon.kmp.LongKMP
+import com.sphereon.kmp.encodeTo
+import com.sphereon.kmp.encodeToBase64Url
 import kotlin.js.JsExport
+import kotlin.math.E
 
 
 expect interface IKey {
@@ -29,10 +33,10 @@ expect interface IKey {
     val crv: Any?
     val x: Any?
     val y: Any?
+    val d: Any?
     val x5chain: Any?
     val additional: Any?
 }
-
 
 
 expect interface ICoseKeyJson : IKey {
@@ -47,6 +51,7 @@ expect interface ICoseKeyJson : IKey {
     override val crv: CoseCurve?
     override val x: String?
     override val y: String?
+    override val d: String?
     override val x5chain: Array<String>?
     override val additional: MutableMap<*, *>?
 }
@@ -62,30 +67,34 @@ class CoseKeyJson(
     override val baseIV: String? = null,
 
     override val crv: CoseCurve? = null,
-    // TODO: Probably some of these are bse64url instead of hex
     override val x: String? = null,
     override val y: String? = null,
+    override val d: String? = null,
     override val x5chain: Array<String>? = null,
     override val additional: MutableMap<*, *>? = mutableMapOf<Any, Any>()
 ) : JsonView<CoseKeyCbor>(), ICoseKeyJson {
     override fun toCbor(): CoseKeyCbor =
         CoseKeyCbor.Builder().withKty(kty).withKid(kid).withAlg(alg).withKeyOps(key_ops).withBaseIV(baseIV)
-            .withCrv(crv).withX(x).withY(y).withX5Chain(x5chain).build() // todo: additional
+            .withCrv(crv).withX(x).withY(y).withD(d).withX5Chain(x5chain).build() // todo: additional
 
 
     companion object {
-        fun fromDTO(dto: ICoseKeyJson) = CoseKeyJson(
-            kty = dto.kty,
-            kid = dto.kid,
-            alg = dto.alg,
-            key_ops = dto.key_ops,
-            baseIV = dto.baseIV,
-            crv = dto.crv,
-            x = dto.x,
-            y = dto.y,
-            x5chain = dto.x5chain,
-            additional = dto.additional
-        )
+        fun fromDTO(dto: ICoseKeyJson) = with(dto) {
+            CoseKeyJson(
+                kty = kty,
+                kid = kid,
+                alg = alg,
+                key_ops = key_ops,
+                baseIV = baseIV,
+                crv = crv,
+                x = x,
+                y = y,
+                d = d,
+                x5chain = x5chain,
+                additional = additional
+
+            )
+        }
     }
 
 
@@ -98,6 +107,7 @@ class CoseKeyJson(
         var crv: CoseCurve? = null
         var x: String? = null
         var y: String? = null
+        var d: String? = null
         var x5chain: Array<String>? = null
         var additional: MutableMap<LongKMP, Any> = mutableMapOf()
 
@@ -114,6 +124,7 @@ class CoseKeyJson(
         fun withCrv(crv: CoseCurve?) = apply { this.crv = crv }
         fun withX(x: String?) = apply { this.x = x }
         fun withY(y: String?) = apply { this.y = y }
+        fun withD(d: String?) = apply { this.d = d }
         fun withX5Chain(x5c: Array<String>?) = apply { this.x5chain = x5c }
 
         // FIXME
@@ -129,6 +140,7 @@ class CoseKeyJson(
                 crv = crv,
                 x = x,
                 y = y,
+                d = d,
                 x5chain = x5chain,
                 additional = additional
             )
@@ -159,6 +171,7 @@ expect interface ICoseKeyCbor : IKey {
     override val crv: CborUInt?
     override val x: CborByteString?
     override val y: CborByteString?
+    override val d: CborByteString?
     override val x5chain: CborArray<CborByteString>?
     override val additional: CborMap<NumberLabel, CborItem<*>>?
 }
@@ -173,6 +186,7 @@ class CoseKeyCbor(
     override val crv: CborUInt? = null,
     override val x: CborByteString? = null,
     override val y: CborByteString? = null,
+    override val d: CborByteString? = null,
     override val x5chain: CborArray<CborByteString>? = null,
     override val additional: CborMap<NumberLabel, AnyCborItem>? = CborMap()
 ) : ICoseKeyCbor, CborView<CoseKeyCbor, CoseKeyJson, CborMap<NumberLabel, AnyCborItem>>(CDDL.map) {
@@ -188,24 +202,26 @@ class CoseKeyCbor(
             .put(BASE_IV, baseIV, true)
             .put(CRV, crv, true)
             .put(X5_CHAIN, x5chain, true)
+            .put(D, d, true)
             .put(X, x, true)
             .put(Y, y, true)
         //todo additional
         return mapBuilder.end()
     }
 
-    @OptIn(ExperimentalStdlibApi::class)
+    //todo: Probably  nice to be able to provide an encoding parm, but then we have to adjust the whole interface
     override fun toJson(): CoseKeyJson {
         return CoseKeyJson.Builder().withKty(CoseKeyType.fromValue(kty.value.toInt()))
-            .withKid(kid?.let { kid.value.toString() })
+            .withKid(kid?.let { kid.value.encodeToBase64Url() })
             .withAlg(alg?.let { CoseSignatureAlgorithm.fromValue(it.value.toInt()) })
-            .withKeyOps(key_ops?.value?.map { ko -> CoseKeyOperations.Companion.fromValue(ko.value.toInt()) }
+            .withKeyOps(key_ops?.value?.map { ko -> CoseKeyOperations.fromValue(ko.value.toInt()) }
                 ?.toTypedArray())
-            .withBaseIV(baseIV?.value?.toHexString())
+            .withBaseIV(baseIV?.value?.encodeToBase64Url())
             .withCrv(crv?.let { CoseCurve.fromValue(it.value.toInt()) })
-            .withX5Chain(x5chain?.toHexStringArray())
-            .withX(x?.value?.toHexString())
-            .withY(y?.value?.toHexString())
+            .withX5Chain(x5chain?.encodeToBase64UrlArray())
+            .withX(x?.value?.encodeToBase64Url())
+            .withY(y?.value?.encodeToBase64Url())
+            .withD(d?.value?.encodeToBase64Url())
             //todo additional
             .build()
 
@@ -250,6 +266,7 @@ class CoseKeyCbor(
         var crv: CborUInt? = null
         var x: CborByteString? = null
         var y: CborByteString? = null
+        var d: CborByteString? = null
         var x5chain: CborArray<CborByteString>? = null
         var additional: CborMap<NumberLabel, AnyCborItem> = CborMap()
 
@@ -271,6 +288,7 @@ class CoseKeyCbor(
 
         fun withX(x: String?) = apply { x?.let { this.x = it.toCborByteString() } }
         fun withY(y: String?) = apply { y?.let { this.y = it.toCborByteString() } }
+        fun withD(d: String?) = apply { d?.let { this.d = it.toCborByteString() } }
         fun withX5Chain(x5c: Array<String>?) =
             apply {
                 x5c?.let {
@@ -304,29 +322,55 @@ class CoseKeyCbor(
         val KEY_OPS = NumberLabel(4)
         val BASE_IV = NumberLabel(5)
         val X5_CHAIN = NumberLabel(33)
+
+        // EC (kty 2) + OKP (kty 1)
         val CRV = NumberLabel(-1)
         val X = NumberLabel(-2)
         val Y = NumberLabel(-3)
+        val D = NumberLabel(-4)
+
+        // RSA, kty 3, TODO
+        val N = NumberLabel(-1)
+        val E = NumberLabel(-2)
+        val D_RSA = NumberLabel(-3)
+        val P = NumberLabel(-4)
+        val Q = NumberLabel(-5)
+        val DP = NumberLabel(-6)
+        val DQ = NumberLabel(-7)
+        val QINV = NumberLabel(-8)
+        val OTHER = NumberLabel(-9)
+        val R_I = NumberLabel(-10)
+        val D_I = NumberLabel(-11)
+        val T_I = NumberLabel(-12)
+
 
         fun builder() = Builder()
 
-        fun fromDTO(dto: ICoseKeyCbor) = CoseKeyCbor(
-            kty = dto.kty,
-            kid = dto.kid,
-            alg = dto.alg,
-            key_ops = dto.key_ops,
-            baseIV = dto.baseIV,
-            crv = dto.crv,
-            x = dto.x,
-            y = dto.y,
-            x5chain = dto.x5chain,
-            additional = dto.additional
-        )
+        fun fromDTO(dto: ICoseKeyCbor) = with(dto) {
+            CoseKeyCbor(
+                kty = kty,
+                kid = kid,
+                alg = alg,
+                key_ops = key_ops,
+                baseIV = baseIV,
+                crv = crv,
+                x = x,
+                y = y,
+                d = d,
+                x5chain = x5chain,
+                additional = additional
+            )
+        }
 
         fun cborDecode(encodedDeviceEngagement: ByteArray): CoseKeyCbor =
             fromCborItem(cborSerializer.decode(encodedDeviceEngagement))
 
         fun fromCborItem(m: CborMap<NumberLabel, AnyCborItem>): CoseKeyCbor {
+            val kty = KTY.required<CborUInt>(m)
+            val keyType = CoseKeyType.fromValue(kty.value.toInt())
+            if (keyType === CoseKeyType.RSA) {
+                throw IllegalArgumentException("RSA type not supported yet")
+            }
             return CoseKeyCbor(
                 kty = KTY.required(m),
                 kid = KID.optional(m),
@@ -337,6 +381,7 @@ class CoseKeyCbor(
                 x5chain = X5_CHAIN.optional(m),
                 x = X.optional(m),
                 y = Y.optional(m),
+                d = D.optional(m),
                 additional = m // Yes this map also contains the above values
             )
         }

@@ -1,3 +1,4 @@
+import org.gradle.internal.impldep.org.eclipse.jgit.lib.ObjectChecker.encoding
 import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnLockMismatchReport
 import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootExtension
 
@@ -121,7 +122,7 @@ kotlin {
 
 
     sourceSets {
-        all{
+        all {
             languageSettings.optIn("kotlin.js.ExperimentalJsExport")
             languageSettings.optIn("kotlinx.serialization.ExperimentalSerializationApi")
             languageSettings.optIn("kotlin.ExperimentalUnsignedTypes")
@@ -140,6 +141,7 @@ kotlin {
                 implementation(libs.whyoleg.cryptography.serialization.asn1)
                 implementation(libs.whyoleg.cryptography.serialization.asn1.modules)
                 implementation(libs.whyoleg.cryptography.random)
+                implementation(libs.encoding.base64)
                 implementation(libs.kermit)
 
 

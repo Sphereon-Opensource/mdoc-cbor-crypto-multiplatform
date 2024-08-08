@@ -11,6 +11,7 @@ import com.sphereon.cbor.CborView
 import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.toCborByteString
+import com.sphereon.kmp.Encoding
 import kotlin.js.JsExport
 
 
@@ -20,7 +21,7 @@ data class CoseSign1InputJson<JsonType, CborType>(
 
     val unprotectedHeader: CoseHeaderJson?,
 
-    val payload: String?, // hex
+    val payload: String?, // base64url
 
 ) : JsonView<CoseSign1InputCbor<CborType, JsonType>>() {
     override fun toCbor(): CoseSign1InputCbor<CborType, JsonType> = CoseSign1InputCbor(
@@ -83,7 +84,7 @@ data class CoseSign1InputCbor<CborType, JsonType>(
     override fun toJson(): CoseSign1InputJson<JsonType, CborType> = CoseSign1InputJson(
         protectedHeader = protectedHeader.toJson(),
         unprotectedHeader = unprotectedHeader?.toJson(),
-        payload = payload?.toHexString()
+        payload = payload?.encodeTo(Encoding.BASE64URL)
     )
 
 }
@@ -133,8 +134,8 @@ data class CoseSign1Cbor<CborType, JsonType>(
     override fun toJson(): CoseSign1Json<JsonType, CborType> = CoseSign1Json(
         protectedHeader = protectedHeader.toJson(),
         unprotectedHeader = unprotectedHeader?.toJson(),
-        payload = payload?.toHexString(),
-        signature = signature.toHexString()
+        payload = payload?.encodeTo(Encoding.BASE64URL),
+        signature = signature.encodeTo(Encoding.BASE64URL)
     )
 
 

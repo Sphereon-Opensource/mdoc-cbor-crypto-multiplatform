@@ -1,7 +1,16 @@
 @file:OptIn(ExperimentalJsExport::class)
 @file:JsExport
 package com.sphereon.jose.jwa
-import kotlinx.serialization.Serializable
+import com.sphereon.cbor.cose.CoseKeyType
+import com.sphereon.cbor.cose.CoseSignatureAlgorithm
+import com.sphereon.cbor.cose.CoseSignatureAlgorithm.ES256
+import com.sphereon.cbor.cose.CoseSignatureAlgorithm.ES384
+import com.sphereon.cbor.cose.CoseSignatureAlgorithm.ES512
+import com.sphereon.cbor.cose.CoseSignatureAlgorithm.EdDSA
+import com.sphereon.cbor.cose.CoseSignatureAlgorithm.HS256
+import com.sphereon.cbor.cose.CoseSignatureAlgorithm.HS256_64
+import com.sphereon.cbor.cose.CoseSignatureAlgorithm.HS384
+import com.sphereon.cbor.cose.CoseSignatureAlgorithm.HS512
 import kotlin.js.ExperimentalJsExport
 import kotlin.js.JsExport
 
@@ -12,10 +21,17 @@ import kotlin.js.JsExport
  *
  * @property id The identifier of the key type.
  */
-@Serializable
+@JsExport
 enum class JwaKeyType(val id: String) {
     EC("EC"),
     RSA("RSA"),
     oct("oct"),
-    OKP("OKP")
+    OKP("OKP");
+
+    companion object {
+        fun fromValue(value: String): JwaKeyType {
+            return JwaKeyType.entries.find { entry -> entry.id == value }
+                ?: throw IllegalArgumentException("Unknown value $value")
+        }
+    }
 }

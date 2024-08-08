@@ -16,6 +16,7 @@ import kotlin.js.JsExport
 enum class CoseKeyType(val value: Int, val description: String) {
     OKP(1, "Octet Key Pair"),
     EC2(2, "Elliptic Curve Keys w/ x- and y-coordinate pair"),
+    RSA(3, "RSA"),
     Symmetric(4, "Symmetric Keys"),
     Reserved(0, "Reserved");
 
