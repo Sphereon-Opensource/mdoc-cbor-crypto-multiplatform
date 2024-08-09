@@ -22,8 +22,64 @@ The library does support generic Cose and Jose keys, but only
 for transport, not for signing/verification. For these operation we delegate to a service you will need to provide.
 Having said that we provide some implementations you could register/use on your platform.
 
+# COSE Key and JSON Web Keys (JWK)
+
+You can convert Cose keys into JWKs and vice versa. On a JWK object you can call to `jwkToCoseKeyCbor()` to get a `CoseKeyCbor` or
+`jwkToCoseKeyJson()` to get a `CoseKeyJson`. On a `CoseKeyCbor` and `CoseKeyJson` objects you can call `cborToJwk()` resp `cborToJwkJson()`
+respectively.
+
+note: The naming is a bit verbose as some of these are Kotlin extension functions, which would cause name clashes in javascript if we would create
+overloads etc.
+
+Example
+
+```kotlin
+val jwk = JWK(
+    kty = JwaKeyType.EC,
+    crv = JwaCurve.P_256,
+    x = "uxHN3W6ehp0VWXKaMNie1J82MVJCFZYScau74o17cx8=",
+    y = "29Y5Ey4u5WGWW4MFMKagJPEJiIjzE1UFFZIRhMhqysM="
+)
+val coseKeyCbor = jwk.jwkToCoseKeyCbor()
+val coseKeyJson = jwk.jwkToCoseKeyJson()
+
+// if you feel adventurous; 
+// Go from Cbor to Jwk, to Cose Key in JSOM. to JWK, to CoseKeyCbor, to JWK and back to Cbor. The end result should equal the original cbor key
+val equalsOriginalCoseKeyCbor = coseKeyCbor.cborToJwk().jwkToCoseKeyJson().jsonToJwk().jwkToCoseKeyCbor().cborToJwk().jwkToCoseKeyCbor()
+
+```
+
+JWK:
+
+```json
+{
+  "kty": "EC",
+  "crv": "P-256",
+  "x": "uxHN3W6ehp0VWXKaMNie1J82MVJCFZYScau74o17cx8=",
+  "y": "29Y5Ey4u5WGWW4MFMKagJPEJiIjzE1UFFZIRhMhqysM="
+}
+```
+
+Cbor in HEX:
+
+```text
+a401022001215820bb11cddd6e9e869d1559729a30d89ed49f3631524215961271abbbe28d7b731f225820dbd639132e2ee561965b830530a6a024f1098888f313550515921184c86acac3
+```
+
+Cbor in diagnostics notation
+
+```text
+{
+     1: 2,
+    -1: 1,
+    -2: h'bb11cddd6e9e869d1559729a30d89ed49f3631524215961271abbbe28d7b731f',
+    -3: h'dbd639132e2ee561965b830530a6a024f1098888f313550515921184c86acac3',
+}
+```
+
 # Javascript/Typescript
 
 For Javascript / Typescript see [README.js.md](./README.js.md) for more information on how to hookup a Javascript
-callback or use a default one we provide. You can also have a look
-at [this example JS source](./src/jsTest/crypto-x509-example-js/index.js)
+callback or use a default one we provide. It also shows how you can use a JWK object without having to use the constructors of the JWK object by
+leveraging the IJWK interfaces. You can also have a look
+at [this example JS source](./src/jsTest/crypto-x509-example-js/index.js) for an example of the validations.

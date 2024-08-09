@@ -155,9 +155,9 @@ kotlin {
                 implementation(libs.kotest.framework.engine)
                 implementation(libs.kotest.framework.datatest)
                 implementation(libs.kotest.property)
-                implementation(npm("@auth0/cose", "1.0.2"))
                 implementation(npm("@js-joda/core", "5.6.3"))
                 implementation(npm("@js-joda/timezone", "2.3.0"))
+                implementation(npm("@sphereon/ssi-sdk-ext.x509-utils", "0.24.1-unstable.9"))
                 /*// Internal mock test JS API. Uses the exposed Crypto interfaces of this module
                 val pathToLocalNpmModule = projectDir.resolve("src/jsMain/resources/crypto-x509-example-js").canonicalPath
                 implementation(npm("@sphereon-internal/crypto-x509-example-js", "file:$pathToLocalNpmModule"))*/

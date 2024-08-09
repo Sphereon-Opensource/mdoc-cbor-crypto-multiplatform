@@ -1,16 +1,6 @@
 @file:OptIn(ExperimentalJsExport::class)
 @file:JsExport
 package com.sphereon.jose.jwa
-import com.sphereon.cbor.cose.CoseKeyType
-import com.sphereon.cbor.cose.CoseSignatureAlgorithm
-import com.sphereon.cbor.cose.CoseSignatureAlgorithm.ES256
-import com.sphereon.cbor.cose.CoseSignatureAlgorithm.ES384
-import com.sphereon.cbor.cose.CoseSignatureAlgorithm.ES512
-import com.sphereon.cbor.cose.CoseSignatureAlgorithm.EdDSA
-import com.sphereon.cbor.cose.CoseSignatureAlgorithm.HS256
-import com.sphereon.cbor.cose.CoseSignatureAlgorithm.HS256_64
-import com.sphereon.cbor.cose.CoseSignatureAlgorithm.HS384
-import com.sphereon.cbor.cose.CoseSignatureAlgorithm.HS512
 import kotlin.js.ExperimentalJsExport
 import kotlin.js.JsExport
 

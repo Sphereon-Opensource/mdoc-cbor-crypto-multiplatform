@@ -15,15 +15,43 @@ import com.sphereon.crypto.toJoseSignatureAlgorithm
 import com.sphereon.jose.jwa.JwaAlgorithm
 import com.sphereon.jose.jwa.JwaCurve
 import com.sphereon.jose.jwa.JwaKeyType
+import com.sphereon.jose.jwa.JwaSignatureAlgorithm
 import kotlinx.serialization.SerialName
 import kotlin.js.JsExport
+
 
 /**
  * JWK [RFC 7517](https://datatracker.ietf.org/doc/html/rfc7517#section-4).
  *
  * ordered alphabetically [RFC7638 s3](https://www.rfc-editor.org/rfc/rfc7638.html#section-3)
  */
-expect interface IJWK {
+expect interface IJwkJson {
+    val alg: String?
+    val crv: String?
+    val d: String?
+    val e: String?
+    val k: String?
+    val key_ops: Array<String>?
+    val kid: String?
+    val kty: String
+    val n: String?
+    val use: String?
+    val x: String?
+    val x5c: Array<String>?
+    val x5t: String?
+    val x5u: String?
+
+    @SerialName("x5t#S256")
+    val x5t_S256: String?
+    val y: String?
+}
+
+/**
+ * JWK [RFC 7517](https://datatracker.ietf.org/doc/html/rfc7517#section-4).
+ *
+ * ordered alphabetically [RFC7638 s3](https://www.rfc-editor.org/rfc/rfc7638.html#section-3)
+ */
+expect interface IJwk {
     val alg: JwaAlgorithm?
     val crv: JwaCurve?
     val d: String?
@@ -44,7 +72,8 @@ expect interface IJWK {
     val y: String?
 }
 
-data class JWK(
+@JsExport
+data class Jwk(
     override val alg: JwaAlgorithm? = null,
     override val crv: JwaCurve? = null,
     override val d: String? = null,
@@ -63,7 +92,7 @@ data class JWK(
     @SerialName("x5t#S256")
     override val x5t_S256: String? = null,
     override val y: String? = null,
-) : IJWK {
+) : IJwk {
 
     class Builder {
         var alg: JwaAlgorithm? = null
@@ -101,7 +130,7 @@ data class JWK(
         fun withY(y: String?) = apply { this.y = y }
 
 
-        fun build(): JWK = JWK(
+        fun build(): Jwk = Jwk(
             alg = alg,
             crv = crv,
             d = d,
@@ -122,7 +151,8 @@ data class JWK(
 
     }
 
-    fun toCoseKeyJson(): CoseKeyJson =
+    // Name is like other extensions functions to not class with JS
+    fun jwkToCoseKeyJson(): CoseKeyJson =
         CoseKeyJson.Builder()
             .withKty(kty?.toCoseKeyType() ?: throw IllegalArgumentException("kty value missing"))
             .withAlg(alg?.toCoseSignatureAlgorithm())
@@ -140,12 +170,34 @@ data class JWK(
             .build()
 
 
-    fun toCoseKeyCbor(): CoseKeyCbor = this.toCoseKeyJson().toCbor()
+    // Name is like other extensions functions to not class with JS
+    fun jwkToCoseKeyCbor(): CoseKeyCbor = this.jwkToCoseKeyJson().toCbor()
 
 
     companion object {
-        fun fromDTO(jwk: IJWK): JWK = with(jwk) {
-            return@fromDTO JWK(
+        fun fromJsonObject(jwk: IJwkJson): Jwk = with(jwk) {
+            return Jwk(
+                alg = JwaSignatureAlgorithm.fromValue(alg),
+                crv = JwaCurve.fromValue(crv),
+                d = d,
+                e = e,
+                k = k,
+                key_ops = key_ops?.map { JoseKeyOperations.fromValue(it) }?.toSet(),
+                kid = kid,
+                kty = JwaKeyType.fromValue(kty),
+                n = n,
+                use = use,
+                x = x,
+                x5c = x5c?.map { it }?.toTypedArray(),
+                x5t = x5t,
+                x5u = x5u,
+                x5t_S256 = x5t_S256,
+                y = y,
+            )
+        }
+
+        fun fromDTO(jwk: IJwk): Jwk = with(jwk) {
+            return@fromDTO Jwk(
                 alg = alg,
                 crv = crv,
                 d = d,
@@ -165,10 +217,10 @@ data class JWK(
             )
         }
 
-        fun fromCoseKeyJson(coseKey: ICoseKeyJson): JWK {
+        fun fromCoseKeyJson(coseKey: ICoseKeyJson): Jwk {
             with(coseKey) {
                 val kty = kty.toJoseKeyType()
-                return JWK.Builder()
+                return Jwk.Builder()
                     .withKty(kty)
                     .withAlg(alg?.toJoseSignatureAlgorithm())
                     .withCrv(crv?.toJoseCurve())
@@ -196,7 +248,7 @@ data class JWK(
 
 
 @JsExport
-fun CoseKeyCbor.cborToJwk() = JWK.fromCoseKey(this)
+fun CoseKeyCbor.cborToJwk() = Jwk.fromCoseKey(this)
 
 @JsExport
-fun CoseKeyJson.jsonToJwk() = JWK.fromCoseKeyJson(this)
+fun CoseKeyJson.jsonToJwk() = Jwk.fromCoseKeyJson(this)

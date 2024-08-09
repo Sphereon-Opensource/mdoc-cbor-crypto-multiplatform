@@ -1,7 +1,45 @@
+# Javascript / typescript specifics
+
+# Creating JWKs
+
+Since in Javascript/typescript you are mainly working with objects created on the fly conforming to a type or interface, the library is exposing
+methods and interfaces that can be used in Typescript as well. Some examples:
+
+```typescript
+// Creating a JWK instance from a JS/JSON object as it is serialized
+const jwkJson = Jwk.Companion.fromJsonObject({
+    kty: 'EC',
+    crv: 'P-256',
+    x: 'uxHN3W6ehp0VWXKaMNie1J82MVJCFZYScau74o17cx8=',
+    y: '29Y5Ey4u5WGWW4MFMKagJPEJiIjzE1UFFZIRhMhqysM='
+})
+
+// Creatomg a JWK with some typings
+const jwkDto = Jwk.Companion.fromDTO({
+    kty: JwaKeyType.EC,
+    crv: JwaCurve.P_256,
+    x: 'uxHN3W6ehp0VWXKaMNie1J82MVJCFZYScau74o17cx8=',
+    y: '29Y5Ey4u5WGWW4MFMKagJPEJiIjzE1UFFZIRhMhqysM='
+})
+
+// Creating a JWK using a builder
+const jwkBuilder = new Jwk.Builder()
+    .withKty(JwaKeyType.EC)
+    .withCrv(JwaCurve.P_256)
+    .withX('uxHN3W6ehp0VWXKaMNie1J82MVJCFZYScau74o17cx8=')
+    .withY('29Y5Ey4u5WGWW4MFMKagJPEJiIjzE1UFFZIRhMhqysM=')
+    .build()
+```
+
+For more about JWKs and how to convert them to Cose Keys and vice versa, see also the [the main README](./README.md#cose-key-and-json-web-keys-jwk)
+
+# X.509 Certificate validation
+
 Below is an example implementation for validating X.509 Certificates in Javascript using a typescript/javascript module
 provided by us called @sphereon/ssi-sdk-ext.x509-utils. Of course you can create your own implementation as well
 
 The class implements the kotlin interface below using promises.
+
 ```kotlin
 interface X509ServiceJS {
     fun <KeyType> verifyCertificateChainJS(
@@ -20,7 +58,9 @@ interface X509ServiceJS {
 
 ```
 
-Example code implementing the above interface
+Below is some example code implementing the above interface. If you want to see a real implementation you can have a look in
+our [SSI-SDK X509 Service](https://github.com/Sphereon-Opensource/SSI-SDK/blob/12fb17a856f9e7e93c4994ea6bc812d35b43331c/packages/mdl-mdoc/src/functions/index.ts#L21)
+
 ```javascript
 const {com} = require('@sphereon/kmp-crypto')
 const {validateX509CertificateChain} = require('@sphereon/ssi-sdk-ext.x509-utils')
@@ -59,6 +99,7 @@ com.sphereon.crypto.CryptoServiceJS.X509
 ````
 
 Response:
+
 ````json
 {
   "error": false,
@@ -92,7 +133,7 @@ Response:
         ],
         "ext": true,
         "kty": "RSA",
-        "n": "xDcYb7J5Wa-PHkTWJPdKr_NF6JJKNpgVhy0FRsGyRyI5CoT1e2gtXs3GjBxrby8IahL5yPsXn3jGFJcNbBYQKhqt1J4asGCzZunUiEHta_GQJuq9Vv0g5WmcsLxJjS69ZXfjC3ZtYlG7Ywv5Kgd8A27tlvE_WM-ozzrCct57_7R4geGIfHxfUe_tfLWYiLfj_msCa82tQ8NRm7lQUysdNClLWdgs5Q",  
+        "n": "xDcYb7J5Wa-PHkTWJPdKr_NF6JJKNpgVhy0FRsGyRyI5CoT1e2gtXs3GjBxrby8IahL5yPsXn3jGFJcNbBYQKhqt1J4asGCzZunUiEHta_GQJuq9Vv0g5WmcsLxJjS69ZXfjC3ZtYlG7Ywv5Kgd8A27tlvE_WM-ozzrCct57_7R4geGIfHxfUe_tfLWYiLfj_msCa82tQ8NRm7lQUysdNClLWdgs5Q",
         "e": "AQAB",
         "alg": "RS256"
       },
@@ -139,12 +180,8 @@ Response:
 }
 ````
 
-
-
-
-
-
 Example certs
+
 ```typescript
 
 

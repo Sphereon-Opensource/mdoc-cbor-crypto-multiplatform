@@ -77,6 +77,50 @@ class CoseKeyJson(
         CoseKeyCbor.Builder().withKty(kty).withKid(kid).withAlg(alg).withKeyOps(key_ops).withBaseIV(baseIV)
             .withCrv(crv).withX(x).withY(y).withD(d).withX5Chain(x5chain).build() // todo: additional
 
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is CoseKeyJson) return false
+
+        if (kty != other.kty) return false
+        if (kid != other.kid) return false
+        if (alg != other.alg) return false
+        if (key_ops != null) {
+            if (other.key_ops == null) return false
+            if (!key_ops.contentEquals(other.key_ops)) return false
+        } else if (other.key_ops != null) return false
+        if (baseIV != other.baseIV) return false
+        if (crv != other.crv) return false
+        if (x != other.x) return false
+        if (y != other.y) return false
+        if (d != other.d) return false
+        if (x5chain != null) {
+            if (other.x5chain == null) return false
+            if (!x5chain.contentEquals(other.x5chain)) return false
+        } else if (other.x5chain != null) return false
+        if (additional != other.additional) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = kty.hashCode()
+        result = 31 * result + (kid?.hashCode() ?: 0)
+        result = 31 * result + (alg?.hashCode() ?: 0)
+        result = 31 * result + (key_ops?.contentHashCode() ?: 0)
+        result = 31 * result + (baseIV?.hashCode() ?: 0)
+        result = 31 * result + (crv?.hashCode() ?: 0)
+        result = 31 * result + (x?.hashCode() ?: 0)
+        result = 31 * result + (y?.hashCode() ?: 0)
+        result = 31 * result + (d?.hashCode() ?: 0)
+        result = 31 * result + (x5chain?.contentHashCode() ?: 0)
+        result = 31 * result + (additional?.hashCode() ?: 0)
+        return result
+    }
+
+    override fun toString(): String {
+        return "CoseKeyJson(kty=$kty, kid=$kid, alg=$alg, key_ops=${key_ops?.contentToString()}, baseIV=$baseIV, crv=$crv, x=$x, y=$y, d=$d, x5chain=${x5chain?.contentToString()}, additional=$additional)"
+    }
+
 
     companion object {
         fun fromDTO(dto: ICoseKeyJson) = with(dto) {
@@ -142,7 +186,7 @@ class CoseKeyJson(
                 y = y,
                 d = d,
                 x5chain = x5chain,
-                additional = additional
+                additional = additional.ifEmpty { null }
             )
         }
     }
@@ -188,7 +232,7 @@ class CoseKeyCbor(
     override val y: CborByteString? = null,
     override val d: CborByteString? = null,
     override val x5chain: CborArray<CborByteString>? = null,
-    override val additional: CborMap<NumberLabel, AnyCborItem>? = CborMap()
+    override val additional: CborMap<NumberLabel, AnyCborItem>? = null
 ) : ICoseKeyCbor, CborView<CoseKeyCbor, CoseKeyJson, CborMap<NumberLabel, AnyCborItem>>(CDDL.map) {
 
     override fun cborBuilder(): CborBuilder<CoseKeyCbor> {
@@ -239,6 +283,8 @@ class CoseKeyCbor(
         if (crv != other.crv) return false
         if (x != other.x) return false
         if (y != other.y) return false
+        if (d != other.d) return false
+        if (x5chain != other.x5chain) return false
         if (additional != other.additional) return false
 
         return true
@@ -253,9 +299,16 @@ class CoseKeyCbor(
         result = 31 * result + (crv?.hashCode() ?: 0)
         result = 31 * result + (x?.hashCode() ?: 0)
         result = 31 * result + (y?.hashCode() ?: 0)
-        result = 31 * result + additional.hashCode()
+        result = 31 * result + (d?.hashCode() ?: 0)
+        result = 31 * result + (x5chain?.hashCode() ?: 0)
+        result = 31 * result + (additional?.hashCode() ?: 0)
         return result
     }
+
+    override fun toString(): String {
+        return "CoseKeyCbor(kty=$kty, kid=$kid, alg=$alg, key_ops=$key_ops, baseIV=$baseIV, crv=$crv, x=$x, y=$y, d=$d, x5chain=$x5chain, additional=$additional)"
+    }
+
 
     class Builder {
         private lateinit var kty: CborUInt
@@ -268,7 +321,7 @@ class CoseKeyCbor(
         var y: CborByteString? = null
         var d: CborByteString? = null
         var x5chain: CborArray<CborByteString>? = null
-        var additional: CborMap<NumberLabel, AnyCborItem> = CborMap()
+        var additional: CborMap<NumberLabel, AnyCborItem>? = null
 
 
         fun withKty(kty: CoseKeyType) = apply { this.kty = CborUInt(kty.value) }
@@ -310,7 +363,7 @@ class CoseKeyCbor(
                 x = x,
                 y = y,
                 x5chain = x5chain,
-                additional = additional
+                additional = if (additional === null || additional?.value.isNullOrEmpty()) null else additional,
             )
         }
     }
@@ -343,6 +396,8 @@ class CoseKeyCbor(
         val D_I = NumberLabel(-11)
         val T_I = NumberLabel(-12)
 
+        val labels = setOf(KTY, KID, ALG, KEY_OPS, BASE_IV, CRV, X5_CHAIN, X, Y, D) // TODO RSA
+
 
         fun builder() = Builder()
 
@@ -371,6 +426,7 @@ class CoseKeyCbor(
             if (keyType === CoseKeyType.RSA) {
                 throw IllegalArgumentException("RSA type not supported yet")
             }
+            val additional = mutableMapOf(* m.value.entries.filter { labels.contains(it.key) == false }.map { Pair(it.key, it.value) }.toTypedArray())
             return CoseKeyCbor(
                 kty = KTY.required(m),
                 kid = KID.optional(m),
@@ -382,7 +438,7 @@ class CoseKeyCbor(
                 x = X.optional(m),
                 y = Y.optional(m),
                 d = D.optional(m),
-                additional = m // Yes this map also contains the above values
+                additional = if (additional.isEmpty()) null else CborMap(additional)
             )
         }
     }
