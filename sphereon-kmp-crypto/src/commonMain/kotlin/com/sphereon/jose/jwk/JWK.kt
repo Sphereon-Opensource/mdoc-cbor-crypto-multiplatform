@@ -101,7 +101,7 @@ data class JWK(
         fun withY(y: String?) = apply { this.y = y }
 
 
-        fun build(): IJWK = JWK(
+        fun build(): JWK = JWK(
             alg = alg,
             crv = crv,
             d = d,
@@ -122,7 +122,7 @@ data class JWK(
 
     }
 
-    fun toCoseKeyJson(): ICoseKeyJson =
+    fun toCoseKeyJson(): CoseKeyJson =
         CoseKeyJson.Builder()
             .withKty(kty?.toCoseKeyType() ?: throw IllegalArgumentException("kty value missing"))
             .withAlg(alg?.toCoseSignatureAlgorithm())
@@ -140,11 +140,32 @@ data class JWK(
             .build()
 
 
-    fun toCoseKeyCbor(): ICoseKeyCbor = CoseKeyJson.fromDTO(this.toCoseKeyJson()).toCbor()
+    fun toCoseKeyCbor(): CoseKeyCbor = this.toCoseKeyJson().toCbor()
 
 
     companion object {
-        fun fromCoseKeyJson(coseKey: ICoseKeyJson): IJWK {
+        fun fromDTO(jwk: IJWK): JWK = with(jwk) {
+            return@fromDTO JWK(
+                alg = alg,
+                crv = crv,
+                d = d,
+                e = e,
+                k = k,
+                key_ops = key_ops,
+                kid = kid,
+                kty = kty,
+                n = n,
+                use = use,
+                x = x,
+                x5c = x5c,
+                x5t = x5t,
+                x5u = x5u,
+                x5t_S256 = x5t_S256,
+                y = y
+            )
+        }
+
+        fun fromCoseKeyJson(coseKey: ICoseKeyJson): JWK {
             with(coseKey) {
                 val kty = kty.toJoseKeyType()
                 return JWK.Builder()
