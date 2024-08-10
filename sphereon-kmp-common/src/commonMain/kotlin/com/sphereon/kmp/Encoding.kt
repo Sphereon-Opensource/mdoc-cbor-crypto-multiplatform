@@ -2,6 +2,7 @@ package com.sphereon.kmp
 
 import io.matthewnelson.encoding.base64.Base64
 import io.matthewnelson.encoding.core.Decoder.Companion.decodeToByteArray
+import io.matthewnelson.encoding.core.Encoder.Companion.encodeToByteArray
 import io.matthewnelson.encoding.core.Encoder.Companion.encodeToString
 import kotlin.js.JsExport
 
@@ -9,7 +10,8 @@ import kotlin.js.JsExport
 enum class Encoding {
     BASE64,
     BASE64URL,
-    HEX
+    HEX,
+    UTF8
 }
 
 @OptIn(ExperimentalStdlibApi::class)
@@ -29,13 +31,13 @@ val base64UrlConf = Base64 {
     isLenient = true
     lineBreakInterval = 0
     encodeToUrlSafe = true
-    padEncoded = true
+    padEncoded = false
 }
 val base64Conf = Base64 {
     isLenient = true
     lineBreakInterval = 0
     encodeToUrlSafe = false
-    padEncoded = true
+    padEncoded = false
 }
 
 @JsExport
@@ -57,6 +59,7 @@ fun String.decodeFrom(encoding: Encoding): ByteArray = when (encoding) {
     Encoding.BASE64URL -> this.decodeFromBase64Url()
     Encoding.BASE64 -> this.decodeFromBase64(urlSafe = false)
     Encoding.HEX -> this.decodeFromHex()
+    Encoding.UTF8 -> this.encodeToByteArray()
 }
 
 @JsExport
@@ -64,4 +67,5 @@ fun ByteArray.encodeTo(encoding: Encoding): String = when (encoding) {
     Encoding.BASE64URL -> this.encodeToBase64Url()
     Encoding.BASE64 -> this.encodeToBase64(urlSafe = false)
     Encoding.HEX -> this.encodeToHex()
+    Encoding.UTF8 -> this.decodeToString()
 }

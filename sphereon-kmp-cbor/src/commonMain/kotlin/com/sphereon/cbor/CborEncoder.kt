@@ -1,5 +1,6 @@
 package com.sphereon.cbor
 
+import com.sphereon.kmp.DefaultLogger
 import kotlin.math.pow
 import kotlinx.io.bytestring.ByteStringBuilder
 import kotlin.experimental.or
@@ -214,7 +215,7 @@ object Cbor {
                     } else if (additionalInformation == 31) {
                         throw IllegalArgumentException("BREAK outside indefinite-length item")
                     } else {
-                        println("fixme: decoding ${MajorType.SPECIAL} probably currently doesn't work")
+                        CborConst.LOG.warn("fixme: decoding ${MajorType.SPECIAL} probably currently doesn't work")
                         CborSimple.decode(encodedCbor, offset)
                     }
                 }

@@ -4,6 +4,7 @@ import com.sphereon.cbor.AnyCborItem
 import com.sphereon.cbor.CDDLType
 import com.sphereon.cbor.Cbor
 import com.sphereon.cbor.CborArray
+import com.sphereon.cbor.CborConst
 import com.sphereon.cbor.CborItem
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborNInt
@@ -35,12 +36,10 @@ sealed class CoseLabel<ItemType>(
 ) : CborItem<ItemType>(value, cddl) {
     @Suppress("UNCHECKED_CAST")
     fun <T> required(map: CborMap<out CoseLabel<*>, AnyCborItem>): T {
-        println("Getting required label '${value}' from map...")
         if (!map.value.containsKey(this)) {
             throw IllegalArgumentException("Key (label: ${this.value}, type: ${this.cddl}) not found in cbor map")
         }
         val result = map.value[this] as T
-        println("... ${result}")
         return result
     }
 
@@ -56,13 +55,13 @@ sealed class CoseLabel<ItemType>(
 
     @Suppress("UNCHECKED_CAST")
     fun <T> optional(map: CborMap<out CoseLabel<*>, AnyCborItem>): T? {
-        println("Getting required label '${value}' from map...")
+        CborConst.LOG.debug("Getting required label '${value}' from map...")
         if (!map.value.containsKey(this)) {
-            println("... <${value.toString()} not available in map>")
+            CborConst.LOG.debug("... <${value.toString()} not available in map>")
             return null
         }
         val result = map.value[this] as T
-        println("... ${result}")
+        CborConst.LOG.debug("... ${result}")
         return result
     }
     fun optionalAsCborMap(map: CborMap<out CoseLabel<*>, AnyCborItem>): CborMap<AnyCborItem, AnyCborItem>? {

@@ -173,6 +173,26 @@ data class Jwk(
     // Name is like other extensions functions to not class with JS
     fun jwkToCoseKeyCbor(): CoseKeyCbor = this.jwkToCoseKeyJson().toCbor()
 
+    fun toJsonObject(): IJwkJson = object : IJwkJson {
+        override val alg: String? = this@Jwk.alg?.value
+        override val crv: String? = this@Jwk.crv?.value
+        override val d: String? = this@Jwk.d
+        override val e: String? = this@Jwk.e
+        override val k: String? = this@Jwk.k
+        override val key_ops: Array<String>? = this@Jwk.key_ops?.map { it.value }?.toTypedArray()
+        override val kid: String? = this@Jwk.kid
+        override val kty: String = this@Jwk.kty.id
+
+        override val n: String? = this@Jwk.n
+        override val use: String? = this@Jwk.use
+        override val x: String? = this@Jwk.x
+        override val x5c: Array<String>? = this@Jwk.x5c
+        override val x5t: String? = this@Jwk.x5t
+        override val x5u: String? = this@Jwk.x5u
+        override val x5t_S256: String? = this@Jwk.x5t_S256
+        override val y: String? = this@Jwk.y
+    }
+
 
     companion object {
         fun fromJsonObject(jwk: IJwkJson): Jwk = with(jwk) {
@@ -220,7 +240,7 @@ data class Jwk(
         fun fromCoseKeyJson(coseKey: ICoseKeyJson): Jwk {
             with(coseKey) {
                 val kty = kty.toJoseKeyType()
-                return Jwk.Builder()
+                return Builder()
                     .withKty(kty)
                     .withAlg(alg?.toJoseSignatureAlgorithm())
                     .withCrv(crv?.toJoseCurve())

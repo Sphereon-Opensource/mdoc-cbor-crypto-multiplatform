@@ -1,5 +1,8 @@
 package com.sphereon.cbor
 
+import com.sphereon.cbor.cose.CoseKeyCbor
+import com.sphereon.cbor.cose.CoseKeyType
+import com.sphereon.kmp.Encoding
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -21,5 +24,12 @@ class EncodedCborItemTest {
         assertEquals(input.value, cborEncoded.decodedValue.value)
         println(test.toString())
 
+    }
+
+    @Test
+    fun shouldEncodeAndDecodeKid() {
+        val cborKey = CoseKeyCbor(kid = "11".toCborByteString(Encoding.UTF8), kty = CoseKeyType.EC2.toCbor())
+        val jsonKey = cborKey.toJson()
+        println(jsonKey)
     }
 }

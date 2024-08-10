@@ -11,6 +11,7 @@ import com.sphereon.cbor.CborString
 import com.sphereon.cbor.CborView
 import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.cborSerializer
+import com.sphereon.cbor.encodeToBase64Array
 import com.sphereon.cbor.encodeToCborByteArray
 import com.sphereon.cbor.toCborByteString
 import com.sphereon.cbor.toCborString
@@ -43,10 +44,10 @@ data class CoseHeaderJson(
         alg = alg,
         crit = crit?.toCborStringArray(),
         contentType = contentType?.toCborString(),
-        kid = kid?.toCborByteString(),
-        partialIv = partialIv?.toCborByteString(),
-        iv = iv?.toCborByteString(),
-        x5chain = x5chain?.encodeToCborByteArray()
+        kid = kid?.toCborByteString(Encoding.UTF8),
+        partialIv = partialIv?.toCborByteString(Encoding.UTF8),
+        iv = iv?.toCborByteString(Encoding.UTF8),
+        x5chain = x5chain?.encodeToCborByteArray(Encoding.BASE64)
     )
 
     // TODO: To JOSE
@@ -124,10 +125,10 @@ data class CoseHeaderCbor(
         alg = alg,
         crit = crit?.toStringArray(),
         contentType = contentType?.toString(),
-        kid = kid?.encodeTo(Encoding.BASE64URL),
-        iv = iv?.encodeTo(Encoding.BASE64URL),
-        partialIv = partialIv?.encodeTo(Encoding.BASE64URL),
-        x5chain = x5chain?.encodeToHexArray()
+        kid = kid?.encodeTo(Encoding.UTF8),
+        iv = iv?.encodeTo(Encoding.UTF8),
+        partialIv = partialIv?.encodeTo(Encoding.UTF8),
+        x5chain = x5chain?.encodeToBase64Array()
     )
 
 

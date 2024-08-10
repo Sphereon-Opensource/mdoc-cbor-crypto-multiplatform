@@ -45,7 +45,7 @@ open class CborByteString(value: cddl_bstr) :
 
 
 }
-
+fun cddl_tstr.stringToCborByteString() = CborByteString(this.encodeToByteArray())
 fun cddl_bstr.toCborByteString() = CborByteString(this)
 class CborByteStringIndefLength(value: List<cddl_bstr>) : CborItem<List<cddl_bstr>>(value, CDDL.bstr_indef_length) {
     override fun encode(builder: ByteStringBuilder) {
@@ -92,5 +92,5 @@ fun CborArray<CborByteString>.encodeToBase64UrlArray() =
 fun CborArray<CborByteString>.encodeToArray(encoding: Encoding) =
     this.value.map { it.encodeTo(encoding) }.toTypedArray()
 
-fun Array<String>.encodeToCborByteArray() = CborArray(this.map { it.toCborByteString() }.toMutableList())
+fun Array<String>.encodeToCborByteArray(encoding: Encoding? = null) = CborArray(this.map { it.toCborByteString(encoding) }.toMutableList())
 

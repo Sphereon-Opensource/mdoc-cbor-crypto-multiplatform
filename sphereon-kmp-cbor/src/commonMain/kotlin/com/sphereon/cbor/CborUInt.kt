@@ -14,7 +14,6 @@ open class CborUInt(value: LongKMP /*UInt*/) : AbstractCborInt<cddl_uint>(value/
 
     override fun validate() {
         if (value.toLong() < 0) {
-            println("Negative number ${value} not allowed for Cbor uint type")
 //            throw IllegalArgumentException("Negative number ${value} not allowed for Cbor uint type")
         }
     }

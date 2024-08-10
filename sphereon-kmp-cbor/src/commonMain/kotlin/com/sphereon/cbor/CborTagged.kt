@@ -116,7 +116,7 @@ open class CborTagged<T>(val tagNumber: Int, val taggedItem: CborItem<T>) :
                 }*/
 
                 else -> {
-                    println("##### Generic TAG encountered: $tag")
+                    CborConst.LOG.info("##### Generic TAG encountered: $tag")
                     return Pair(newItemOffset, CborTagged(tagNumber.toInt(), taggedItem))
                 }
             }

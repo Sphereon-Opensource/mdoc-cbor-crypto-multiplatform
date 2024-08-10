@@ -3,12 +3,12 @@
 
 package com.sphereon.cbor.cose
 
-import com.sphereon.cbor.CborUInt
 import kotlinx.serialization.Serializable
 import kotlin.js.ExperimentalJsExport
 import kotlin.js.JsExport
 
 @Serializable
+@JsExport
 enum class HashAlgorithm(val hashName: String) {
     SHA256("SHA-256"),
     SHA384("SHA-384"),

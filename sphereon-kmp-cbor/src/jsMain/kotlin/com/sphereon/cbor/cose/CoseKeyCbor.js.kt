@@ -8,33 +8,54 @@ import com.sphereon.cbor.CborUInt
 
 @JsExport
 actual external interface IKey {
+    @JsName("kty")
     actual val kty: Any
+
+    @JsName("kid")
     actual val kid: Any?
+
+    @JsName("alg")
     actual val alg: Any?
+
+    @JsName("key_ops")
     actual val key_ops: Any?
+
+    @JsName("baseIV")
     actual val baseIV: Any?
+
+    @JsName("crv")
     actual val crv: Any?
+
+    @JsName("x")
     actual val x: Any?
+
+    @JsName("y")
     actual val y: Any?
+
+    @JsName("x5chain") //x5c in JWK
     actual val x5chain: Any?
+
+    @JsName("additional")
     actual val additional: Any?
+
+    @JsName("d")
     actual val d: Any?
 
 }
 
 @JsExport
 actual external interface ICoseKeyJson : IKey {
-    actual abstract override val kty: CoseKeyType
-    actual abstract override val kid: String?
-    actual abstract override val alg: CoseAlgorithm?
-    actual abstract override val key_ops: Array<CoseKeyOperations>?
-    actual abstract override val baseIV: String?
-    actual abstract override val crv: CoseCurve?
-    actual abstract override val x: String?
-    actual abstract override val y: String?
-    actual abstract override val d: String?
-    actual abstract override val x5chain: Array<String>?
-    actual abstract override val additional: MutableMap<*, *>?
+    actual override val kty: CoseKeyType
+    actual override val kid: String?
+    actual override val alg: CoseAlgorithm?
+    actual override val key_ops: Array<CoseKeyOperations>?
+    actual override val baseIV: String?
+    actual override val crv: CoseCurve?
+    actual override val x: String?
+    actual override val y: String?
+    actual override val d: String?
+    actual override val x5chain: Array<String>?
+    actual override val additional: MutableMap<*, *>?
 
 }
 
@@ -54,15 +75,15 @@ actual external interface ICoseKeyJson : IKey {
 
 @JsExport
 actual external interface ICoseKeyCbor : IKey {
-    actual abstract override val kty: CborUInt
-    actual abstract override val kid: CborByteString?
-    actual abstract override val alg: CborUInt?
-    actual abstract override val key_ops: CborArray<CborUInt>?
-    actual abstract override val baseIV: CborByteString?
-    actual abstract override val crv: CborUInt?
-    actual abstract override val x: CborByteString?
-    actual abstract override val y: CborByteString?
-    actual abstract override val d: CborByteString?
-    actual abstract override val x5chain: CborArray<CborByteString>?
-    actual abstract override val additional: CborMap<NumberLabel, CborItem<*>>?
+    actual override val kty: CborUInt
+    actual override val kid: CborByteString?
+    actual override val alg: CborUInt?
+    actual override val key_ops: CborArray<CborUInt>?
+    actual override val baseIV: CborByteString?
+    actual override val crv: CborUInt?
+    actual override val x: CborByteString?
+    actual override val y: CborByteString?
+    actual override val d: CborByteString?
+    actual override val x5chain: CborArray<CborByteString>?
+    actual override val additional: CborMap<NumberLabel, CborItem<*>>?
 }

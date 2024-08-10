@@ -11,14 +11,15 @@ import com.sphereon.cbor.CborUInt
 import com.sphereon.cbor.CborView
 import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.cborSerializer
-import com.sphereon.cbor.encodeToBase64UrlArray
+import com.sphereon.cbor.encodeToArray
 import com.sphereon.cbor.toCborByteString
 import com.sphereon.kmp.Encoding
 import com.sphereon.kmp.LongKMP
+import com.sphereon.kmp.decodeFrom
 import com.sphereon.kmp.encodeTo
-import com.sphereon.kmp.encodeToBase64Url
+import io.matthewnelson.encoding.core.Encoder.Companion.encodeToString
+import kotlinx.serialization.json.Json.Default.encodeToString
 import kotlin.js.JsExport
-import kotlin.math.E
 
 
 expect interface IKey {
@@ -255,17 +256,25 @@ class CoseKeyCbor(
 
     //todo: Probably  nice to be able to provide an encoding parm, but then we have to adjust the whole interface
     override fun toJson(): CoseKeyJson {
-        return CoseKeyJson.Builder().withKty(CoseKeyType.fromValue(kty.value.toInt()))
-            .withKid(kid?.let { kid.value.encodeToBase64Url() })
+        return CoseKeyJson.Builder()
+            .withKty(CoseKeyType.fromValue(kty.value.toInt()))
+            .withKid(kid?.let { kid.value.decodeToString()})
             .withAlg(alg?.let { CoseSignatureAlgorithm.fromValue(it.value.toInt()) })
             .withKeyOps(key_ops?.value?.map { ko -> CoseKeyOperations.fromValue(ko.value.toInt()) }
                 ?.toTypedArray())
-            .withBaseIV(baseIV?.value?.encodeToBase64Url())
+            .withBaseIV(baseIV?.value?.encodeTo(Encoding.BASE64URL))
             .withCrv(crv?.let { CoseCurve.fromValue(it.value.toInt()) })
-            .withX5Chain(x5chain?.encodeToBase64UrlArray())
-            .withX(x?.value?.encodeToBase64Url())
-            .withY(y?.value?.encodeToBase64Url())
-            .withD(d?.value?.encodeToBase64Url())
+            /**
+             * The "x5c" (X.509 certificate chain) parameter contains a chain of one
+             *    or more PKIX certificates [RFC5280].  The certificate chain is
+             *    represented as a JSON array of certificate value strings.  Each
+             *    string in the array is a base64-encoded (Section 4 of [RFC4648] --
+             *    not base64url-encoded) DER
+             */
+            .withX5Chain(x5chain?.encodeToArray(Encoding.BASE64)) // see note above about base64
+            .withX(x?.value?.encodeTo(Encoding.BASE64URL))
+            .withY(y?.value?.encodeTo(Encoding.BASE64URL))
+            .withD(d?.value?.encodeTo(Encoding.BASE64URL))
             //todo additional
             .build()
 
@@ -326,7 +335,7 @@ class CoseKeyCbor(
 
         fun withKty(kty: CoseKeyType) = apply { this.kty = CborUInt(kty.value) }
 
-        fun withKid(kid: String?) = apply { kid?.let { this.kid = it.toCborByteString() } }
+        fun withKid(kid: String?) = apply { kid?.let { this.kid = it.toCborByteString(Encoding.UTF8) } }
         fun withAlg(alg: CoseAlgorithm?) = apply { alg?.let { this.alg = CborUInt(it.value) } }
         fun withKeyOps(key_ops: Array<CoseKeyOperations>?) = apply {
             key_ops?.let {
@@ -334,18 +343,25 @@ class CoseKeyCbor(
             }
         }
 
-        fun withBaseIV(baseIVHex: String?) = apply { baseIVHex?.let { this.baseIV = it.toCborByteString() } }
+        fun withBaseIV(baseIVHex: String?) = apply { baseIVHex?.let { this.baseIV = it.toCborByteString(Encoding.BASE64URL) } }
         fun withCrv(crv: CoseCurve?) = apply {
             crv?.let { this.crv = it.toCbor() }
         }
 
-        fun withX(x: String?) = apply { x?.let { this.x = it.toCborByteString() } }
-        fun withY(y: String?) = apply { y?.let { this.y = it.toCborByteString() } }
-        fun withD(d: String?) = apply { d?.let { this.d = it.toCborByteString() } }
+        fun withX(x: String?) = apply { x?.let { this.x = it.toCborByteString(Encoding.BASE64URL) } }
+        fun withY(y: String?) = apply { y?.let { this.y = it.toCborByteString(Encoding.BASE64URL) } }
+        fun withD(d: String?) = apply { d?.let { this.d = it.toCborByteString(Encoding.BASE64URL) } }
         fun withX5Chain(x5c: Array<String>?) =
             apply {
                 x5c?.let {
-                    this.x5chain = CborArray(it.map { cert -> cert.toCborByteString() }.toMutableList())
+                    /**
+                     * The "x5c" (X.509 certificate chain) parameter contains a chain of one
+                     *    or more PKIX certificates [RFC5280].  The certificate chain is
+                     *    represented as a JSON array of certificate value strings.  Each
+                     *    string in the array is a base64-encoded (Section 4 of [RFC4648] --
+                     *    not base64url-encoded) DER
+                     */
+                    this.x5chain = CborArray(it.map { cert -> CborByteString(cert.decodeFrom(Encoding.BASE64)) }.toMutableList()) // see remark about base64
                 }
             }
 
@@ -362,6 +378,7 @@ class CoseKeyCbor(
                 crv = crv,
                 x = x,
                 y = y,
+                d = d,
                 x5chain = x5chain,
                 additional = if (additional === null || additional?.value.isNullOrEmpty()) null else additional,
             )

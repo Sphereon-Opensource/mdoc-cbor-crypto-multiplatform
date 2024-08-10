@@ -2,6 +2,7 @@ package com.sphereon.cbor.cose
 
 import kotlinx.serialization.Serializable
 import kotlin.js.JsExport
+import kotlin.js.JsName
 
 /**
  * This parameter is used to restrict the algorithm that is used with the key.
@@ -14,12 +15,19 @@ import kotlin.js.JsExport
  */
 @JsExport
 interface CoseAlgorithm {
+    @JsName("name")
     val name: String
+    @JsName("value")
     val value: Int
+    @JsName("keyType")
     val keyType: CoseKeyType?
+    @JsName("hash")
     val hash: HashAlgorithm?
+    @JsName("tagLength")
     val tagLength: Int?
+    @JsName("curve")
     val curve: CoseCurve?
+    @JsName("description")
     val description: String
 }
 

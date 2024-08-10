@@ -1,5 +1,7 @@
 package com.sphereon.cbor
 
+import com.sphereon.kmp.Encoding
+import com.sphereon.kmp.decodeFrom
 import io.matthewnelson.encoding.base64.Base64
 import io.matthewnelson.encoding.core.Decoder.Companion.decodeToByteArray
 import kotlinx.io.bytestring.ByteStringBuilder
@@ -28,20 +30,26 @@ fun cddl_tstr.toCborString() = CborString(this)
 fun Array<String>.toCborStringArray() = CborArray(this.map { it.toCborString() }.toMutableList())
 fun CborArray<CborString>.toStringArray() = this.value.map { it.value }.toTypedArray()
 
-val HEX_ALPHABET = "0123456789abcdefABCDEF"
+private val HEX_ALPHABET = "0123456789abcdefABCDEF"
 
 @OptIn(ExperimentalStdlibApi::class)
-fun cddl_tstr.toCborByteString(): CborByteString {
-    if (this.length % 2 == 0) {
+fun cddl_tstr.toCborByteString(encoding: Encoding? = null): CborByteString {
+    if (encoding === Encoding.HEX || (encoding === null && this.length % 2 == 0)) {
         if (this.equals(this.filter { HEX_ALPHABET.contains(it) })) {
             return CborByteString(this.hexToByteArray())
         }
     }
-    if (this.equals(this.filter { (Base64.Default.CHARS + "=").contains(it) }) || this.equals(this.filter { (Base64.UrlSafe.CHARS + "=").contains(it) })) {
-        if (this.contains("-") || this.contains("_")) {
+    if ((encoding === Encoding.BASE64URL || encoding === Encoding.BASE64 ||
+                (encoding === null &&
+                        (this == this.filter { (Base64.Default.CHARS + "=").contains(it) } ||
+                                this == this.filter { (Base64.UrlSafe.CHARS + "=").contains(it) })))
+    ) {
+        if (encoding === Encoding.BASE64URL || this.contains("-") || this.contains("_")) {
             return CborByteString(this.decodeToByteArray(Base64.UrlSafe))
         }
+        // Base64
         return CborByteString(this.decodeToByteArray(Base64.Default))
     }
-    return CborByteString(this.encodeToByteArray())
+    // UTF-8
+    return CborByteString(this.decodeFrom(Encoding.UTF8))
 }

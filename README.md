@@ -2,7 +2,7 @@
 <h1 align="center">
   <br>
 <a href="https://www.sphereon.com"><img src="https://sphereon.com/content/themes/sphereon/assets/img/logo.svg" alt="Sphereon" width="400"></a>
-  <br>Multi platform mDL/mdoc and CBOR library
+  <br>Multi platform mDL/mdoc, crypto and CBOR
   <br>
 </h1>
 
@@ -20,11 +20,19 @@ this to not make to many assumptions on crypto libraries. The library does suppo
 for transport, not for signing/verification. For these operation we delegate to a service you will need to provide.
 Having said that we provide some implementations you could register/use on your platform.
 
+# CBOR
+
+A multi-platform CBOR library. The goal is that this library is to be able to work with CBOR data. It can be used natively on Android, iOS,
+apple, linux, windows as well as in JVMs and Javascript/Typescript.
+
 # Crypto JOSE/COSE
 
-A multi-platform JOSE/COSE library. The goal is that this library can be used natively on Android, iOS,
+A multi-platform JOSE/COSE library. The goal is that this library is to be able to convert COSE/CBOR keys and JOSE JWKs and other primitives into
+one-another. The library also has support for X.509 Certificate chain validations. It can be used natively on Android, iOS,
 apple, linux, windows as well as in JVMs and Javascript/Typescript. See
 the [crypto README](./sphereon-kmp-crypto/README.md) for more information.
+
+# MDL and Mdoc
 
 # CBOR and Json views explained
 

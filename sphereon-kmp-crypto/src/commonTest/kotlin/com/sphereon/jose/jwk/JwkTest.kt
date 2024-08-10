@@ -24,8 +24,8 @@ class JWKTest {
         val jwk = Jwk(
             kty = JwaKeyType.EC,
             crv = JwaCurve.P_256,
-            x = "uxHN3W6ehp0VWXKaMNie1J82MVJCFZYScau74o17cx8=",
-            y = "29Y5Ey4u5WGWW4MFMKagJPEJiIjzE1UFFZIRhMhqysM="
+            x = "uxHN3W6ehp0VWXKaMNie1J82MVJCFZYScau74o17cx8",
+            y = "29Y5Ey4u5WGWW4MFMKagJPEJiIjzE1UFFZIRhMhqysM"
         )
         val coseKey = jwk.jwkToCoseKeyCbor()
 
@@ -120,8 +120,8 @@ class JWKTest {
         val jwk = Jwk(
             kty = JwaKeyType.EC,
             crv = JwaCurve.P_256,
-            x = "uxHN3W6ehp0VWXKaMNie1J82MVJCFZYScau74o17cx8=",
-            y = "29Y5Ey4u5WGWW4MFMKagJPEJiIjzE1UFFZIRhMhqysM="
+            x = "uxHN3W6ehp0VWXKaMNie1J82MVJCFZYScau74o17cx8",
+            y = "29Y5Ey4u5WGWW4MFMKagJPEJiIjzE1UFFZIRhMhqysM"
         )
         assertEquals(jwk, jwk.jwkToCoseKeyCbor().cborToJwk())
     }

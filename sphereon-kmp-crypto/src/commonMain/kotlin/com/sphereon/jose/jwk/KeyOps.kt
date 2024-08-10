@@ -3,7 +3,7 @@ package com.sphereon.jose.jwk
 import kotlin.js.JsExport
 
 @JsExport
-enum class JoseKeyOperations(val paramName: String, val description: String) {
+enum class JoseKeyOperations(val value: String, val description: String) {
 
     SIGN("sign","The key is used to create signatures.  Requires private key fields"),
     VERIFY("verify", "The key is used for verification of signatures"),
@@ -21,7 +21,7 @@ enum class JoseKeyOperations(val paramName: String, val description: String) {
 
     companion object {
         fun fromValue(value: String): JoseKeyOperations {
-            return entries.find { entry -> entry.paramName == value }
+            return entries.find { entry -> entry.value == value }
                 ?: throw IllegalArgumentException("Unknown value $value")
         }
     }
