@@ -35,10 +35,6 @@ repositories {
     mavenCentral()
     gradlePluginPortal()
     maven {
-        url = uri("https://raw.githubusercontent.com/a-sit-plus/gradle-conventions-plugin/mvn/repo")
-        name = "aspConventions"
-    }
-    maven {
         url = uri("https://oss.sonatype.org/content/repositories/snapshots")
         name = "bigNum"
     }
@@ -118,14 +114,8 @@ kotlin {
                 implementation(libs.kotlinx.datetime)
                 implementation(libs.kotlinx.serialization.core)
                 implementation(libs.kotlinx.serialization.json)
-                implementation(libs.kotlinx.serialization.cbor)
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.kotlinx.io.core)
-                implementation(libs.whyoleg.cryptography.core)
-                implementation(libs.whyoleg.cryptography.serialization.pem)
-                implementation(libs.whyoleg.cryptography.serialization.asn1)
-                implementation(libs.whyoleg.cryptography.serialization.asn1.modules)
-                implementation(libs.whyoleg.cryptography.random)
                 implementation(libs.kermit)
             }
         }

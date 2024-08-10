@@ -77,7 +77,12 @@ object IssuerAuthValidation {
         issuerAuth: COSE_Sign1<MobileSecurityObjectCbor, MobileSecurityObjectJson>,
         coseCryptoService: ICoseCryptoService = CryptoService.COSE,
         keyInfo: IKeyInfo<ICoseKeyCbor>?
-    ): IVerifySignatureResult<ICoseKeyCbor> = coseCryptoService.verify1(issuerAuth, keyInfo)
+    ): IVerifySignatureResult<ICoseKeyCbor> {
+        if (keyInfo?.key?.d !== null) {
+            throw AssertionError("Do not use private keys to verify!")
+        }
+        return coseCryptoService.verify1(issuerAuth, keyInfo)
+    }
 
 
     /**

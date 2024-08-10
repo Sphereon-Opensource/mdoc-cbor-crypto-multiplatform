@@ -36,10 +36,6 @@ repositories {
     mavenCentral()
     gradlePluginPortal()
     maven {
-        url = uri("https://raw.githubusercontent.com/a-sit-plus/gradle-conventions-plugin/mvn/repo")
-        name = "aspConventions"
-    }
-    maven {
         url = uri("https://oss.sonatype.org/content/repositories/snapshots")
         name = "bigNum"
     }
@@ -107,7 +103,7 @@ kotlin {
 
 
     sourceSets {
-        all{
+        all {
             languageSettings.optIn("kotlin.js.ExperimentalJsExport")
             languageSettings.optIn("kotlinx.serialization.ExperimentalSerializationApi")
             languageSettings.optIn("kotlin.ExperimentalUnsignedTypes")
@@ -120,7 +116,6 @@ kotlin {
                 implementation(libs.kotlinx.datetime)
                 implementation(libs.kotlinx.serialization.core)
                 implementation(libs.kotlinx.serialization.json)
-                implementation(libs.kotlinx.serialization.cbor)
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.kotlinx.io.core)
                 implementation(libs.kermit)

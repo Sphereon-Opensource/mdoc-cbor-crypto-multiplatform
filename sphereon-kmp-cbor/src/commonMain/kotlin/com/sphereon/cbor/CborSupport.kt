@@ -1,25 +1,13 @@
 package com.sphereon.cbor
 
 
-import kotlinx.serialization.cbor.Cbor
 import kotlin.js.JsExport
 
 
 val cborSerializer = CborSupport.serializer
-val kotlinSerializer = CborSupport.kotlinSerializer
 
 @JsExport
 object CborSupport {
-
-    val kotlinSerializer by lazy {
-        return@lazy Cbor {
-            ignoreUnknownKeys = true
-//            alwaysUseByteString = true
-            encodeDefaults = false
-//            writeDefiniteLengths = true
-        }
-    }
-
     val serializer by lazy {
         return@lazy com.sphereon.cbor.Cbor
     }
@@ -40,7 +28,7 @@ object CborSupport {
         return CborEncodedItem(value, CborByteString(bytes))
     }
 
-    fun <Type: AnyCborItem> dataItemToValue(value: CborEncodedItem<Type>): Type {
+    fun <Type : AnyCborItem> dataItemToValue(value: CborEncodedItem<Type>): Type {
         return CborEncodedItem.toDecodedValue(value)
     }
 

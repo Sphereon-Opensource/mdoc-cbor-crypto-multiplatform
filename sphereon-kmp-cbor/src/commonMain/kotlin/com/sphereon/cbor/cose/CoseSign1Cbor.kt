@@ -15,10 +15,12 @@ import com.sphereon.cbor.toCborByteString
 import com.sphereon.kmp.Encoding
 import com.sphereon.kmp.decodeFromHex
 import com.sphereon.kmp.encodeTo
+import kotlinx.serialization.Serializable
 import kotlin.js.JsExport
 
 
 @JsExport
+@Serializable
 data class CoseSign1InputJson<JsonType, CborType>(
     val protectedHeader: CoseHeaderJson,
 
@@ -35,6 +37,7 @@ data class CoseSign1InputJson<JsonType, CborType>(
 }
 
 @JsExport
+@Serializable
 data class CoseSign1Json<JsonType, CborType>(
     val protectedHeader: CoseHeaderJson,
 
@@ -50,6 +53,15 @@ data class CoseSign1Json<JsonType, CborType>(
         payload = payload?.toCborByteString(),
         signature = signature.toCborByteString()
     )
+
+    companion object {
+        fun <JsonType, CborType> fromDTO(dto: CoseSign1Json<JsonType, CborType>) = CoseSign1Json<JsonType, CborType>(
+            protectedHeader = dto.protectedHeader,
+            unprotectedHeader = dto.unprotectedHeader,
+            payload = dto.payload,
+            signature = dto.signature
+        )
+    }
 }
 
 @JsExport

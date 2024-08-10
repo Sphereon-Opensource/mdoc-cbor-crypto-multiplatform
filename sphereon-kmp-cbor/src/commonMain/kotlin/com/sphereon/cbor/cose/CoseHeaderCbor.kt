@@ -21,9 +21,11 @@ import com.sphereon.cbor.toStringArray
 import com.sphereon.kmp.Encoding
 import com.sphereon.kmp.LongKMP
 import com.sphereon.kmp.bigIntFromNumber
+import kotlinx.serialization.Serializable
 import kotlin.js.JsExport
 
 @JsExport
+@Serializable
 data class CoseHeaderJson(
 
     /**
@@ -47,7 +49,7 @@ data class CoseHeaderJson(
         kid = kid?.toCborByteString(Encoding.UTF8),
         partialIv = partialIv?.toCborByteString(Encoding.UTF8),
         iv = iv?.toCborByteString(Encoding.UTF8),
-        x5chain = x5chain?.encodeToCborByteArray(Encoding.BASE64)
+        x5chain = x5chain?.encodeToCborByteArray(Encoding.BASE64) // base64 not url
     )
 
     // TODO: To JOSE
