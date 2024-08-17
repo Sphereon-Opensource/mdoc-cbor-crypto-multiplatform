@@ -7,16 +7,19 @@ import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborView
 import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.cborSerializer
-import com.sphereon.cbor.cddl_tstr
 import com.sphereon.cbor.cose.COSE_Key
-import com.sphereon.cbor.cose.StringLabel
+import com.sphereon.cbor.cose.CoseKeyJson
+import com.sphereon.cbor.StringLabel
+import com.sphereon.kmp.LongKMP
+import kotlinx.serialization.Contextual
 import kotlin.js.JsExport
 
 @JsExport
 data class DeviceKeyInfoJson(
-    val deviceKey: cddl_tstr, // FIXME CoseKey,
+    val deviceKey: CoseKeyJson,
     val keyAuthorizations: KeyAuthorizationsJson? = null,
-    val keyInfo: KeyInfo? = null,
+    @Contextual
+    val keyInfo: MutableMap<LongKMP, *>? = null,
 ) : JsonView<DeviceKeyInfoCbor>() {
     override fun toCbor(): DeviceKeyInfoCbor {
         TODO("Not yet implemented")
@@ -28,7 +31,7 @@ data class DeviceKeyInfoJson(
 data class DeviceKeyInfoCbor(
     val deviceKey: COSE_Key,
     val keyAuthorizations: KeyAuthorizationsCbor? = null,
-    val keyInfo: KeyInfo? = null,
+    val keyInfo: KeyInfoCbor? = null,
 ) : CborView<DeviceKeyInfoCbor, DeviceKeyInfoJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
     override fun cborBuilder(): CborBuilder<DeviceKeyInfoCbor> =
         CborMap.builder(this).put(DEVICE_KEY, deviceKey.toCbor())

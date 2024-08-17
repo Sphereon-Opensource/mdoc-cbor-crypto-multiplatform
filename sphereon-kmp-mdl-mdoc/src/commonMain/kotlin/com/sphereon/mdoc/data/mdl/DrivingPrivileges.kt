@@ -14,7 +14,7 @@ import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.cddl_full_date
 import com.sphereon.cbor.cddl_tstr
 import com.sphereon.cbor.cborViewListToCborItem
-import com.sphereon.cbor.cose.StringLabel
+import com.sphereon.cbor.StringLabel
 import com.sphereon.cbor.instantToDateStringISO
 import com.sphereon.cbor.localDateTimeToDateStringISO
 import com.sphereon.cbor.localDateToCborFullDate
@@ -31,7 +31,6 @@ import com.sphereon.mdoc.data.mdl.DrivingPrivilegeCbor.Companion.VEHICLE_CATEGOR
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
 import kotlin.js.JsExport
 import kotlin.js.JsName
 
@@ -123,7 +122,6 @@ data class DrivingPrivilegesJson(val backing: List<DrivingPrivilegeJson> = mutab
 typealias CborDrivingPrivilegeBuilder = DrivingPrivilegeCbor.Builder
 
 @JsExport
-@Serializable
 data class DrivingPrivilegeJson(
     @SerialName("vehicle_category_code")
     val vehicle_category_code: String,
@@ -414,7 +412,6 @@ data class DrivingPrivilegesCodeCbor(val code: CborString, val sign: CborString?
 }
 
 @JsExport
-@Serializable
 data class DrivingPrivilegesCodeJson(val code: cddl_tstr, val sign: cddl_tstr?, val value: cddl_tstr?) :
     JsonView<DrivingPrivilegesCodeCbor>() {
 

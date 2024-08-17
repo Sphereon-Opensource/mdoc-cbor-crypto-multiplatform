@@ -1,7 +1,5 @@
 package com.sphereon.cbor
 
-import com.sphereon.cbor.cose.NumberLabel
-import com.sphereon.cbor.cose.StringLabel
 import kotlinx.io.bytestring.ByteStringBuilder
 import kotlin.js.JsExport
 

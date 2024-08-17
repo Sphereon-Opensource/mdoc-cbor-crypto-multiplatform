@@ -1,9 +1,5 @@
-package com.sphereon.cbor.cose
+package com.sphereon.cbor
 
-import com.sphereon.cbor.CDDL
-import com.sphereon.cbor.Cbor
-import com.sphereon.cbor.CborString
-import com.sphereon.cbor.cddl_tstr
 import kotlinx.io.bytestring.ByteStringBuilder
 import kotlin.js.JsExport
 

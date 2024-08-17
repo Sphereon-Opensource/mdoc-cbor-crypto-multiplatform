@@ -4,7 +4,7 @@ import com.sphereon.cbor.CborHexEncodedItem
 import com.sphereon.cbor.CborUInt
 import com.sphereon.cbor.cose.COSE_Key
 import com.sphereon.cbor.toCborBool
-import com.sphereon.kmp.bigIntFromNumber
+import com.sphereon.kmp.numberToKmpLong
 import com.sphereon.kmp.decodeFromHex
 import com.sphereon.mdoc.tx.device.BleOptionsCbor
 import com.sphereon.mdoc.tx.device.DeviceEngagementCbor
@@ -54,7 +54,7 @@ class MobileSecurityObjectTest {
             deviceRetrievalMethods = arrayOf(
                 DeviceRetrievalMethodCbor(
                     type = DeviceRetrievalMethodType.BLE.toCborItem(),
-                    version = CborUInt(1.bigIntFromNumber()),
+                    version = CborUInt(1.numberToKmpLong()),
                     retrievalOptions = BleOptionsCbor(
                         peripheralServerMode = false.toCborBool(),
                         centralClientMode = true.toCborBool(),

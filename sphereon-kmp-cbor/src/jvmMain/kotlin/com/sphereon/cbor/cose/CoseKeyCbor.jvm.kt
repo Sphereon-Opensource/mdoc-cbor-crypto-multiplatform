@@ -5,6 +5,8 @@ import com.sphereon.cbor.CborByteString
 import com.sphereon.cbor.CborItem
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborUInt
+import com.sphereon.cbor.NumberLabel
+import kotlinx.serialization.json.JsonObject
 
 actual interface IKey {
     actual val kty: Any
@@ -32,7 +34,7 @@ actual interface ICoseKeyJson : IKey {
     actual abstract override val y: String?
     actual abstract override val d: String?
     actual abstract override val x5chain: Array<String>?
-    actual abstract override val additional: MutableMap<*, *>?
+    actual abstract override val additional: JsonObject?
 
 }
 

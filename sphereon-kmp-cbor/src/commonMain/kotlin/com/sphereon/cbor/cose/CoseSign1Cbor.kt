@@ -10,17 +10,16 @@ import com.sphereon.cbor.CborNull
 import com.sphereon.cbor.CborString
 import com.sphereon.cbor.CborView
 import com.sphereon.cbor.JsonView
+import com.sphereon.cbor.NumberLabel
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.toCborByteString
 import com.sphereon.kmp.Encoding
 import com.sphereon.kmp.decodeFromHex
 import com.sphereon.kmp.encodeTo
-import kotlinx.serialization.Serializable
 import kotlin.js.JsExport
 
 
 @JsExport
-@Serializable
 data class CoseSign1InputJson<JsonType, CborType>(
     val protectedHeader: CoseHeaderJson,
 
@@ -37,7 +36,6 @@ data class CoseSign1InputJson<JsonType, CborType>(
 }
 
 @JsExport
-@Serializable
 data class CoseSign1Json<JsonType, CborType>(
     val protectedHeader: CoseHeaderJson,
 
@@ -275,7 +273,7 @@ data class CoseSignatureStructureCbor(
 @JsExport
 data class ToBeSignedJson(val hexValue: String, val key: ICoseKeyJson?, val alg: CoseAlgorithm?) : JsonView<ToBeSignedCbor>() {
     override fun toCbor() =
-        ToBeSignedCbor(hexValue.decodeFromHex().toCborByteString(), key = key?.let { CoseKeyJson.fromDTO(it).toCbor() }, alg = alg)
+        ToBeSignedCbor(hexValue.decodeFromHex().toCborByteString(), key = key?.let { CoseKeyJson.Static.fromDTO(it).toCbor() }, alg = alg)
 
 }
 

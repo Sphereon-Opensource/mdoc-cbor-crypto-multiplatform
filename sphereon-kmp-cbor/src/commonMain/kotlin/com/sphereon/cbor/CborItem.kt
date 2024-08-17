@@ -12,7 +12,7 @@ import kotlin.js.JsExport
  * We use closed polymorphism here (sealed)
  */
 @JsExport
-abstract class CborItem<Type>(
+sealed class CborItem<Type>(
     val value: Type,
     cddl: CDDLType
 ) : CborBaseItem(cddl) {

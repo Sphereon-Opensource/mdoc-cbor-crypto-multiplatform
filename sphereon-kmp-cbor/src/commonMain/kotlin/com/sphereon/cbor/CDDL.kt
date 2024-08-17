@@ -1,9 +1,18 @@
+@file:Suppress("SERIALIZER_TYPE_INCOMPATIBLE")
+
 package com.sphereon.cbor
 
 import com.sphereon.cbor.CborTagged.Companion.DATE_TIME_STRING
 import com.sphereon.kmp.LongKMP
-import com.sphereon.kmp.bigIntFromNumber
-import com.sphereon.kmp.toBigInt
+import com.sphereon.kmp.numberToKmpLong
+import com.sphereon.kmp.toKmpLong
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlin.js.ExperimentalJsExport
 import kotlin.js.JsExport
 
@@ -37,7 +46,8 @@ typealias cddl_any = Any
 
 @OptIn(ExperimentalJsExport::class)
 @JsExport
-interface CDDLType {
+@Serializable(with = CDDLSerializer::class)
+sealed interface CDDLType {
     val format: String
     val majorType: MajorType?
     val info: Int?
@@ -64,12 +74,12 @@ interface CDDLType {
  */
 @Suppress("UNCHECKED_CAST")
 @JsExport
+@Serializable(with = CDDLSerializer::class)
 sealed class CDDL(
     override val format: String,
     override val majorType: MajorType? = null,
     override val info: Int? = null,
     override val aliasFor: Array<CDDLType> = arrayOf(),
-
     ) : CDDLType {
 
     /*fun <T : Any?> anyToType(value: T): CDDLType {
@@ -148,12 +158,12 @@ sealed class CDDL(
                 )
             }.toTypedArray())) // fixme. Needs inspection of keys and values and map type
             nil -> nil.newNil()
-            nint -> nint.newNInt(if (value is LongKMP) value else if (value is Number) value.toBigInt() else value as LongKMP)
+            nint -> nint.newNInt(if (value is LongKMP) value else if (value is Number) value.toKmpLong() else value as LongKMP)
             tdate -> tdate.newTDate(value as cddl_tdate)
             text -> text.newText(value as cddl_text)
             time -> time.newTime(value as cddl_time)
             tstr_indef_length -> tstr_indef_length.newStringIndefLength(value as List<cddl_tstr>)
-            uint -> uint.newUint(if (value is LongKMP) value else if (value is Number) value.toBigInt() else value as LongKMP)
+            uint -> uint.newUint(if (value is LongKMP) value else if (value is Number) value.toKmpLong() else value as LongKMP)
             undefined -> undefined.newUndefined()
         }
 
@@ -164,49 +174,57 @@ sealed class CDDL(
 
     }
 
+    @Serializable(with = CDDLSerializer::class)
     object uint : CDDL("uint", MajorType.UNSIGNED_INTEGER) {
         fun newUint(value: cddl_uint) = CborUInt(value)
 
 
     }
 
+    @Serializable(with = CDDLSerializer::class)
     object nint : CDDL("nint", MajorType.NEGATIVE_INTEGER) {
         fun newNInt(value: cddl_nint) = CborNInt(value)
     }
 
+    @Serializable(with = CDDLSerializer::class)
     object int :
         CDDL("int", null, null, aliasFor = arrayOf(uint, nint)) {
         fun newInt(value: Int) =
-            if (value < 0) CborNInt(value.bigIntFromNumber()) else CborUInt(value.bigIntFromNumber())
+            if (value < 0) CborNInt(value.numberToKmpLong()) else CborUInt(value.numberToKmpLong())
 
         fun newLong(value: Long) =
-            if (value < 0) CborNInt(value.bigIntFromNumber()) else CborUInt(value.bigIntFromNumber())
+            if (value < 0) CborNInt(value.numberToKmpLong()) else CborUInt(value.numberToKmpLong())
 
 
     }
 
+    @Serializable(with = CDDLSerializer::class)
     object bstr : CDDL("bstr", MajorType.BYTE_STRING) {
         fun newByteString(value: cddl_bstr) = CborByteString(value)
     }
 
+    @Serializable(with = CDDLSerializer::class)
     object bstr_indef_length : CDDL("bstr", MajorType.BYTE_STRING) {
         fun newByteString(value: List<cddl_bstr>) = CborByteStringIndefLength(value)
     }
 
+    @Serializable(with = CDDLSerializer::class)
     object bytes : CDDL("bytes", MajorType.BYTE_STRING, aliasFor = arrayOf(bstr)) {
         fun newBytes(value: cddl_bstr) = CborByteString(value)
     }
 
-
+    @Serializable(with = CDDLSerializer::class)
     object tstr_indef_length : CDDL("tstr", MajorType.UNICODE_STRING) {
         fun newStringIndefLength(value: List<cddl_tstr>) = CborStringIndefLength(value)
     }
 
+    @Serializable(with = CDDLSerializer::class)
     object text : CDDL("text", MajorType.UNICODE_STRING, aliasFor = arrayOf(tstr)) {
         fun newText(value: cddl_text) = CborString(value)
     }
 
 
+    @Serializable(with = CDDLSerializer::class)
     object tdate : CDDL(
         "tdate", MajorType.TAG, DATE_TIME_STRING
     ) // RFC 7049, section 2.4.1, a tdate data item shall contain a date-time string as specified in RFC 3339
@@ -214,6 +232,7 @@ sealed class CDDL(
         fun newTDate(value: cddl_tdate) = CborTDate(value)
     }
 
+    @Serializable(with = CDDLSerializer::class)
     object full_date : CDDL(
         "full-date", MajorType.TAG, CborTagged.FULL_DATE_STRING
     ) // #6.1004(tstr) In accordance with RFC 8943, a full-date data item shall contain a full-datestring as specified in RFC 3339.
@@ -221,6 +240,7 @@ sealed class CDDL(
         fun newFullDate(value: cddl_full_date) = CborFullDate(value)
     }
 
+    @Serializable(with = CDDLSerializer::class)
     object time : CDDL(
         "time", MajorType.TAG, CborTagged.DATE_TIME_NUMBER
     ) // RFC 7049, section 2.4.1, a tdate data item shall contain a date-time number as specified in RFC 3339
@@ -228,49 +248,60 @@ sealed class CDDL(
         fun newTime(value: cddl_time) = CborTime(value)
     }
 
+    @Serializable(with = CDDLSerializer::class)
     object float16 : CDDL("float16", MajorType.SPECIAL, 25) {
         fun newFloat16(value: cddl_float16) = CborFloat16(value)
     }
 
+    @Serializable(with = CDDLSerializer::class)
     object float32 : CDDL("float32", MajorType.SPECIAL, 26) {
         fun newFloat32(value: cddl_float32) = CborFloat32(value)
     }
 
+    @Serializable(with = CDDLSerializer::class)
     object float64 : CDDL("float64", MajorType.SPECIAL, 27) {
         fun newFloat64(value: cddl_float64) = CborDouble(value)
     }
 
+    @Serializable(with = CDDLSerializer::class)
     object float : CDDL("float", MajorType.SPECIAL, aliasFor = arrayOf(float16, float32, float64)) {
         fun newFloat(value: cddl_float) = CborFloat32(value)
     }
 
+    @Serializable(with = CDDLSerializer::class)
     object False : CDDL("false", MajorType.SPECIAL, 20) {
         fun newFalse() = CborSimple.FALSE
     }
 
+    @Serializable(with = CDDLSerializer::class)
     object True : CDDL("true", MajorType.SPECIAL, 21) {
         fun newTrue() = CborSimple.TRUE
     }
 
+    @Serializable(with = CDDLSerializer::class)
     object bool :
         CDDL("bool", MajorType.SPECIAL, aliasFor = arrayOf(False, True)) {
         fun newBool(value: cddl_bool) = if (value) CborSimple.TRUE else CborSimple.FALSE
     }
 
+    @Serializable(with = CDDLSerializer::class)
     object nil : CDDL("nil", MajorType.SPECIAL, 22) {
         fun newNil() = CborSimple.NULL
 
     }
 
+    @Serializable(with = CDDLSerializer::class)
     object Null : CDDL("null", MajorType.SPECIAL, 22, arrayOf(nil)) {
         fun newNull() = CborSimple.NULL
     }
 
+    @Serializable(with = CDDLSerializer::class)
     object undefined :
         CDDL("undefined", MajorType.SPECIAL, 23) {
         fun newUndefined() = CborSimple.UNDEFINED
     }
 
+    @Serializable(with = CDDLSerializer::class)
     object map :
         CDDL(
             "map",
@@ -282,6 +313,7 @@ sealed class CDDL(
     }
 
 
+    @Serializable(with = CDDLSerializer::class)
     object list :
         CDDL(
             "list",
@@ -290,6 +322,7 @@ sealed class CDDL(
         fun <T : AnyCborItem> newList(value: cddl_list<T>) = CborArray(value)
     }
 
+    @Serializable(with = CDDLSerializer::class)
     object any :
         CDDL(
             "any"
@@ -305,7 +338,7 @@ sealed class CDDL(
             }
 
             // fixme: this is not correct. We first need to traverse the aliases, as an alias could go without major and additional info
-            return entries.first { it.majorType == majorType && it.info == additionalInfo }
+            return util.entries.first { it.majorType == majorType && it.info == additionalInfo }
                 .toTag(additionalInfo)
         }
 
@@ -345,29 +378,34 @@ sealed class CDDL(
     }
 
 
-    companion object {
-        val entries = arrayOf(
-            any,
-            uint,
-            int,
-            nint,
-            bstr,
-            bytes,
-            tstr,
-            tdate,
-            time,
-            float,
-            False,
-            True,
-            bool,
-            nil,
-            Null,
-            undefined,
-            float,
-            float16,
-            float32,
-            float64
-        )
+    object util {
+        // Lazy for serialization as this class is used as object in the above CDDL class
+        val entries by lazy {
+            arrayOf(
+                any,
+                uint,
+                int,
+                nint,
+                bstr,
+                bytes,
+                tstr,
+                tdate,
+                time,
+                float,
+                False,
+                True,
+                bool,
+                nil,
+                Null,
+                undefined,
+                float,
+                float16,
+                float32,
+                float64
+            )
+        }
+
+        fun fromFormat(format: String) = entries.first { it.format == format }
 
         fun fromTag(tag: String): CDDL {
             if (!tag.startsWith("#")) {
@@ -391,5 +429,20 @@ sealed class CDDL(
         fun fromMajorType(majorType: MajorType? = null, additionalInfo: Int? = null) = entries.first {
             it.majorType == majorType && it.info == additionalInfo
         }
+    }
+
+}
+
+
+
+internal object CDDLSerializer : KSerializer<CDDL> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("CDDL", PrimitiveKind.STRING)
+
+    override fun serialize(encoder: Encoder, value: CDDL) {
+        encoder.encodeString(value.format)
+    }
+
+    override fun deserialize(decoder: Decoder): CDDL {
+        return CDDL.util.fromFormat(decoder.decodeString())
     }
 }

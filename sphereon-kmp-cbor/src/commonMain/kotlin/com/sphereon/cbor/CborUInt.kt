@@ -1,8 +1,8 @@
 package com.sphereon.cbor
 
 import com.sphereon.kmp.LongKMP
-import com.sphereon.kmp.bigIntFromUInt
-import com.sphereon.kmp.bigIntFromULong
+import com.sphereon.kmp.uintToKmpLong
+import com.sphereon.kmp.ulongToKmpLong
 import kotlinx.io.bytestring.ByteStringBuilder
 import kotlin.js.JsExport
 import kotlin.js.JsName
@@ -25,11 +25,11 @@ open class CborUInt(value: LongKMP /*UInt*/) : AbstractCborInt<cddl_uint>(value/
     companion object {
         internal fun decode(encodedCbor: ByteArray, offset: Int): Pair<Int, CborUInt> {
             val (newOffset, value) = Cbor.decodeLength(encodedCbor, offset)
-            return Pair(newOffset, CborUInt(value.bigIntFromULong()))
+            return Pair(newOffset, CborUInt(value.ulongToKmpLong()))
         }
     }
 }
 
 fun CborUInt.toUInt() = value.toUInt()
-fun UInt.toCborUIntFromUint() = CborUInt(this.bigIntFromUInt())
+fun UInt.toCborUIntFromUint() = CborUInt(this.uintToKmpLong())
 fun cddl_uint.toCborUInt() = CborUInt(this)

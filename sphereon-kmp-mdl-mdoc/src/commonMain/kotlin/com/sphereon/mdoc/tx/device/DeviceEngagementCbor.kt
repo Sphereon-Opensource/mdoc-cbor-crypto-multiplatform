@@ -18,12 +18,12 @@ import com.sphereon.cbor.cborViewArrayToCborItem
 import com.sphereon.cbor.cddl_uint
 import com.sphereon.cbor.cose.CoseKeyCbor
 import com.sphereon.cbor.cose.CoseKeyJson
-import com.sphereon.cbor.cose.NumberLabel
-import com.sphereon.cbor.cose.StringLabel
+import com.sphereon.cbor.NumberLabel
+import com.sphereon.cbor.StringLabel
 import com.sphereon.cbor.toCborUInt
 import com.sphereon.kmp.LongKMP
-import com.sphereon.kmp.bigIntFromNumber
-import com.sphereon.kmp.toBigInt
+import com.sphereon.kmp.numberToKmpLong
+import com.sphereon.kmp.toKmpLong
 import kotlin.js.JsExport
 import kotlin.js.JsName
 
@@ -236,7 +236,7 @@ enum class DeviceRetrievalMethodType(val type: Int) {
     NFC(1), BLE(2), WIFI_WARE(3);
 
     fun toCborItem(): CborUInt {
-        return CborUInt(type.bigIntFromNumber())
+        return CborUInt(type.numberToKmpLong())
     }
 
     companion object {
@@ -397,7 +397,7 @@ data class NfcOptionsJson(
     constructor(
         maxCommandDataFieldLength: Int, // maps to number in JS
         maxResponseDataFieldLength: Int // maps to number in JS
-    ) : this(maxCommandDataFieldLength.toBigInt(), maxResponseDataFieldLength.toBigInt())
+    ) : this(maxCommandDataFieldLength.toKmpLong(), maxResponseDataFieldLength.toKmpLong())
 
     override fun toCbor(): NfcOptionsCbor {
         TODO("Not yet implemented")

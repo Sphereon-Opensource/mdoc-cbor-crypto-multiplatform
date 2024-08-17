@@ -5,6 +5,8 @@ import com.sphereon.cbor.CborByteString
 import com.sphereon.cbor.CborItem
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborUInt
+import com.sphereon.cbor.NumberLabel
+import kotlinx.serialization.json.JsonObject
 
 @JsExport
 actual external interface IKey {
@@ -55,8 +57,7 @@ actual external interface ICoseKeyJson : IKey {
     actual override val y: String?
     actual override val d: String?
     actual override val x5chain: Array<String>?
-    actual override val additional: MutableMap<*, *>?
-
+    actual override val additional: JsonObject?
 }
 
 /**

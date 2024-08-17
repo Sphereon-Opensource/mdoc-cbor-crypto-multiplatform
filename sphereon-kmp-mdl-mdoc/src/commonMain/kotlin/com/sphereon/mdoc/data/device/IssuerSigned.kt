@@ -14,11 +14,12 @@ import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborUInt
 import com.sphereon.cbor.CborView
 import com.sphereon.cbor.JsonView
+import com.sphereon.cbor.JsonView2
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.cose.COSE_Sign1
 import com.sphereon.cbor.cose.CoseSign1Cbor
 import com.sphereon.cbor.cose.CoseSign1Json
-import com.sphereon.cbor.cose.StringLabel
+import com.sphereon.cbor.StringLabel
 import com.sphereon.cbor.toCborByteString
 import com.sphereon.cbor.toCborString
 import com.sphereon.cbor.toCborUInt
@@ -29,6 +30,8 @@ import com.sphereon.mdoc.data.DataElementValue
 import com.sphereon.mdoc.data.NameSpace
 import com.sphereon.mdoc.data.mso.MobileSecurityObjectCbor
 import com.sphereon.mdoc.data.mso.MobileSecurityObjectJson
+import kotlinx.serialization.Polymorphic
+import kotlinx.serialization.Serializable
 import kotlin.js.JsExport
 
 @JsExport
@@ -136,7 +139,6 @@ data class IssuerSignedCbor(
         return "IssuerSignedCbor(nameSpaces=$nameSpaces, issuerAuth=$issuerAuth)"
     }
 
-
     companion object {
         val NAME_SPACES = StringLabel("nameSpaces")
         val ISSUER_AUTH = StringLabel("issuerAuth")
@@ -149,7 +151,7 @@ data class IssuerSignedCbor(
             val nameSpaces = if (nameSpacesMap == null) null else CborMap(mutableMapOf(* nameSpacesMap.value.map {
                 Pair(
                     it.key,
-                    CborArray(it.value.value.map { encoded -> CborEncodedItem(IssuerSignedItemCbor.fromCborItem(encoded.decodedValue)) }
+                    CborArray(it.value.value.map { encoded -> CborEncodedItem(IssuerSignedItemCbor.static.fromCborItem(encoded.decodedValue)) }
                         .toMutableList())
                 )
             }.toTypedArray()))
@@ -168,23 +170,25 @@ data class IssuerSignedCbor(
 
 
 @JsExport
-data class IssuerSignedItemJson<Type : Any>(
+@Serializable
+data class IssuerSignedItemJson(
     val digestID: LongKMP,
     val random: String, //todo: also add hex validation
     val elementIdentifier: String,
-    val elementValue: Type,
+    @Polymorphic
+    val elementValue: Any,
     val elementCDDL: CDDLType // We need this as otherwise we would lose type info. Strings can be (full)dates, tstr and text etc.
-) : JsonView<IssuerSignedItemCbor<Type>>() {
-    override fun toCbor(): IssuerSignedItemCbor<Type> = IssuerSignedItemCbor(
+) : JsonView2() {
+    override fun toCbor(): IssuerSignedItemCbor<Any> = IssuerSignedItemCbor(
         digestID = digestID.toCborUInt(),
         random = random.toCborByteString(),
         elementIdentifier = elementIdentifier.toCborString(),
-        elementValue = (elementCDDL as CDDL).newCborItem(elementValue) as DataElementValue<Type>
+        elementValue = (elementCDDL as CDDL).newCborItem(elementValue) as DataElementValue<Any>
     )
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is IssuerSignedItemJson<*>) return false
+        if (other !is IssuerSignedItemJson) return false
 
         if (digestID != other.digestID) return false
         if (random != other.random) return false
@@ -210,22 +214,21 @@ data class IssuerSignedItemJson<Type : Any>(
 }
 
 
-@OptIn(ExperimentalStdlibApi::class)
 @JsExport
 data class IssuerSignedItemCbor<Type : Any>(
     val digestID: CborUInt,
     val random: CborByteString,
     val elementIdentifier: DataElementIdentifier,
     val elementValue: DataElementValue<Type>
-) : CborView<IssuerSignedItemCbor<Type>, IssuerSignedItemJson<Type>, Map<StringLabel, AnyCborItem>>(CDDL.map) {
+) : CborView<IssuerSignedItemCbor<Type>, IssuerSignedItemJson, Map<StringLabel, AnyCborItem>>(CDDL.map) {
     override fun cborBuilder(): CborBuilder<IssuerSignedItemCbor<Type>> {
-        return CborMap.builder(this).put(DIGEST_ID, digestID).put(RANDOM, random)
-            .put(ELEMENT_IDENTIFIER, elementIdentifier).put(
-                ELEMENT_VALUE, elementValue
+        return CborMap.builder(this).put(static.DIGEST_ID, digestID).put(static.RANDOM, random)
+            .put(static.ELEMENT_IDENTIFIER, elementIdentifier).put(
+                static.ELEMENT_VALUE, elementValue
             ).end()
     }
 
-    override fun toJson(): IssuerSignedItemJson<Type> {
+    override fun toJson(): IssuerSignedItemJson {
         var elementVal = this.elementValue.value
         var elementCDDL = this.elementValue.cddl
         if (elementVal is CborItem<*>) {
@@ -234,6 +237,7 @@ data class IssuerSignedItemCbor<Type : Any>(
         } else if (this.elementValue is CborCollectionItem<*>) {
             elementVal = this.elementValue.toJson() as Type
         }
+
         return IssuerSignedItemJson(
             digestID = digestID.value,
             random = random.value.encodeToBase64Url(),
@@ -269,8 +273,7 @@ data class IssuerSignedItemCbor<Type : Any>(
         return "IssuerSignedItemCbor(digestID=$digestID, random=$random, elementIdentifier=$elementIdentifier, elementValue=$elementValue)"
     }
 
-
-    companion object {
+    object static {
         val DIGEST_ID = StringLabel("digestID")
         val RANDOM = StringLabel("random")
         val ELEMENT_IDENTIFIER = StringLabel("elementIdentifier")
@@ -286,9 +289,12 @@ data class IssuerSignedItemCbor<Type : Any>(
 
         fun cborDecode(data: ByteArray): IssuerSignedItemCbor<*> = fromCborItem(cborSerializer.decode(data))
     }
+
+
+
 }
 
 
 typealias IssuerSignedNamesSpacesCbor = CborMap<NameSpace, CborArray<CborEncodedItem<IssuerSignedItemCbor<Any>>>>
-typealias IssuerSignedNamesSpacesJson = MutableMap<String, Array<IssuerSignedItemJson<Any>>>
+typealias IssuerSignedNamesSpacesJson = MutableMap<String, Array<IssuerSignedItemJson>>
 

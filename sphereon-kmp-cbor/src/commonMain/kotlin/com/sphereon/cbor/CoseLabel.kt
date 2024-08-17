@@ -1,17 +1,6 @@
-package com.sphereon.cbor.cose
+package com.sphereon.cbor
 
-import com.sphereon.cbor.AnyCborItem
-import com.sphereon.cbor.CDDLType
-import com.sphereon.cbor.Cbor
-import com.sphereon.cbor.CborArray
-import com.sphereon.cbor.CborConst
-import com.sphereon.cbor.CborItem
-import com.sphereon.cbor.CborMap
-import com.sphereon.cbor.CborNInt
-import com.sphereon.cbor.CborString
-import com.sphereon.cbor.CborUInt
-import com.sphereon.cbor.cddl_list
-import com.sphereon.cbor.cose.NumberLabeledMap.Companion.decodeNumberLabeledMap
+import com.sphereon.cbor.NumberLabeledMap.Companion.decodeNumberLabeledMap
 import kotlin.js.JsExport
 
 

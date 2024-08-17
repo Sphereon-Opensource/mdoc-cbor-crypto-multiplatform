@@ -1,6 +1,13 @@
 package com.sphereon.kmp
 
 
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlin.js.JsExport
 import kotlin.js.JsName
 
@@ -12,8 +19,12 @@ import kotlin.js.JsName
  *
  */
 @JsExport
+@Serializable(with = LongKMPSerializer::class)
 class LongKMP(value: Double) : Number(), Comparable<LongKMP> {
     private val long: Long = value.toLong()
+    @JsName("fromString")
+    constructor(value: String) : this(value.toDouble())
+
     @JsName("fromLong")
     constructor(value: Long) : this(value.toDouble())
 
@@ -37,20 +48,22 @@ class LongKMP(value: Double) : Number(), Comparable<LongKMP> {
     }
 
     override fun toLong(): Long {
-        return long.toLong()
+        return long
     }
 
     fun toULong(): ULong {
-        return long.toLong().toULong()
+        return long.toULong()
     }
 
     fun toUInt(): UInt {
-        return long.toLong().toUInt()
+        return long.toUInt()
     }
 
     override fun toShort(): Short {
         return long.toShort()
     }
+
+    override fun toString() = this.long.toString()
 
     override fun compareTo(other: LongKMP): Int {
         return long.compareTo(other.long)
@@ -69,25 +82,33 @@ class LongKMP(value: Double) : Number(), Comparable<LongKMP> {
         return long.hashCode()
     }
 
-    override fun toString(): String {
-        return "LongKMP($long)"
-    }
 
 
 }
 
-@JsExport
-fun Number.toBigInt() = LongKMP(this.toLong())
+object LongKMPSerializer : KSerializer<LongKMP> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("LongKMP", PrimitiveKind.LONG)
+
+    override fun serialize(encoder: Encoder, value: LongKMP) {
+        encoder.encodeLong(value.toLong())
+    }
+
+    override fun deserialize(decoder: Decoder): LongKMP {
+        return LongKMP(decoder.decodeLong())
+    }
+}
+
+fun Number.toKmpLong() = LongKMP(this.toLong())
 
 @JsExport
-fun Number.bigIntFromNumber() = this.toBigInt()
-fun UInt.bigIntFromUInt() = LongKMP(this.toLong())
+fun Number.numberToKmpLong() = this.toKmpLong()
+fun UInt.uintToKmpLong() = LongKMP(this.toLong())
 
 @JsExport
-fun ULong.bigIntFromULong() = LongKMP(this.toLong())
+fun ULong.ulongToKmpLong() = LongKMP(this.toLong())
 
 @JsExport
-fun Byte.bigIntFromByte() = LongKMP(this.toLong())
+fun Byte.byteToKmpLong() = LongKMP(this.toLong())
 
 @JsExport
-fun String.bigIntFromString() = LongKMP(this.toLong())
+fun String.stringToKmpLong() = LongKMP(this)

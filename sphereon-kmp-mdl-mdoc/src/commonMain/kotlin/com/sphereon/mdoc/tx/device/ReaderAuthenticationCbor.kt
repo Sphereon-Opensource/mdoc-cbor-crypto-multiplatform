@@ -99,9 +99,9 @@ data class SessionTranscriptCbor(
 }
 
 
-sealed class HandoverJson<CborType> : JsonView<CborType>()
+sealed class HandoverJson<CborType: Any> : JsonView<CborType>()
 
-sealed class HandoverCbor<CborType, JsonType> : CborView<CborType, JsonView<CborType>, CborArray<AnyCborItem>>(CDDL.list)
+sealed class HandoverCbor<CborType: Any, JsonType> : CborView<CborType, JsonView<CborType>, CborArray<AnyCborItem>>(CDDL.list)
 class QrHandoverJson : HandoverJson<QrHandoverCbor>() {
     override fun toCbor(): QrHandoverCbor {
         return QrHandoverCbor()

@@ -12,7 +12,7 @@ import com.sphereon.cbor.CborString
 import com.sphereon.cbor.CborView
 import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.cddl_tstr
-import com.sphereon.cbor.cose.StringLabel
+import com.sphereon.cbor.StringLabel
 import com.sphereon.cbor.toCborBool
 import com.sphereon.cbor.toCborString
 import com.sphereon.mdoc.data.DataElementCbor

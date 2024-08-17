@@ -1,6 +1,14 @@
 package com.sphereon.cbor.cose
 
+import com.sphereon.cbor.CDDL
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlin.js.JsExport
 import kotlin.js.JsName
 
@@ -36,8 +44,7 @@ interface CoseAlgorithm {
  */
 
 
-//todo: Add curve
-@Serializable
+@Serializable(with = CoseAlgorithmSerializer::class)
 @JsExport
 sealed class CoseSignatureAlgorithm(
     override val name: String,
@@ -143,14 +150,16 @@ sealed class CoseSignatureAlgorithm(
             "RSASSA-PSS w/ SHA-512"
         )
 
-
-    companion object {
+    object Static {
         val asList = listOf(ES256, ES384, ES512, EdDSA, HS256_64, HS256, HS384, HS512)
         fun fromValue(value: Int?): CoseSignatureAlgorithm? {
             if (value == null) {
                 return null
             }
             return asList.firstOrNull { it.value == value.toInt() }
+        }
+        fun fromName(name: String): CoseSignatureAlgorithm {
+            return asList.first { it.name == name }
         }
     }
 
@@ -180,3 +189,15 @@ sealed class CBOREncryptionAlgorithm(override val algValue: String) : JwaAlgorit
     object PBES2_HS384_A192KW : JwaEncryptionAlgorithm("PBES2-HS384+A192KW")
     object PBES2_HS512_A256KW : JwaEncryptionAlgorithm("PBES2-HS512+A256KW")
 }*/
+
+internal object CoseAlgorithmSerializer : KSerializer<CoseSignatureAlgorithm> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("CoseAlgorithm", PrimitiveKind.STRING)
+
+    override fun serialize(encoder: Encoder, value: CoseSignatureAlgorithm) {
+        encoder.encodeString(value.name)
+    }
+
+    override fun deserialize(decoder: Decoder): CoseSignatureAlgorithm {
+        return CoseSignatureAlgorithm.Static.fromName(decoder.decodeString())
+    }
+}

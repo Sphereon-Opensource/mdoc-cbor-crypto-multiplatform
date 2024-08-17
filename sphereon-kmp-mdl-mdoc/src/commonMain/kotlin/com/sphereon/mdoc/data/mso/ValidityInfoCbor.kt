@@ -9,7 +9,7 @@ import com.sphereon.cbor.CborView
 import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.cddl_tdate
-import com.sphereon.cbor.cose.StringLabel
+import com.sphereon.cbor.StringLabel
 import kotlin.js.JsExport
 
 @JsExport

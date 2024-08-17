@@ -12,7 +12,7 @@ import com.sphereon.cbor.CborUInt
 import com.sphereon.cbor.CborView
 import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.cborViewArrayToCborItem
-import com.sphereon.cbor.cose.StringLabel
+import com.sphereon.cbor.StringLabel
 import com.sphereon.kmp.LongKMP
 import com.sphereon.mdoc.data.DeviceResponseDocumentError
 import com.sphereon.mdoc.data.DocType

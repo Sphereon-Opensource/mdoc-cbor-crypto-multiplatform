@@ -8,19 +8,20 @@ import com.sphereon.cbor.CborBuilder
 import com.sphereon.cbor.CborByteString
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborString
-import com.sphereon.cbor.CborView
-import com.sphereon.cbor.JsonView
+import com.sphereon.cbor.CborView2
+import com.sphereon.cbor.JsonView2
+import com.sphereon.cbor.NumberLabel
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.encodeToBase64Array
 import com.sphereon.cbor.encodeToCborByteArray
 import com.sphereon.cbor.toCborByteString
 import com.sphereon.cbor.toCborString
 import com.sphereon.cbor.toCborStringArray
-import com.sphereon.cbor.encodeToHexArray
+import com.sphereon.cbor.toNumberLabel
 import com.sphereon.cbor.toStringArray
 import com.sphereon.kmp.Encoding
 import com.sphereon.kmp.LongKMP
-import com.sphereon.kmp.bigIntFromNumber
+import com.sphereon.kmp.numberToKmpLong
 import kotlinx.serialization.Serializable
 import kotlin.js.JsExport
 
@@ -41,7 +42,8 @@ data class CoseHeaderJson(
     val iv: String? = null,
     val partialIv: String? = null,
     val x5chain: Array<String>? = null,
-) : JsonView<CoseHeaderCbor>() {
+) : JsonView2() {
+
     override fun toCbor(): CoseHeaderCbor = CoseHeaderCbor(
         alg = alg,
         crit = crit?.toCborStringArray(),
@@ -73,7 +75,7 @@ data class CoseHeaderCbor(
     val iv: CborByteString? = null,
     val partialIv: CborByteString? = null,
     val x5chain: CborArray<CborByteString>? = null,
-) : CborView<CoseHeaderCbor, CoseHeaderJson, CborMap<NumberLabel, AnyCborItem>>(CDDL.map) {
+) : CborView2<CoseHeaderCbor, CoseHeaderJson, CborMap<NumberLabel, AnyCborItem>>(CDDL.map) {
     companion object {
         val ALG = NumberLabel(1)
         val CRIT = NumberLabel(2)
@@ -96,7 +98,7 @@ data class CoseHeaderCbor(
                 x5Chain = CborArray(mutableListOf(x5Chain))
             }
             @Suppress("UNCHECKED_CAST") return CoseHeaderCbor(
-                alg = CoseSignatureAlgorithm.fromValue(algValue),
+                alg = CoseSignatureAlgorithm.Static.fromValue(algValue),
                 crit = CRIT.optional(m),
                 contentType = CONTENT_TYPE.optional(m),
                 kid = KID.optional(m),
@@ -110,7 +112,7 @@ data class CoseHeaderCbor(
     }
 
     override fun cborBuilder(): CborBuilder<CoseHeaderCbor> {
-        return CborMap.builder(this).put(ALG, alg?.value?.bigIntFromNumber()?.toInt()?.toNumberLabel(), true)
+        return CborMap.builder(this).put(ALG, alg?.value?.numberToKmpLong()?.toInt()?.toNumberLabel(), true)
             .put(CRIT, crit, true).put(CONTENT_TYPE, contentType, true).put(KID, kid, true).put(IV, iv, true)
             .put(PARTIAL_IV, partialIv, true)
             /**

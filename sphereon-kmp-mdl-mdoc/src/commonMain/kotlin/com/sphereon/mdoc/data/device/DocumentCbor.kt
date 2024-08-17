@@ -9,12 +9,8 @@ import com.sphereon.cbor.CborString
 import com.sphereon.cbor.CborView
 import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.cborSerializer
-import com.sphereon.cbor.cose.StringLabel
+import com.sphereon.cbor.StringLabel
 import com.sphereon.mdoc.data.DocumentErrors
-import com.sphereon.mdoc.data.mso.KeyAuthorizationsCbor
-import com.sphereon.mdoc.data.mso.KeyAuthorizationsCbor.Companion.DATA_ELEMENTS
-import com.sphereon.mdoc.tx.device.DeviceRetrievalMethodCbor
-import com.sphereon.mdoc.tx.device.DeviceRetrievalMethodCbor.Companion
 import kotlin.js.JsExport
 
 @JsExport

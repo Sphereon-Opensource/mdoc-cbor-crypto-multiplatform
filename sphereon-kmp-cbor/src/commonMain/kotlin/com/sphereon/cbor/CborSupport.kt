@@ -1,15 +1,15 @@
 package com.sphereon.cbor
 
-
 import kotlin.js.JsExport
 
 
 val cborSerializer = CborSupport.serializer
 
+
 @JsExport
 object CborSupport {
     val serializer by lazy {
-        return@lazy com.sphereon.cbor.Cbor
+        return@lazy Cbor
     }
 
     fun <Type> itemFromValue(value: Type, cddl: CDDL): CborItem<Type> {

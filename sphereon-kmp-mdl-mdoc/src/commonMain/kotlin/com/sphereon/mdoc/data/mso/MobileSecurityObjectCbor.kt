@@ -8,7 +8,7 @@ import com.sphereon.cbor.CborString
 import com.sphereon.cbor.CborView
 import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.cborSerializer
-import com.sphereon.cbor.cose.StringLabel
+import com.sphereon.cbor.StringLabel
 import com.sphereon.kmp.LongKMP
 import com.sphereon.mdoc.data.DocType
 import com.sphereon.mdoc.data.NameSpace
