@@ -1,15 +1,15 @@
 package com.sphereon.crypto
 
-import com.sphereon.cbor.cose.CoseAlgorithm
-import com.sphereon.cbor.cose.CoseCurve
-import com.sphereon.cbor.cose.CoseKeyOperations
-import com.sphereon.cbor.cose.CoseKeyType
-import com.sphereon.cbor.cose.CoseSignatureAlgorithm
-import com.sphereon.jose.jwa.JwaAlgorithm
-import com.sphereon.jose.jwa.JwaCurve
-import com.sphereon.jose.jwa.JwaKeyType
-import com.sphereon.jose.jwa.JwaSignatureAlgorithm
-import com.sphereon.jose.jwk.JoseKeyOperations
+import com.sphereon.crypto.cose.CoseAlgorithm
+import com.sphereon.crypto.cose.CoseCurve
+import com.sphereon.crypto.cose.CoseKeyOperations
+import com.sphereon.crypto.cose.CoseKeyType
+import com.sphereon.crypto.cose.CoseSignatureAlgorithm
+import com.sphereon.crypto.jose.JwaAlgorithm
+import com.sphereon.crypto.jose.JwaCurve
+import com.sphereon.crypto.jose.JwaKeyType
+import com.sphereon.crypto.jose.JwaSignatureAlgorithm
+import com.sphereon.crypto.jose.JoseKeyOperations
 import kotlin.js.JsExport
 
 @JsExport

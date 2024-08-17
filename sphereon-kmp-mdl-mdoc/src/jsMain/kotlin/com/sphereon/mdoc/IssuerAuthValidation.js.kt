@@ -1,8 +1,7 @@
 package com.sphereon.mdoc
 
-import com.sphereon.cbor.cose.COSE_Sign1
-import com.sphereon.cbor.cose.CoseKeyCbor
-import com.sphereon.cbor.cose.ICoseKeyCbor
+import com.sphereon.crypto.cose.COSE_Sign1
+import com.sphereon.crypto.cose.ICoseKeyCbor
 import com.sphereon.crypto.CoseCryptoServiceJS
 import com.sphereon.crypto.CoseCryptoServiceJSAdapter
 import com.sphereon.crypto.CryptoServiceJS
@@ -10,9 +9,6 @@ import com.sphereon.crypto.IKeyInfo
 import com.sphereon.crypto.IVerifyResult
 import com.sphereon.crypto.IVerifySignatureResult
 import com.sphereon.crypto.IX509VerificationResult
-import com.sphereon.crypto.VerifyResult
-import com.sphereon.crypto.VerifySignatureResult
-import com.sphereon.crypto.X509VerificationResult
 import com.sphereon.crypto.coseService
 import com.sphereon.kmp.DateTimeUtils
 import com.sphereon.kmp.getDateTime

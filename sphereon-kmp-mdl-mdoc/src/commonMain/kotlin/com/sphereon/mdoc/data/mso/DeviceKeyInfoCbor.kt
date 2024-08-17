@@ -7,8 +7,8 @@ import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborView
 import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.cborSerializer
-import com.sphereon.cbor.cose.COSE_Key
-import com.sphereon.cbor.cose.CoseKeyJson
+import com.sphereon.crypto.cose.COSE_Key
+import com.sphereon.crypto.cose.CoseKeyJson
 import com.sphereon.cbor.StringLabel
 import com.sphereon.kmp.LongKMP
 import kotlinx.serialization.Contextual

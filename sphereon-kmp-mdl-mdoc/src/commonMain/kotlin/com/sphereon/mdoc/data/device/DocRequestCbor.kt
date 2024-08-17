@@ -14,9 +14,9 @@ import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.cddl_bstr
 import com.sphereon.cbor.cddl_tstr
-import com.sphereon.cbor.cose.COSE_Sign1
-import com.sphereon.cbor.cose.CoseSign1Cbor
-import com.sphereon.cbor.cose.CoseSign1Json
+import com.sphereon.crypto.cose.COSE_Sign1
+import com.sphereon.crypto.cose.CoseSign1Cbor
+import com.sphereon.crypto.cose.CoseSign1Json
 import com.sphereon.cbor.StringLabel
 import com.sphereon.mdoc.data.RequestInfo
 import com.sphereon.mdoc.tx.device.ReaderAuthenticationCbor

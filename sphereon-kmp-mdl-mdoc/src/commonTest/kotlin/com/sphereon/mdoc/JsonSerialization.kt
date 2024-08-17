@@ -1,5 +1,5 @@
 import com.sphereon.cbor.JsonView2
-import com.sphereon.cbor.cose.CoseKeyJson
+import com.sphereon.crypto.cose.CoseKeyJson
 import com.sphereon.mdoc.data.device.IssuerSignedItemJson
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule

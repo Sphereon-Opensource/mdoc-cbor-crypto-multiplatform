@@ -9,7 +9,7 @@ import com.sphereon.cbor.CborString
 import com.sphereon.cbor.CborView
 import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.cborSerializer
-import com.sphereon.cbor.cose.COSE_Key
+import com.sphereon.crypto.cose.COSE_Key
 import com.sphereon.mdoc.data.device.DeviceItemsRequestCbor
 import com.sphereon.mdoc.data.device.DeviceItemsRequestJson
 import kotlin.js.JsExport

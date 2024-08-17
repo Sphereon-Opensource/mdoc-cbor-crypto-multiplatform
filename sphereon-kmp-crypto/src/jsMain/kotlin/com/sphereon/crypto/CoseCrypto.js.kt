@@ -1,9 +1,9 @@
 package com.sphereon.crypto
 
-import com.sphereon.cbor.cose.CoseKeyType
-import com.sphereon.cbor.cose.CoseSign1Cbor
-import com.sphereon.cbor.cose.CoseSign1InputCbor
-import com.sphereon.cbor.cose.ICoseKeyCbor
+import com.sphereon.crypto.cose.CoseKeyType
+import com.sphereon.crypto.cose.CoseSign1Cbor
+import com.sphereon.crypto.cose.CoseSign1InputCbor
+import com.sphereon.crypto.cose.ICoseKeyCbor
 import kotlinx.coroutines.await
 import kotlin.js.Promise
 

@@ -1,6 +1,6 @@
 package com.sphereon.crypto
 
-import com.sphereon.cbor.cose.IKey
+import com.sphereon.crypto.cose.IKey
 import kotlinx.coroutines.await
 import kotlin.js.Promise
 
@@ -10,7 +10,7 @@ import kotlin.js.Promise
  */
 @JsExport
 external interface IX509ServiceJS {
-    fun <KeyType:IKey> verifyCertificateChainJS(
+    fun <KeyType: IKey> verifyCertificateChainJS(
         chainDER: Array<ByteArray>?,
         chainPEM: Array<String>?,
         trustedCerts: Array<String>?,
@@ -132,7 +132,7 @@ internal object X509ServiceJSAdapter : X509CallbackService {
         return this.trustedCerts?.toTypedArray()
     }
 
-    override suspend fun <KeyType:IKey> verifyCertificateChain(
+    override suspend fun <KeyType: IKey> verifyCertificateChain(
         chainDER: Array<ByteArray>?,
         chainPEM: Array<String>?,
         trustedCerts: Array<String>?,

@@ -1,7 +1,7 @@
 package com.sphereon.mdoc
 
-import com.sphereon.cbor.cose.COSE_Sign1
-import com.sphereon.cbor.cose.ICoseKeyCbor
+import com.sphereon.crypto.cose.COSE_Sign1
+import com.sphereon.crypto.cose.ICoseKeyCbor
 import com.sphereon.crypto.IKeyInfo
 import com.sphereon.crypto.IVerifyResults
 import com.sphereon.kmp.DateTimeUtils

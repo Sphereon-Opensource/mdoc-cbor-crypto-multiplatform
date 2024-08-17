@@ -2,13 +2,13 @@ package com.sphereon.mdoc.data.device
 
 import com.sphereon.cbor.CborArray
 import com.sphereon.cbor.CborByteString
-import com.sphereon.cbor.cose.CoseCurve
-import com.sphereon.cbor.cose.CoseHeaderCbor
-import com.sphereon.cbor.cose.CoseKeyJson
-import com.sphereon.cbor.cose.CoseKeyType
-import com.sphereon.cbor.cose.CoseSign1Cbor
-import com.sphereon.cbor.cose.CoseSignatureAlgorithm
-import com.sphereon.cbor.cose.CoseSignatureStructureCbor
+import com.sphereon.crypto.cose.CoseCurve
+import com.sphereon.crypto.cose.CoseHeaderCbor
+import com.sphereon.crypto.cose.CoseKeyJson
+import com.sphereon.crypto.cose.CoseKeyType
+import com.sphereon.crypto.cose.CoseSign1Cbor
+import com.sphereon.crypto.cose.CoseSignatureAlgorithm
+import com.sphereon.crypto.cose.CoseSignatureStructureCbor
 import com.sphereon.cbor.stringToCborByteString
 import com.sphereon.cbor.toCborByteString
 import com.sphereon.kmp.Encoding

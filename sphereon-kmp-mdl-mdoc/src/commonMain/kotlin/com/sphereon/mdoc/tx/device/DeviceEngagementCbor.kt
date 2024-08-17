@@ -16,8 +16,8 @@ import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.cborViewArrayToCborItem
 import com.sphereon.cbor.cddl_uint
-import com.sphereon.cbor.cose.CoseKeyCbor
-import com.sphereon.cbor.cose.CoseKeyJson
+import com.sphereon.crypto.cose.CoseKeyCbor
+import com.sphereon.crypto.cose.CoseKeyJson
 import com.sphereon.cbor.NumberLabel
 import com.sphereon.cbor.StringLabel
 import com.sphereon.cbor.toCborUInt

@@ -2,7 +2,7 @@ package com.sphereon.mdoc.mso
 
 import com.sphereon.cbor.CborHexEncodedItem
 import com.sphereon.cbor.CborUInt
-import com.sphereon.cbor.cose.COSE_Key
+import com.sphereon.crypto.cose.COSE_Key
 import com.sphereon.cbor.toCborBool
 import com.sphereon.kmp.numberToKmpLong
 import com.sphereon.kmp.decodeFromHex

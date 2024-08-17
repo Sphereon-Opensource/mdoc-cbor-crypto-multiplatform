@@ -16,9 +16,9 @@ import com.sphereon.cbor.CborView
 import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.JsonView2
 import com.sphereon.cbor.cborSerializer
-import com.sphereon.cbor.cose.COSE_Sign1
-import com.sphereon.cbor.cose.CoseSign1Cbor
-import com.sphereon.cbor.cose.CoseSign1Json
+import com.sphereon.crypto.cose.COSE_Sign1
+import com.sphereon.crypto.cose.CoseSign1Cbor
+import com.sphereon.crypto.cose.CoseSign1Json
 import com.sphereon.cbor.StringLabel
 import com.sphereon.cbor.toCborByteString
 import com.sphereon.cbor.toCborString

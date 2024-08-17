@@ -1,15 +1,14 @@
 package com.sphereon.mdoc.data
 
-import com.sphereon.cbor.cose.COSE_Sign1
-import com.sphereon.cbor.cose.CoseKeyCbor
-import com.sphereon.cbor.cose.ICoseKeyCbor
-import com.sphereon.crypto.ICoseCryptoService
+import com.sphereon.crypto.cose.COSE_Sign1
+import com.sphereon.crypto.cose.ICoseKeyCbor
 import com.sphereon.crypto.CryptoService
+import com.sphereon.crypto.ICoseCryptoService
 import com.sphereon.crypto.IKeyInfo
 import com.sphereon.crypto.IVerifyResults
+import com.sphereon.crypto.IX509Service
 import com.sphereon.crypto.VerifyResult
 import com.sphereon.crypto.VerifyResults
-import com.sphereon.crypto.IX509Service
 import com.sphereon.kmp.DateTimeUtils
 import com.sphereon.kmp.getDateTime
 import com.sphereon.mdoc.MdocConst

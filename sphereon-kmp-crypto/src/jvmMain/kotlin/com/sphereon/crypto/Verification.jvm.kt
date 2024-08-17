@@ -1,6 +1,6 @@
 package com.sphereon.crypto
 
-import com.sphereon.cbor.cose.IKey
+import com.sphereon.crypto.cose.IKey
 
 
 actual interface IVerifyResult {
