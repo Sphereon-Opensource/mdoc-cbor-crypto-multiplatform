@@ -62,13 +62,13 @@ data class DeviceRequestCbor(
     /**
      * docRequests contains an array of all requested documents.
      */
-    val docRequests: CborArray<DocRequestCbor>
+    val docRequests: Array<DocRequestCbor>
 
 ) : CborView<DeviceRequestCbor, DeviceRequestJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
     override fun cborBuilder(): CborBuilder<DeviceRequestCbor> =
         CborMap.builder(this).put(VERSION, version, optional = false).put(
             DOC_REQUESTS,
-            CborArray(docRequests.value.map { it.toCbor() }.toMutableList()),
+            CborArray(docRequests.map { it.toCbor() }.toMutableList()),
             optional = false
         )
             .end()
@@ -106,9 +106,9 @@ data class DeviceRequestCbor(
         fun fromCborItem(m: CborMap<StringLabel, AnyCborItem>): DeviceRequestCbor {
             return DeviceRequestCbor(
                 VERSION.required(m),
-                CborArray(DOC_REQUESTS.required<CborArray<CborMap<StringLabel, AnyCborItem>>>(m).value.map {
+                DOC_REQUESTS.required<CborArray<CborMap<StringLabel, AnyCborItem>>>(m).value.map {
                     DocRequestCbor.fromCborItem(it)
-                }.toMutableList())
+                }.toTypedArray()
             )
         }
 

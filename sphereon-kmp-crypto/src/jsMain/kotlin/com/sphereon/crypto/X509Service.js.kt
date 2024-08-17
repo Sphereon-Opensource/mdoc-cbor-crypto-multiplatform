@@ -1,6 +1,5 @@
 package com.sphereon.crypto
 
-import com.sphereon.crypto.cose.IKey
 import kotlinx.coroutines.await
 import kotlin.js.Promise
 

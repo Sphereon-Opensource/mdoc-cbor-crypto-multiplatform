@@ -1,6 +1,10 @@
 package com.sphereon.cbor
 
 import kotlinx.io.bytestring.ByteStringBuilder
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonPrimitive
 import kotlin.js.JsExport
 
 class CborStringIndefLength(value: List<cddl_tstr>) : CborItem<List<cddl_tstr>>(value, CDDL.tstr_indef_length) {
@@ -38,6 +42,11 @@ class CborStringIndefLength(value: List<cddl_tstr>) : CborItem<List<cddl_tstr>>(
             return Pair(cursor, CborStringIndefLength(chunks))
         }
     }
+
+        override fun toJson(): JsonArray {
+            TODO("Indef lengt to json not implemented yet")
+        }
+
 }
 
 @JsExport
@@ -46,6 +55,10 @@ class CborNil : CborSimple<cddl_nil>(null, CDDL.nil) {
         if (value != null) {
             throw IllegalArgumentException("Nil requires value ${null}")
         }
+    }
+
+    override fun toJson(): JsonElement {
+        return JsonNull
     }
 }
 
@@ -56,5 +69,9 @@ class CborNull : CborSimple<cddl_null>(null, CDDL.Null) {
         if (value != null) {
             throw IllegalArgumentException("Nil requires value ${null}")
         }
+    }
+
+    override fun toJson(): JsonElement {
+        return JsonNull
     }
 }

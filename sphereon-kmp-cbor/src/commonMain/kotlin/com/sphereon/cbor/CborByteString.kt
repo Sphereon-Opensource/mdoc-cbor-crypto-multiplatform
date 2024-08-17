@@ -3,11 +3,18 @@ package com.sphereon.cbor
 import com.sphereon.kmp.Encoding
 import com.sphereon.kmp.encodeTo
 import kotlinx.io.bytestring.ByteStringBuilder
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonPrimitive
 import kotlin.js.JsExport
 
 @JsExport
 open class CborByteString(value: cddl_bstr) :
     CborItem<cddl_bstr>(value, CDDL.bstr) {
+
+    override fun toJson(): JsonElement {
+        return JsonPrimitive(encodeTo(Encoding.BASE64URL))
+    }
+
     override fun encode(builder: ByteStringBuilder) {
         Cbor.encodeLength(builder, majorType!!, value.size)
         builder.append(value)
@@ -48,6 +55,9 @@ open class CborByteString(value: cddl_bstr) :
 fun cddl_tstr.stringToCborByteString() = CborByteString(this.encodeToByteArray())
 fun cddl_bstr.toCborByteString() = CborByteString(this)
 class CborByteStringIndefLength(value: List<cddl_bstr>) : CborItem<List<cddl_bstr>>(value, CDDL.bstr_indef_length) {
+    override fun toJson(): JsonElement {
+        TODO("Cbor bytestring indef length to JSON not implemented yet")
+    }
     override fun encode(builder: ByteStringBuilder) {
         val majorTypeShifted = (majorType!!.type shl 5)
         builder.append((majorTypeShifted + 31).toByte())

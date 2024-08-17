@@ -1,6 +1,8 @@
 package com.sphereon.cbor
 
 import kotlinx.io.bytestring.ByteStringBuilder
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonPrimitive
 import kotlin.experimental.or
 import kotlin.js.JsExport
 
@@ -39,6 +41,10 @@ class CborFloat32(value: cddl_float32) : CborFloat(value, CDDL.float32)
 
 @JsExport
 class CborDouble(value: cddl_float64) : CborItem<cddl_float64>(value, CDDL.float64) {
+    override fun toJson(): JsonElement {
+        return JsonPrimitive(toValue())
+    }
+
     override fun encode(builder: ByteStringBuilder) =
         builder.run {
             val majorTypeShifted = (majorType!!.type shl 5).toByte()

@@ -4,6 +4,8 @@ package com.sphereon.cbor
 
 
 import kotlinx.io.bytestring.ByteStringBuilder
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonPrimitive
 import kotlin.js.JsExport
 
 
@@ -60,14 +62,11 @@ sealed class CborItem<Type>(
             }
         }
 
-    @Suppress("UNCHECKED_CAST")
-    fun <T> toValue(): T {
-        return value as T
+    fun toValue(): Type {
+        return value
     }
 
-    open fun <T>toJson(): T {
-        return toValue()
-    }
+    abstract fun toJson(): JsonElement
 
     @Suppress("UNCHECKED_CAST")
     val asMap: cddl_map<Any, Any>

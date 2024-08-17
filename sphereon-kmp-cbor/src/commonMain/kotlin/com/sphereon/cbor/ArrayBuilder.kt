@@ -6,7 +6,7 @@ import kotlin.js.JsExport
  * Array builder.
  */
 @JsExport
-data class ArrayBuilder<T>(private val parent: T, private val array: CborArray<CborBaseItem>) {
+data class ArrayBuilder<T>(private val parent: T, private val array: CborArray<CborItem<*>>) {
     fun addRequired(vararg item: AnyCborItem) = apply {
         if (item.isEmpty()) {
             throw IllegalArgumentException("item can not be empty")

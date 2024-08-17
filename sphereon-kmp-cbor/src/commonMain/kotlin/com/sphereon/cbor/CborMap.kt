@@ -1,6 +1,7 @@
 package com.sphereon.cbor
 
 import kotlinx.io.bytestring.ByteStringBuilder
+import kotlinx.serialization.json.JsonObject
 import kotlin.js.JsExport
 
 
@@ -15,13 +16,13 @@ open class CborMap<K : AnyCborItem, V : AnyCborItem?>(
     }
 
 
-    override fun <T> toJson(): T {
-        return mutableMapOf(* value.map {
+    override fun toJson(): JsonObject {
+        return JsonObject(value.entries.map {
             Pair(
-                it.key.toJson<Any>(),
-                if (it.value is CborItem<*>) (it.value as CborItem<Any>).toJson<Any>() else it.value
+                it.key.toJson().toString(),
+                if (it.value is CborItem<*>) (it.value as CborItem<Any>).toJson() else throw IllegalArgumentException("Map must contain cbor values")
             )
-        }.toTypedArray()) as T
+        }.toMap())
     }
 
     fun <T> getStringLabel(key: cddl_tstr, required: Boolean? = false): T {

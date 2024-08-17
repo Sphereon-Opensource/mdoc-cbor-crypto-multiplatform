@@ -5,6 +5,8 @@ import com.sphereon.kmp.decodeFrom
 import io.matthewnelson.encoding.base64.Base64
 import io.matthewnelson.encoding.core.Decoder.Companion.decodeToByteArray
 import kotlinx.io.bytestring.ByteStringBuilder
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonPrimitive
 import kotlin.js.JsExport
 import kotlin.uuid.Uuid
 
@@ -23,6 +25,10 @@ class CborString(value: cddl_tstr) : CborItem<cddl_tstr>(value, CDDL.tstr) {
             val slice = encodedCbor.sliceArray(IntRange(payloadBegin, payloadEnd - 1))
             return Pair(payloadEnd, CborString(slice.decodeToString()))
         }
+    }
+
+    override fun toJson(): JsonElement {
+        return JsonPrimitive(toValue())
     }
 }
 

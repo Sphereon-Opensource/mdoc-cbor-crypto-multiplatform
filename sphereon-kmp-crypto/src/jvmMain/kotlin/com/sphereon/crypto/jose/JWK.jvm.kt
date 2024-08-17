@@ -1,5 +1,6 @@
 package com.sphereon.crypto.jose
 
+import com.sphereon.crypto.IKey
 import kotlinx.serialization.SerialName
 
 /**
@@ -7,25 +8,25 @@ import kotlinx.serialization.SerialName
  *
  * ordered alphabetically [RFC7638 s3](https://www.rfc-editor.org/rfc/rfc7638.html#section-3)
  */
-actual interface IJwk {
-    actual val alg: JwaAlgorithm?
-    actual val crv: JwaCurve?
-    actual val d: String?
+actual interface IJwk: IKey {
+    actual override val alg: JwaAlgorithm?
+    actual override val crv: JwaCurve?
+    actual override val d: String?
     actual val e: String?
     actual val k: String?
-    actual val key_ops: Set<JoseKeyOperations>?
-    actual val kid: String?
-    actual val kty: JwaKeyType
+    actual override val key_ops: Set<JoseKeyOperations>?
+    actual override val kid: String?
+    actual override val kty: JwaKeyType
     actual val n: String?
     actual val use: String?
-    actual val x: String?
+    actual override val x: String?
     actual val x5c: Array<String>?
     actual val x5t: String?
     actual val x5u: String?
 
     @SerialName("x5t#S256")
     actual val x5t_S256: String?
-    actual val y: String?
+    actual override val y: String?
 
 }
 
@@ -34,24 +35,24 @@ actual interface IJwk {
  *
  * ordered alphabetically [RFC7638 s3](https://www.rfc-editor.org/rfc/rfc7638.html#section-3)
  */
-actual interface IJwkJson {
-    actual val alg: String?
-    actual val crv: String?
-    actual val d: String?
+actual interface IJwkJson: IKey {
+    actual override val alg: String?
+    actual override val crv: String?
+    actual override val d: String?
     actual val e: String?
     actual val k: String?
-    actual val key_ops: Array<String>?
-    actual val kid: String?
-    actual val kty: String
+    actual override val key_ops: Array<String>?
+    actual override val kid: String?
+    actual override val kty: String
     actual val n: String?
     actual val use: String?
-    actual val x: String?
+    actual override val x: String?
     actual val x5c: Array<String>?
     actual val x5t: String?
     actual val x5u: String?
 
     @SerialName("x5t#S256")
     actual val x5t_S256: String?
-    actual val y: String?
+    actual override val y: String?
 
 }

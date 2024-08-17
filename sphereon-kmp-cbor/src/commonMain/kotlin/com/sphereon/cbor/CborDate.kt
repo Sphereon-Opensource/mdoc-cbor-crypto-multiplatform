@@ -11,15 +11,26 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atTime
 import kotlinx.datetime.toInstant
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonPrimitive
 import kotlin.js.JsExport
 
 @JsExport
-class CborTDate(value: cddl_tdate) : CborTagged<cddl_tdate>(CDDL.tdate.info!!, CborString(value))
+class CborTDate(value: cddl_tdate) : CborTagged<cddl_tdate>(CDDL.tdate.info!!, CborString(value)) {
+    override fun toJson(): JsonElement {
+        return JsonPrimitive(toValue())
+    }
+}
 
 @JsExport
 class CborFullDate(
     value: cddl_full_date
-) : CborTagged<cddl_full_date>(CDDL.full_date.info!!, CborString(value))
+) : CborTagged<cddl_full_date>(CDDL.full_date.info!!, CborString(value)) {
+    override fun toJson(): JsonElement {
+        return JsonPrimitive(toValue())
+    }
+}
+
 
 @JsExport
 fun CborTDate.cborTDateToEpochSeconds(utils: DateTimeUtils = DateTimeUtils.DEFAULT, timeZoneId: String? = null) =

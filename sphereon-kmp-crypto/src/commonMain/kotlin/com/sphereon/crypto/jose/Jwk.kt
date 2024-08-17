@@ -4,6 +4,7 @@ import com.sphereon.crypto.cose.CoseKeyCbor
 import com.sphereon.crypto.cose.CoseKeyJson
 import com.sphereon.crypto.cose.ICoseKeyCbor
 import com.sphereon.crypto.cose.ICoseKeyJson
+import com.sphereon.crypto.IKey
 import com.sphereon.crypto.toCoseCurve
 import com.sphereon.crypto.toCoseKeyOperations
 import com.sphereon.crypto.toCoseKeyType
@@ -21,25 +22,25 @@ import kotlin.js.JsExport
  *
  * ordered alphabetically [RFC7638 s3](https://www.rfc-editor.org/rfc/rfc7638.html#section-3)
  */
-expect interface IJwkJson {
-    val alg: String?
-    val crv: String?
-    val d: String?
+expect interface IJwkJson: IKey {
+    override val alg: String?
+    override val crv: String?
+    override val d: String?
     val e: String?
     val k: String?
-    val key_ops: Array<String>?
-    val kid: String?
-    val kty: String
+    override val key_ops: Array<String>?
+    override val kid: String?
+    override val kty: String
     val n: String?
     val use: String?
-    val x: String?
+    override val x: String?
     val x5c: Array<String>?
     val x5t: String?
     val x5u: String?
 
     @SerialName("x5t#S256")
     val x5t_S256: String?
-    val y: String?
+    override val y: String?
 }
 
 /**
@@ -47,25 +48,25 @@ expect interface IJwkJson {
  *
  * ordered alphabetically [RFC7638 s3](https://www.rfc-editor.org/rfc/rfc7638.html#section-3)
  */
-expect interface IJwk {
-    val alg: JwaAlgorithm?
-    val crv: JwaCurve?
-    val d: String?
+expect interface IJwk : IKey {
+    override val alg: JwaAlgorithm?
+    override val crv: JwaCurve?
+    override val d: String?
     val e: String?
     val k: String?
-    val key_ops: Set<JoseKeyOperations>?
-    val kid: String?
-    val kty: JwaKeyType
+    override val key_ops: Set<JoseKeyOperations>?
+    override val kid: String?
+    override val kty: JwaKeyType
     val n: String?
     val use: String?
-    val x: String?
+    override val x: String?
     val x5c: Array<String>?
     val x5t: String?
     val x5u: String?
 
     @SerialName("x5t#S256")
     val x5t_S256: String?
-    val y: String?
+    override val y: String?
 }
 
 @JsExport
@@ -89,6 +90,9 @@ data class Jwk(
     override val x5t_S256: String? = null,
     override val y: String? = null,
 ) : IJwk {
+
+    override val additional: Any?
+        get() = TODO("Not yet implemented")
 
     class Builder {
         var alg: JwaAlgorithm? = null
@@ -150,7 +154,7 @@ data class Jwk(
     // Name is like other extensions functions to not class with JS
     fun jwkToCoseKeyJson(): CoseKeyJson =
         CoseKeyJson.Builder()
-            .withKty(kty?.toCoseKeyType() ?: throw IllegalArgumentException("kty value missing"))
+            .withKty(kty.toCoseKeyType() ?: throw IllegalArgumentException("kty value missing"))
             .withAlg(alg?.toCoseSignatureAlgorithm())
             .withCrv(crv?.toCoseCurve())
             .withD(d)
@@ -187,6 +191,8 @@ data class Jwk(
         override val x5u: String? = this@Jwk.x5u
         override val x5t_S256: String? = this@Jwk.x5t_S256
         override val y: String? = this@Jwk.y
+        override val additional: Any?
+            get() = TODO("Not yet implemented")
     }
 
 
@@ -260,6 +266,8 @@ data class Jwk(
         fun fromCoseKey(coseKey: ICoseKeyCbor) = fromCoseKeyJson(CoseKeyCbor.fromDTO(coseKey).toJson())
 
     }
+
+
 }
 
 

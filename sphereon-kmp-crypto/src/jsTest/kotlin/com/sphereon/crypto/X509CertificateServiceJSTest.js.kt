@@ -2,7 +2,6 @@ package com.sphereon.crypto
 
 
 import com.sphereon.crypto.cose.CoseKeyCbor
-import com.sphereon.crypto.cose.IKey
 import kotlinx.coroutines.test.TestResult
 import kotlinx.coroutines.test.runTest
 import kotlin.js.Promise

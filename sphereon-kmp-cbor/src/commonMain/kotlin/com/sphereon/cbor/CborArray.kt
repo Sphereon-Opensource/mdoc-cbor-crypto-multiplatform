@@ -1,11 +1,12 @@
 package com.sphereon.cbor
 
 import kotlinx.io.bytestring.ByteStringBuilder
+import kotlinx.serialization.json.JsonArray
 import kotlin.js.JsExport
 
 @Suppress("UNCHECKED_CAST")
 @JsExport
-class CborArray<V : CborBaseItem>(value: cddl_list<V> = mutableListOf(), val indefiniteLength: Boolean = false) :
+class CborArray<V : CborItem<*>>(value: cddl_list<V> = mutableListOf(), val indefiniteLength: Boolean = false) :
     CborCollectionItem<cddl_list<V>>(value, CDDL.list) {
     fun <T> required(idx: Int): T {
         if (idx > this.value.size) {
@@ -18,10 +19,8 @@ class CborArray<V : CborBaseItem>(value: cddl_list<V> = mutableListOf(), val ind
         return value.getOrNull(idx) as T
     }
 
-    override fun <T> toJson(): T {
-        return value.map {
-            if (it is CborItem<*>) it.toJson() else it
-        }.toTypedArray<Any>() as T
+    override fun toJson(): JsonArray {
+        return JsonArray(value.map { it.toJson() })
     }
 
     override fun encode(builder: ByteStringBuilder) {

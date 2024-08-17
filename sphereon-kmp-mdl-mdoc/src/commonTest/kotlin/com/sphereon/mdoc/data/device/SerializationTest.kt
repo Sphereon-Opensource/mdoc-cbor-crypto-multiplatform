@@ -5,6 +5,7 @@ import com.sphereon.kmp.toKmpLong
 import jsonSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.JsonPrimitive
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -26,7 +27,7 @@ class SerializationTest {
     fun shouldDecodeAndEncodeIssuerSignedItemJson() {
         val json = "{\"digestID\":200,\"random\":\"random\",\"elementIdentifier\":\"identifier\",\"elementValue\":400,\"elementCDDL\":\"uint\"}"
         val issuerSigned =
-            IssuerSignedItemJson(digestID = 200L.toKmpLong(), random = "random", elementValue = 400L, elementCDDL = CDDL.uint, elementIdentifier = "identifier")
+            IssuerSignedItemJson(digestID = 200L.toKmpLong(), random = "random", elementValue = JsonPrimitive(400L), elementCDDL = CDDL.uint, elementIdentifier = "identifier")
         assertEquals(json, jsonSerializer.encodeToString(issuerSigned))
         assertEquals(issuerSigned, jsonSerializer.decodeFromString(json))
         println(jsonSerializer.encodeToString(issuerSigned))

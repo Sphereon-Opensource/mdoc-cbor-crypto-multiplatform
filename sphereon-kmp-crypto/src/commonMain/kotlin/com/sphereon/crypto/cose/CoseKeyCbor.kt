@@ -14,6 +14,7 @@ import com.sphereon.cbor.NumberLabel
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.encodeToArray
 import com.sphereon.cbor.toCborByteString
+import com.sphereon.crypto.IKey
 import com.sphereon.kmp.Encoding
 import com.sphereon.kmp.decodeFrom
 import com.sphereon.kmp.encodeTo
@@ -22,23 +23,6 @@ import kotlinx.serialization.json.JsonObject
 import kotlin.js.JsExport
 
 
-expect interface IKey {
-    val kty: Any
-    val kid: Any?
-    val alg: Any?
-
-    val key_ops: Any?
-
-    val baseIV: Any?
-
-    val crv: Any?
-    val x: Any?
-    val y: Any?
-    val d: Any?
-    val x5chain: Any?
-    val additional: Any?
-}
-
 expect interface ICoseKeyJson : IKey {
     override val kty: CoseKeyType
     override val kid: String?
@@ -46,13 +30,13 @@ expect interface ICoseKeyJson : IKey {
 
     override val key_ops: Array<CoseKeyOperations>?
 
-    override val baseIV: String?
+    val baseIV: String?
 
     override val crv: CoseCurve?
     override val x: String?
     override val y: String?
     override val d: String?
-    override val x5chain: Array<String>?
+    val x5chain: Array<String>?
     override val additional: JsonObject?
 }
 
@@ -227,12 +211,12 @@ expect interface ICoseKeyCbor : IKey {
     override val kid: CborByteString?
     override val alg: CborUInt?
     override val key_ops: CborArray<CborUInt>?
-    override val baseIV: CborByteString?
+    val baseIV: CborByteString?
     override val crv: CborUInt?
     override val x: CborByteString?
     override val y: CborByteString?
     override val d: CborByteString?
-    override val x5chain: CborArray<CborByteString>?
+    val x5chain: CborArray<CborByteString>?
     override val additional: CborMap<NumberLabel, CborItem<*>>?
 }
 

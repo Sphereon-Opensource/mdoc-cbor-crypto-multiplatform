@@ -2,6 +2,8 @@ package com.sphereon.cbor
 
 import com.sphereon.kmp.LongKMP
 import kotlinx.io.bytestring.ByteStringBuilder
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonPrimitive
 import kotlin.js.JsExport
 
 
@@ -11,6 +13,10 @@ open class CborTagged<T>(val tagNumber: Int, val taggedItem: CborItem<T>) :
     override fun encode(builder: ByteStringBuilder) {
         Cbor.encodeLength(builder, MajorType.TAG, tagNumber)
         taggedItem.encode(builder)
+    }
+
+    override fun toJson(): JsonElement {
+        return taggedItem.toJson()
     }
 
     companion object {

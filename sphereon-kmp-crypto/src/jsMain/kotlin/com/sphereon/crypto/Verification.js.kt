@@ -1,7 +1,5 @@
 package com.sphereon.crypto
 
-import com.sphereon.crypto.cose.IKey
-
 @JsExport
 actual external interface IVerifyResult {
     actual val name: String

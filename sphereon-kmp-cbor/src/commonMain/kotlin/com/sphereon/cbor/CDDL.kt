@@ -3,8 +3,11 @@
 package com.sphereon.cbor
 
 import com.sphereon.cbor.CborTagged.Companion.DATE_TIME_STRING
+import com.sphereon.kmp.Encoding
 import com.sphereon.kmp.LongKMP
+import com.sphereon.kmp.decodeFrom
 import com.sphereon.kmp.numberToKmpLong
+import com.sphereon.kmp.stringToKmpLong
 import com.sphereon.kmp.toKmpLong
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -13,6 +16,20 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonNull.content
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.boolean
+import kotlinx.serialization.json.double
+import kotlinx.serialization.json.float
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.long
 import kotlin.js.ExperimentalJsExport
 import kotlin.js.JsExport
 
@@ -80,7 +97,7 @@ sealed class CDDL(
     override val majorType: MajorType? = null,
     override val info: Int? = null,
     override val aliasFor: Array<CDDLType> = arrayOf(),
-    ) : CDDLType {
+) : CDDLType {
 
     /*fun <T : Any?> anyToType(value: T): CDDLType {
         if (value == null) {
@@ -96,74 +113,89 @@ sealed class CDDL(
         }
     }
 */
-    fun <T : Any> newCborItem(value: T?): CborItem<out Any?> {
+    fun <T : Any> newCborItem(origValue: T?): CborItem<out Any?> {
         // We are not using inheritance for the methods as that would impact JS export.
         // Since this is a sealed class anyway that is not too bad
+        var value = origValue
+        val jsonElement: JsonElement? = when (value) {
+            is JsonPrimitive -> value
+            is JsonArray -> value
+            is JsonObject -> value
+            is JsonNull -> value
+            else -> null
+        }
         if (value == null) {
             return nil.newNil()
         } else if (value == Unit) {
             return undefined.newUndefined()
         }
         return when (this) {
-            tstr -> tstr.newString(value.toString())
+            tstr -> if (jsonElement === null) tstr.newString(value.toString()) else tstr.fromJson(jsonElement.jsonPrimitive)
             False -> False.newFalse()
             Null -> Null.newNull()
             True -> True.newTrue()
             any -> return when (value) {
-                is cddl_tstr -> tstr.newString(value)
-                is cddl_uint -> uint.newUint(value)
-                is cddl_int -> int.newLong(value.toLong())
-                is cddl_bstr -> bstr.newByteString(value)
-                is cddl_tdate -> tdate.newTDate(value)
-                is cddl_full_date -> full_date.newFullDate(value)
-                is cddl_float64 -> float64.newFloat64(value)
-                is cddl_float -> float.newFloat(value)
-                is cddl_bool -> bool.newBool(value)
-                is cddl_list<*> -> list.newList(value.map {
+                is cddl_tstr -> if (jsonElement === null) tstr.newString(value) else tstr.fromJson(jsonElement.jsonPrimitive)
+                is cddl_uint -> if (jsonElement === null) uint.newUint(value) else uint.fromJson(jsonElement.jsonPrimitive)
+                is cddl_int -> if (jsonElement === null) int.newLong(value.toLong()) else int.fromJson(jsonElement.jsonPrimitive)
+                is cddl_bstr -> if (jsonElement === null) bstr.newByteString(value) else bstr.fromJson(jsonElement.jsonPrimitive)
+                is cddl_tdate -> if (jsonElement === null) tdate.newTDate(value) else tdate.fromJson(jsonElement.jsonPrimitive)
+                is cddl_full_date -> if (jsonElement === null) full_date.newFullDate(value) else full_date.fromJson(jsonElement.jsonPrimitive)
+                is cddl_float64 -> if (jsonElement === null) float64.newFloat64(value) else float64.fromJson(jsonElement.jsonPrimitive)
+                is cddl_float -> if (jsonElement === null) float.newFloat(value) else float.fromJson(jsonElement.jsonPrimitive)
+                is cddl_bool -> if (jsonElement === null) bool.newBool(value) else bool.fromJson(jsonElement.jsonPrimitive)
+                is cddl_list<*> -> if (jsonElement === null) list.newList(value.map {
                     if (it is AnyCborItem) it else any.newCborItem(
                         it
                     )
-                }.toMutableList())
+                }.toMutableList()) else list.fromJson(jsonElement.jsonArray)
 
-                is cddl_map<*, *> -> map.newMap(mutableMapOf(* value.map {
+                is cddl_map<*, *> -> if (jsonElement === null) map.newMap(mutableMapOf(* value.map {
                     Pair(
                         if (it.key is AnyCborItem) it.key as AnyCborItem else any.newCborItem(it.key),
                         if (it.value is AnyCborItem) it.value as AnyCborItem else any.newCborItem(it.value)
                     )
-                }.toTypedArray()))
+                }.toTypedArray())) else map.fromJson(jsonElement.jsonObject)
 
                 else -> throw IllegalArgumentException("newCborItem for ${value} Not implemented yet")
             }
 
-            bool -> bool.newBool(value == true)
-            bstr -> bstr.newByteString(value as ByteArray)
-            bstr_indef_length -> bstr_indef_length.newByteString(value as List<cddl_bstr>)
-            bytes -> bytes.newBytes(value as ByteArray)
-            float -> float.newFloat(value as Float)
-            float16 -> float16.newFloat16(value as Float)
-            float32 -> float32.newFloat32(value as Float)
-            float64 -> float64.newFloat64(value as Double)
-            full_date -> full_date.newFullDate(value as cddl_full_date)
-            int -> int.newInt(value as Int)
-            list -> if (value is CborArray<*>) value else list.newList((value as MutableList<*>).map {
+            bool -> if (jsonElement === null) bool.newBool(value == true) else bool.fromJson(jsonElement.jsonPrimitive)
+            bstr -> if (jsonElement === null) bstr.newByteString(value as ByteArray) else bstr.fromJson(jsonElement.jsonPrimitive)
+            bstr_indef_length -> if (jsonElement === null) bstr_indef_length.newByteString(value as List<cddl_bstr>) else TODO("indef cddl from json not implemented yet")
+            bytes -> if (jsonElement === null) bytes.newBytes(value as ByteArray) else bytes.fromJson(jsonElement.jsonPrimitive)
+            float -> if (jsonElement === null) float.newFloat(value as Float) else float.fromJson(jsonElement.jsonPrimitive)
+            float16 -> if (jsonElement === null) float16.newFloat16(value as Float) else float16.fromJson(jsonElement.jsonPrimitive)
+            float32 -> if (jsonElement === null) float32.newFloat32(value as Float) else float32.fromJson(jsonElement.jsonPrimitive)
+            float64 -> if (jsonElement === null) float64.newFloat64(value as Double) else float64.fromJson(jsonElement.jsonPrimitive)
+            full_date -> if (jsonElement === null) full_date.newFullDate(value as cddl_full_date) else full_date.fromJson(jsonElement.jsonPrimitive)
+            int -> if (jsonElement === null) int.newInt(value as Int) else int.fromJson(jsonElement.jsonPrimitive)
+            list -> if (jsonElement === null) if (value is CborArray<*>) value else list.newList((value as MutableList<*>).map {
                 if (it is AnyCborItem) it else any.newCborItem(
                     it
                 )
-            }.toMutableList())
+            }.toMutableList()) else list.fromJson(jsonElement.jsonArray)
 
-            map -> if (value is CborMap<*, *>) value else map.newMap(mutableMapOf(* (value as MutableMap<*, *>).map {
+            map -> if (jsonElement === null) if (value is CborMap<*, *>) value else map.newMap(mutableMapOf(* (value as MutableMap<*, *>).map {
                 Pair(
                     if (it.key is AnyCborItem) it.key as AnyCborItem else any.newCborItem(it.key),
                     if (it.value is AnyCborItem) it.value as AnyCborItem else any.newCborItem(it.value)
                 )
-            }.toTypedArray())) // fixme. Needs inspection of keys and values and map type
+            }.toTypedArray())) /* fixme. Needs inspection of keys and values and map type*/ else map.fromJson(jsonElement.jsonObject)
+
             nil -> nil.newNil()
-            nint -> nint.newNInt(if (value is LongKMP) value else if (value is Number) value.toKmpLong() else value as LongKMP)
-            tdate -> tdate.newTDate(value as cddl_tdate)
-            text -> text.newText(value as cddl_text)
-            time -> time.newTime(value as cddl_time)
-            tstr_indef_length -> tstr_indef_length.newStringIndefLength(value as List<cddl_tstr>)
-            uint -> uint.newUint(if (value is LongKMP) value else if (value is Number) value.toKmpLong() else value as LongKMP)
+            nint -> if (jsonElement === null) nint.newNInt(if (value is Number) value.toKmpLong() else value as LongKMP) else nint.fromJson(
+                jsonElement.jsonPrimitive
+            )
+
+            tdate -> if (jsonElement === null) tdate.newTDate(value as cddl_tdate) else tdate.fromJson(jsonElement.jsonPrimitive)
+            text -> if (jsonElement === null) text.newText(value as cddl_text) else text.fromJson(jsonElement.jsonPrimitive)
+            time -> if (jsonElement === null) time.newTime(value as cddl_time) else time.fromJson(jsonElement.jsonPrimitive)
+            tstr_indef_length -> if (jsonElement !== null) tstr_indef_length.newStringIndefLength(value as List<cddl_tstr>) else TODO("tstr indef length from json to cbor not implemented")
+            uint -> if (jsonElement === null) uint.newUint(if (value is LongKMP) value else if (value is Number) value.toKmpLong() else value as LongKMP) else uint.fromJson(
+                jsonElement.jsonPrimitive
+            )
+
             undefined -> undefined.newUndefined()
         }
 
@@ -171,12 +203,14 @@ sealed class CDDL(
 
     object tstr : CDDL("tstr", MajorType.UNICODE_STRING) {
         fun newString(value: cddl_tstr) = CborString(value)
+        fun fromJson(value: JsonPrimitive) = CborString(value.content)
 
     }
 
     @Serializable(with = CDDLSerializer::class)
     object uint : CDDL("uint", MajorType.UNSIGNED_INTEGER) {
         fun newUint(value: cddl_uint) = CborUInt(value)
+        fun fromJson(value: JsonPrimitive) = CborUInt(value.content.stringToKmpLong())
 
 
     }
@@ -184,6 +218,7 @@ sealed class CDDL(
     @Serializable(with = CDDLSerializer::class)
     object nint : CDDL("nint", MajorType.NEGATIVE_INTEGER) {
         fun newNInt(value: cddl_nint) = CborNInt(value)
+        fun fromJson(value: JsonPrimitive) = CborNInt(value.content.stringToKmpLong())
     }
 
     @Serializable(with = CDDLSerializer::class)
@@ -195,32 +230,41 @@ sealed class CDDL(
         fun newLong(value: Long) =
             if (value < 0) CborNInt(value.numberToKmpLong()) else CborUInt(value.numberToKmpLong())
 
+        fun fromJson(value: JsonPrimitive) =
+            if (value.long < 0) CborNInt(value.content.stringToKmpLong()) else CborUInt(value.content.stringToKmpLong())
 
     }
 
     @Serializable(with = CDDLSerializer::class)
     object bstr : CDDL("bstr", MajorType.BYTE_STRING) {
         fun newByteString(value: cddl_bstr) = CborByteString(value)
+        fun fromJson(value: JsonPrimitive, encoding: Encoding = Encoding.BASE64URL) = CborByteString(value.content.decodeFrom(encoding))
     }
 
     @Serializable(with = CDDLSerializer::class)
     object bstr_indef_length : CDDL("bstr", MajorType.BYTE_STRING) {
         fun newByteString(value: List<cddl_bstr>) = CborByteStringIndefLength(value)
+        fun fromJson(value: JsonArray, encoding: Encoding = Encoding.BASE64URL): CborByteStringIndefLength =
+            TODO("indef length from json to cbor not implemented yet")
     }
 
     @Serializable(with = CDDLSerializer::class)
     object bytes : CDDL("bytes", MajorType.BYTE_STRING, aliasFor = arrayOf(bstr)) {
         fun newBytes(value: cddl_bstr) = CborByteString(value)
+        fun fromJson(value: JsonPrimitive, encoding: Encoding = Encoding.BASE64URL) = CborByteString(value.content.decodeFrom(encoding))
     }
 
     @Serializable(with = CDDLSerializer::class)
     object tstr_indef_length : CDDL("tstr", MajorType.UNICODE_STRING) {
         fun newStringIndefLength(value: List<cddl_tstr>) = CborStringIndefLength(value)
+        fun fromJson(value: JsonArray, encoding: Encoding = Encoding.BASE64URL): CborStringIndefLength =
+            TODO("indef length from json to cbor not implemented yet")
     }
 
     @Serializable(with = CDDLSerializer::class)
     object text : CDDL("text", MajorType.UNICODE_STRING, aliasFor = arrayOf(tstr)) {
         fun newText(value: cddl_text) = CborString(value)
+        fun fromJson(value: JsonPrimitive) = CborString(value.content)
     }
 
 
@@ -230,6 +274,7 @@ sealed class CDDL(
     ) // RFC 7049, section 2.4.1, a tdate data item shall contain a date-time string as specified in RFC 3339
     {
         fun newTDate(value: cddl_tdate) = CborTDate(value)
+        fun fromJson(value: JsonPrimitive) = CborTDate(value.content)
     }
 
     @Serializable(with = CDDLSerializer::class)
@@ -238,6 +283,7 @@ sealed class CDDL(
     ) // #6.1004(tstr) In accordance with RFC 8943, a full-date data item shall contain a full-datestring as specified in RFC 3339.
     {
         fun newFullDate(value: cddl_full_date) = CborFullDate(value)
+        fun fromJson(value: JsonPrimitive) = CborFullDate(value.content)
     }
 
     @Serializable(with = CDDLSerializer::class)
@@ -246,59 +292,70 @@ sealed class CDDL(
     ) // RFC 7049, section 2.4.1, a tdate data item shall contain a date-time number as specified in RFC 3339
     {
         fun newTime(value: cddl_time) = CborTime(value)
+        fun fromJson(value: JsonPrimitive) = CborTime(value.content.stringToKmpLong())
     }
 
     @Serializable(with = CDDLSerializer::class)
     object float16 : CDDL("float16", MajorType.SPECIAL, 25) {
         fun newFloat16(value: cddl_float16) = CborFloat16(value)
+        fun fromJson(value: JsonPrimitive) = CborFloat16(value.float)
     }
 
     @Serializable(with = CDDLSerializer::class)
     object float32 : CDDL("float32", MajorType.SPECIAL, 26) {
         fun newFloat32(value: cddl_float32) = CborFloat32(value)
+        fun fromJson(value: JsonPrimitive) = CborFloat32(value.float)
     }
 
     @Serializable(with = CDDLSerializer::class)
     object float64 : CDDL("float64", MajorType.SPECIAL, 27) {
         fun newFloat64(value: cddl_float64) = CborDouble(value)
+        fun fromJson(value: JsonPrimitive) = CborDouble(value.double)
     }
 
     @Serializable(with = CDDLSerializer::class)
     object float : CDDL("float", MajorType.SPECIAL, aliasFor = arrayOf(float16, float32, float64)) {
         fun newFloat(value: cddl_float) = CborFloat32(value)
+        fun fromJson(value: JsonPrimitive) = CborFloat32(value.float)
     }
 
     @Serializable(with = CDDLSerializer::class)
     object False : CDDL("false", MajorType.SPECIAL, 20) {
         fun newFalse() = CborSimple.FALSE
+        fun fromJson(value: JsonPrimitive) = CborSimple.FALSE
     }
 
     @Serializable(with = CDDLSerializer::class)
     object True : CDDL("true", MajorType.SPECIAL, 21) {
         fun newTrue() = CborSimple.TRUE
+        fun fromJson(value: JsonPrimitive) = CborSimple.TRUE
     }
 
     @Serializable(with = CDDLSerializer::class)
     object bool :
         CDDL("bool", MajorType.SPECIAL, aliasFor = arrayOf(False, True)) {
         fun newBool(value: cddl_bool) = if (value) CborSimple.TRUE else CborSimple.FALSE
+        fun fromJson(value: JsonPrimitive) = if (value.boolean) CborSimple.TRUE else CborSimple.FALSE
     }
 
     @Serializable(with = CDDLSerializer::class)
     object nil : CDDL("nil", MajorType.SPECIAL, 22) {
         fun newNil() = CborSimple.NULL
+        fun fromJson(value: JsonElement) = CborSimple.NULL
 
     }
 
     @Serializable(with = CDDLSerializer::class)
     object Null : CDDL("null", MajorType.SPECIAL, 22, arrayOf(nil)) {
         fun newNull() = CborSimple.NULL
+        fun fromJson(value: JsonElement) = CborSimple.NULL
     }
 
     @Serializable(with = CDDLSerializer::class)
     object undefined :
         CDDL("undefined", MajorType.SPECIAL, 23) {
         fun newUndefined() = CborSimple.UNDEFINED
+        fun fromJson(value: JsonElement) = CborSimple.UNDEFINED
     }
 
     @Serializable(with = CDDLSerializer::class)
@@ -310,6 +367,21 @@ sealed class CDDL(
 
         fun newMap(value: MutableMap<AnyCborItem, AnyCborItem>): CborItem<MutableMap<AnyCborItem, AnyCborItem>> =
             CborMap(value)
+
+        /**
+         * Please note that this method is not able to map onto the exact Cbor items as the json values have no type information!
+         */
+        fun fromJson(value: JsonObject): CborMap<CborString, AnyCborItem> = CborMap(value.entries.map {
+            Pair(
+                CborString(it.key),
+                when (it.value) {
+                    is JsonPrimitive -> any.fromJson(it.value)
+                    is JsonArray -> list.fromJson(it.value as JsonArray)
+                    is JsonObject -> fromJson(it.value as JsonObject)
+                    else -> throw IllegalArgumentException("Unknown type encountered")
+                }
+            )
+        }.toMap().toMutableMap())
     }
 
 
@@ -320,6 +392,18 @@ sealed class CDDL(
             MajorType.ARRAY
         ) {
         fun <T : AnyCborItem> newList(value: cddl_list<T>) = CborArray(value)
+
+        /**
+         * Please note that this method is not able to map onto the exact Cbor items as the json values have no type information!
+         */
+        fun fromJson(value: JsonArray): CborArray<CborItem<*>> = CborArray(value.map { elt ->
+            when (elt) {
+                is JsonPrimitive -> any.fromJson(elt)
+                is JsonArray -> fromJson(elt)
+                is JsonObject -> map.fromJson(elt)
+                else -> throw IllegalArgumentException("Unknown type encountered")
+            }
+        }.toMutableList())
     }
 
     @Serializable(with = CDDLSerializer::class)
@@ -328,6 +412,7 @@ sealed class CDDL(
             "any"
         ) {
         fun newAny(value: cddl_any) = CborAny(value)
+        fun fromJson(value: JsonElement): CborAny<Any> = TODO("Json any to cbor not implemeted yet")
     }
 
 
@@ -432,7 +517,6 @@ sealed class CDDL(
     }
 
 }
-
 
 
 internal object CDDLSerializer : KSerializer<CDDL> {

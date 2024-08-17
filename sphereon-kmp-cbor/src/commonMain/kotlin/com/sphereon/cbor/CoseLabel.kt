@@ -23,6 +23,7 @@ sealed class CoseLabel<ItemType>(
     cddl: CDDLType,
     val type: LabelType,
 ) : CborItem<ItemType>(value, cddl) {
+
     @Suppress("UNCHECKED_CAST")
     fun <T> required(map: CborMap<out CoseLabel<*>, AnyCborItem>): T {
         if (!map.value.containsKey(this)) {
