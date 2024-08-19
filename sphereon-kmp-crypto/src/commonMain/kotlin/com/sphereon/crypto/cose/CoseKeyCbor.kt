@@ -8,7 +8,7 @@ import com.sphereon.cbor.CborByteString
 import com.sphereon.cbor.CborItem
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborUInt
-import com.sphereon.cbor.CborView2
+import com.sphereon.cbor.CborView
 import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.NumberLabel
 import com.sphereon.cbor.cborSerializer
@@ -233,7 +233,7 @@ class CoseKeyCbor(
     override val d: CborByteString? = null,
     override val x5chain: CborArray<CborByteString>? = null,
     override val additional: CborMap<NumberLabel, AnyCborItem>? = null
-) : ICoseKeyCbor, CborView2<CoseKeyCbor, CoseKeyJson, CborMap<NumberLabel, AnyCborItem>>(CDDL.map) {
+) : ICoseKeyCbor, CborView<CoseKeyCbor, CoseKeyJson, CborMap<NumberLabel, AnyCborItem>>(CDDL.map) {
 
     override fun cborBuilder(): CborBuilder<CoseKeyCbor> {
         val mapBuilder = CborMap.builder(this)

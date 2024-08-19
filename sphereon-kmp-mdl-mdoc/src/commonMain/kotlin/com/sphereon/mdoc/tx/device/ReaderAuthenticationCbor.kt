@@ -6,7 +6,7 @@ import com.sphereon.cbor.CborArray
 import com.sphereon.cbor.CborBuilder
 import com.sphereon.cbor.CborByteString
 import com.sphereon.cbor.CborString
-import com.sphereon.cbor.CborView
+import com.sphereon.cbor.CborViewOld
 import com.sphereon.cbor.JsonViewOld
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.crypto.cose.COSE_Key
@@ -29,7 +29,7 @@ data class ReaderAuthenticationJson(
 data class ReaderAuthenticationCbor(
     val sessionTranscript: SessionTranscriptCbor,
     val itemsRequest: DeviceItemsRequestCbor
-) : CborView<ReaderAuthenticationCbor, ReaderAuthenticationJson, CborArray<AnyCborItem>>(CDDL.list) {
+) : CborViewOld<ReaderAuthenticationCbor, ReaderAuthenticationJson, CborArray<AnyCborItem>>(CDDL.list) {
     override fun cborBuilder(): CborBuilder<ReaderAuthenticationCbor> {
         return CborArray.builder(this).add(READER_AUTHENTICATION).add(sessionTranscript.toCbor())
             .add(itemsRequest.toCbor()).end()
@@ -69,7 +69,7 @@ data class SessionTranscriptCbor(
     val deviceEngagement: DeviceEngagementCbor,
     val eReaderKey: COSE_Key,
     val handover: HandoverCbor<*, *>
-) : CborView<SessionTranscriptCbor, SessionTranscriptJson, CborArray<AnyCborItem>>(CDDL.list) {
+) : CborViewOld<SessionTranscriptCbor, SessionTranscriptJson, CborArray<AnyCborItem>>(CDDL.list) {
     override fun cborBuilder(): CborBuilder<SessionTranscriptCbor> {
         return CborArray.builder(this)
             .add(CborByteString.fromCborItem(deviceEngagement.toCbor()))
@@ -101,7 +101,7 @@ data class SessionTranscriptCbor(
 
 sealed class HandoverJson<CborType: Any> : JsonViewOld<CborType>()
 
-sealed class HandoverCbor<CborType: Any, JsonType> : CborView<CborType, JsonViewOld<CborType>, CborArray<AnyCborItem>>(CDDL.list)
+sealed class HandoverCbor<CborType: Any, JsonType> : CborViewOld<CborType, JsonViewOld<CborType>, CborArray<AnyCborItem>>(CDDL.list)
 class QrHandoverJson : HandoverJson<QrHandoverCbor>() {
     override fun toCbor(): QrHandoverCbor {
         return QrHandoverCbor()

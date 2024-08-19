@@ -4,7 +4,7 @@ import com.sphereon.cbor.AnyCborItem
 import com.sphereon.cbor.CDDL
 import com.sphereon.cbor.CborBuilder
 import com.sphereon.cbor.CborMap
-import com.sphereon.cbor.CborView
+import com.sphereon.cbor.CborViewOld
 import com.sphereon.cbor.JsonViewOld
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.crypto.cose.COSE_Key
@@ -32,7 +32,7 @@ data class DeviceKeyInfoCbor(
     val deviceKey: COSE_Key,
     val keyAuthorizations: KeyAuthorizationsCbor? = null,
     val keyInfo: KeyInfoCbor? = null,
-) : CborView<DeviceKeyInfoCbor, DeviceKeyInfoJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
+) : CborViewOld<DeviceKeyInfoCbor, DeviceKeyInfoJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
     override fun cborBuilder(): CborBuilder<DeviceKeyInfoCbor> =
         CborMap.builder(this).put(DEVICE_KEY, deviceKey.toCbor())
             .put(KEY_AUTHORIZATIONS, keyAuthorizations?.toCbor(), true).put(

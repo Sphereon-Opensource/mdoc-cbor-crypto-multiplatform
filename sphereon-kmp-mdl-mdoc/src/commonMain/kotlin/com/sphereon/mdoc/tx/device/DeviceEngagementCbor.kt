@@ -11,7 +11,7 @@ import com.sphereon.cbor.CborEncodedItem
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborString
 import com.sphereon.cbor.CborUInt
-import com.sphereon.cbor.CborView
+import com.sphereon.cbor.CborViewOld
 import com.sphereon.cbor.JsonViewOld
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.cborViewArrayToCborItem
@@ -50,7 +50,7 @@ data class DeviceEngagementCbor(
     val serverRetrievalMethod: ServerRetrievalMethodsCbor? = null,
     val protocolInfo: ProtocolInfo? = null,
     val additionalItems: CborMap<NumberLabel, AnyCborItem>? = CborMap(mutableMapOf())
-) : CborView<DeviceEngagementCbor, DeviceEngagementJson, CborMap<NumberLabel, AnyCborItem>>(CDDL.map) {
+) : CborViewOld<DeviceEngagementCbor, DeviceEngagementJson, CborMap<NumberLabel, AnyCborItem>>(CDDL.map) {
 
     companion object {
         val VERSION = NumberLabel(0)
@@ -137,7 +137,7 @@ data class ServerRetrievalMethodsJson(val Oidc: ServerRetrievalInfo?, val WebApi
 
 @JsExport
 data class ServerRetrievalMethodsCbor(val Oidc: ServerRetrievalInfo?, val WebApi: ServerRetrievalInfo?) :
-    CborView<ServerRetrievalMethodsCbor, ServerRetrievalMethodsJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
+    CborViewOld<ServerRetrievalMethodsCbor, ServerRetrievalMethodsJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
     override fun cborBuilder(): CborBuilder<ServerRetrievalMethodsCbor> {
         return CborMap.builder(this)
             .put(OIDC, Oidc?.cborBuilder()?.build(), true)
@@ -194,7 +194,7 @@ data class DeviceEngagementSecurityJson(val cypherSuite: LongKMP, val eDeviceKey
 
 @JsExport
 data class DeviceEngagementSecurityCbor(val cypherSuite: CborUInt, val eDeviceKeyBytes: CoseKeyCbor) :
-    CborView<DeviceEngagementSecurityCbor, DeviceEngagementSecurityJson, CborArray<AnyCborItem>>(CDDL.list) {
+    CborViewOld<DeviceEngagementSecurityCbor, DeviceEngagementSecurityJson, CborArray<AnyCborItem>>(CDDL.list) {
     override fun cborBuilder(): CborBuilder<DeviceEngagementSecurityCbor> {
         return CborArray.builder(this)
             .add(cypherSuite)
@@ -251,7 +251,7 @@ data class DeviceRetrievalMethodCbor(
     val type: CborUInt,
     val version: CborUInt,
     val retrievalOptions: DeviceRetrievalOptionsCbor
-) : CborView<DeviceRetrievalMethodCbor, DeviceRetrievalMethodJson, CborArray<AnyCborItem>>(CDDL.list) {
+) : CborViewOld<DeviceRetrievalMethodCbor, DeviceRetrievalMethodJson, CborArray<AnyCborItem>>(CDDL.list) {
 
     override fun cborBuilder(): CborBuilder<DeviceRetrievalMethodCbor> {
         return CborArray.builder(this)
@@ -300,7 +300,7 @@ sealed class DeviceRetrievalOptionsJson : JsonViewOld<DeviceRetrievalOptionsCbor
 
 @JsExport
 sealed class DeviceRetrievalOptionsCbor :
-    CborView<DeviceRetrievalOptionsCbor, DeviceRetrievalOptionsJson, CborMap<NumberLabel, AnyCborItem>>(CDDL.map)
+    CborViewOld<DeviceRetrievalOptionsCbor, DeviceRetrievalOptionsJson, CborMap<NumberLabel, AnyCborItem>>(CDDL.map)
 
 @JsExport
 data class WifiOptionsCbor(

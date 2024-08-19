@@ -9,7 +9,7 @@ import com.sphereon.cbor.CborInt
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborString
 import com.sphereon.cbor.CborUInt
-import com.sphereon.cbor.CborView
+import com.sphereon.cbor.CborViewOld
 import com.sphereon.cbor.JsonViewOld
 import com.sphereon.cbor.cborViewArrayToCborItem
 import com.sphereon.cbor.StringLabel
@@ -65,7 +65,7 @@ data class DeviceResponseCbor(
 
     val status: CborUInt = CborUInt(0)
 
-) : CborView<DeviceResponseCbor, DeviceResponseJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
+) : CborViewOld<DeviceResponseCbor, DeviceResponseJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
     override fun cborBuilder(): CborBuilder<DeviceResponseCbor> {
         return CborMap.builder(this)
             .put(VERSION, version, false)

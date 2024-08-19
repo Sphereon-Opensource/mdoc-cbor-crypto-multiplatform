@@ -9,7 +9,7 @@ import com.sphereon.cbor.CborBuilder
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborSimple
 import com.sphereon.cbor.CborString
-import com.sphereon.cbor.CborView
+import com.sphereon.cbor.CborViewOld
 import com.sphereon.cbor.JsonViewOld
 import com.sphereon.cbor.cddl_tstr
 import com.sphereon.cbor.StringLabel
@@ -90,7 +90,7 @@ data class DeviceItemsRequestCbor(
      */
     val requestInfo: CborMap<CborString, AnyCborItem>? = null
 
-) : CborView<DeviceItemsRequestCbor, DeviceItemsRequestJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
+) : CborViewOld<DeviceItemsRequestCbor, DeviceItemsRequestJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
     companion object {
         val DOC_TYPE = StringLabel("docType")
         val NAME_SPACES = StringLabel("nameSpaces")

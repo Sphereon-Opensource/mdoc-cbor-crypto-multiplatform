@@ -6,7 +6,7 @@ import com.sphereon.cbor.CborArray
 import com.sphereon.cbor.CborBuilder
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborString
-import com.sphereon.cbor.CborView
+import com.sphereon.cbor.CborViewOld
 import com.sphereon.cbor.JsonViewOld
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.StringLabel
@@ -90,7 +90,7 @@ data class DocumentCbor (
      * If present, ErrorCode shall contain an error code according to 8.3.2.1.2.3.
      */
     val errors: DocumentErrors?
-) : CborView<DocumentCbor, DocumentJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
+) : CborViewOld<DocumentCbor, DocumentJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
     override fun cborBuilder(): CborBuilder<DocumentCbor> {
         TODO("Not yet implemented")
     }

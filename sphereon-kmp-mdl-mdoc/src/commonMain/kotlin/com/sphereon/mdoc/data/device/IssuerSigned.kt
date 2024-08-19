@@ -14,7 +14,6 @@ import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborUInt
 import com.sphereon.cbor.CborView
 import com.sphereon.cbor.ICborItemValueJson
-import com.sphereon.cbor.JsonViewOld
 import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.StringLabel
 import com.sphereon.cbor.cborSerializer
@@ -39,7 +38,7 @@ import kotlin.js.JsExport
 data class IssuerSignedJson(
     val nameSpaces: IssuerSignedNamesSpacesJson?,
     val issuerAuth: CoseSign1Json<MobileSecurityObjectJson, MobileSecurityObjectCbor>
-) : JsonViewOld<IssuerSignedCbor>() {
+) : JsonView() {
     override fun toCbor(): IssuerSignedCbor {
         return IssuerSignedCbor(
             issuerAuth = issuerAuth.toCbor(),

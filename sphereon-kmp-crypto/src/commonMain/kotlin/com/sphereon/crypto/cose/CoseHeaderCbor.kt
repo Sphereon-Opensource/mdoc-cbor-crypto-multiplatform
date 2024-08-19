@@ -8,7 +8,7 @@ import com.sphereon.cbor.CborBuilder
 import com.sphereon.cbor.CborByteString
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborString
-import com.sphereon.cbor.CborView2
+import com.sphereon.cbor.CborView
 import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.NumberLabel
 import com.sphereon.cbor.cborSerializer
@@ -75,7 +75,7 @@ data class CoseHeaderCbor(
     val iv: CborByteString? = null,
     val partialIv: CborByteString? = null,
     val x5chain: CborArray<CborByteString>? = null,
-) : CborView2<CoseHeaderCbor, CoseHeaderJson, CborMap<NumberLabel, AnyCborItem>>(CDDL.map) {
+) : CborView<CoseHeaderCbor, CoseHeaderJson, CborMap<NumberLabel, AnyCborItem>>(CDDL.map) {
     companion object {
         val ALG = NumberLabel(1)
         val CRIT = NumberLabel(2)

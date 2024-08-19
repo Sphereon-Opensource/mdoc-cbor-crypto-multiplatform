@@ -6,7 +6,7 @@ import com.sphereon.cbor.CborArray
 import com.sphereon.cbor.CborBuilder
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborString
-import com.sphereon.cbor.CborView
+import com.sphereon.cbor.CborViewOld
 import com.sphereon.cbor.JsonViewOld
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.cddl_tstr
@@ -64,7 +64,7 @@ data class DeviceRequestCbor(
      */
     val docRequests: Array<DocRequestCbor>
 
-) : CborView<DeviceRequestCbor, DeviceRequestJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
+) : CborViewOld<DeviceRequestCbor, DeviceRequestJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
     override fun cborBuilder(): CborBuilder<DeviceRequestCbor> =
         CborMap.builder(this).put(VERSION, version, optional = false).put(
             DOC_REQUESTS,

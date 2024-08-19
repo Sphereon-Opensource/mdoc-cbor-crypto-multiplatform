@@ -42,6 +42,7 @@ open class CborEncodedItem<Type>(
 
     fun <Type : AnyCborItem> cborDecode(): Type {
         return when (decodedValue) {
+            is CborViewOld<*,*,*> -> decodedValue.toCbor() as Type
             is CborView<*,*,*> -> decodedValue.toCbor() as Type
             is AnyCborItem -> decodedValue as Type
             else -> throw IllegalArgumentException("A CborEncoded item or CborView is required")
@@ -53,6 +54,7 @@ open class CborEncodedItem<Type>(
             return when (deserializedValue) {
                 is AnyCborItem -> CborByteString(cborSerializer.encode(deserializedValue))
                 is CborView<*, *, *> -> CborByteString(deserializedValue.cborEncode())
+                is CborViewOld<*, *, *> -> CborByteString(deserializedValue.cborEncode())
                 else -> throw IllegalArgumentException("A CborEncoded item or CborView is required")
             }
         }

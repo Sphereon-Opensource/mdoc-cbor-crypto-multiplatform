@@ -9,7 +9,7 @@ import com.sphereon.cbor.CborByteString
 import com.sphereon.cbor.CborEncodedItem
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborTagged
-import com.sphereon.cbor.CborView
+import com.sphereon.cbor.CborViewOld
 import com.sphereon.cbor.JsonViewOld
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.cddl_bstr
@@ -61,7 +61,7 @@ data class DocRequestCbor(
      */
     // FIXME: ReaderAuth generic/type
     val readerAuth: COSE_Sign1<ReaderAuthenticationCbor, ReaderAuthenticationJson>? = null
-) : CborView<DocRequestCbor, DocRequestJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
+) : CborViewOld<DocRequestCbor, DocRequestJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
 
     companion object {
         val ITEMS_REQUEST = StringLabel("itemsRequest")

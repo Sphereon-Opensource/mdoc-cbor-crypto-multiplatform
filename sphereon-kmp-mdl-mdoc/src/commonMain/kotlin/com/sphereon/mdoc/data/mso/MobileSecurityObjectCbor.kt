@@ -5,7 +5,7 @@ import com.sphereon.cbor.CDDL
 import com.sphereon.cbor.CborBuilder
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborString
-import com.sphereon.cbor.CborView
+import com.sphereon.cbor.CborViewOld
 import com.sphereon.cbor.JsonViewOld
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.StringLabel
@@ -36,7 +36,7 @@ data class MobileSecurityObjectCbor(
     val deviceKeyInfo: DeviceKeyInfoCbor,
     val docType: DocType,
     val validityInfo: ValidityInfoCbor,
-) : CborView<MobileSecurityObjectCbor, MobileSecurityObjectJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
+) : CborViewOld<MobileSecurityObjectCbor, MobileSecurityObjectJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
     override fun cborBuilder(): CborBuilder<MobileSecurityObjectCbor> {
         return CborMap.builder(this).put(VERSION, version).put(DIGEST_ALGORITHM, digestAlgorithm)
             .put(VALUE_DIGESTS, valueDigests).put(DEVICE_KEY_INFO, deviceKeyInfo.toCbor()).put(DOC_TYPE, docType)

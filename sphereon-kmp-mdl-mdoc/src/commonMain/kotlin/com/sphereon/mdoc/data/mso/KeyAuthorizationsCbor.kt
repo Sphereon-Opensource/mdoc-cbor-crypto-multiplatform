@@ -4,7 +4,7 @@ import com.sphereon.cbor.AnyCborItem
 import com.sphereon.cbor.CDDL
 import com.sphereon.cbor.CborBuilder
 import com.sphereon.cbor.CborMap
-import com.sphereon.cbor.CborView
+import com.sphereon.cbor.CborViewOld
 import com.sphereon.cbor.JsonViewOld
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.StringLabel
@@ -43,7 +43,7 @@ data class KeyAuthorizationsJson(
 data class KeyAuthorizationsCbor(
     val nameSpaces: AuthorizedNameSpaces? = null,
     val dataElements: AuthorizedDataElements? = null
-) : CborView<KeyAuthorizationsCbor, KeyAuthorizationsJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
+) : CborViewOld<KeyAuthorizationsCbor, KeyAuthorizationsJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
     override fun cborBuilder(): CborBuilder<KeyAuthorizationsCbor> =
         CborMap.builder(this).put(NAME_SPACES, nameSpaces, true).put(DATA_ELEMENTS, dataElements, true).end()
 
