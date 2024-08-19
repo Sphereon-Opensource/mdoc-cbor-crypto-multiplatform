@@ -6,7 +6,7 @@ import com.sphereon.cbor.CborBuilder
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborTDate
 import com.sphereon.cbor.CborView
-import com.sphereon.cbor.JsonView
+import com.sphereon.cbor.JsonViewOld
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.cddl_tdate
 import com.sphereon.cbor.StringLabel
@@ -20,7 +20,7 @@ data class ValidityInfoJson(
     val expectedUpdate: cddl_tdate? = null,
 
 
-    ) : JsonView<ValidityInfoCbor>() {
+    ) : JsonViewOld<ValidityInfoCbor>() {
     override fun toCbor() = ValidityInfoCbor(CborTDate(signed),
         CborTDate(validFrom),
         CborTDate(validUntil),

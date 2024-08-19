@@ -9,6 +9,7 @@ import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborNull
 import com.sphereon.cbor.CborString
 import com.sphereon.cbor.CborView
+import com.sphereon.cbor.JsonViewOld
 import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.NumberLabel
 import com.sphereon.cbor.cborSerializer
@@ -16,7 +17,6 @@ import com.sphereon.cbor.toCborByteString
 import com.sphereon.kmp.Encoding
 import com.sphereon.kmp.decodeFromHex
 import com.sphereon.kmp.encodeTo
-import kotlinx.serialization.Serializable
 import kotlin.js.JsExport
 
 
@@ -28,7 +28,7 @@ data class CoseSign1InputJson<JsonType, CborType>(
 
     val payload: String?, // base64url
 
-) : JsonView<CoseSign1InputCbor<CborType, JsonType>>() {
+) : JsonViewOld<CoseSign1InputCbor<CborType, JsonType>>() {
     override fun toCbor(): CoseSign1InputCbor<CborType, JsonType> = CoseSign1InputCbor(
         protectedHeader = protectedHeader.toCbor(),
         unprotectedHeader = unprotectedHeader?.toCbor(),
@@ -217,7 +217,7 @@ data class CoseSignatureStructureJson(
     val signProtected: String? = null,
     val externalAad: String? = null, // todo: "" instead of null?
     val payload: String
-) : JsonView<CoseSignatureStructureCbor>() {
+) : JsonViewOld<CoseSignatureStructureCbor>() {
     override fun toCbor(): CoseSignatureStructureCbor = throw NotImplementedError("CoseSignatureStructure Json to Cbor is not yet implemented")
 }
 
@@ -272,7 +272,7 @@ data class CoseSignatureStructureCbor(
 }
 
 @JsExport
-data class ToBeSignedJson(val hexValue: String, val key: ICoseKeyJson?, val alg: CoseAlgorithm?) : JsonView<ToBeSignedCbor>() {
+data class ToBeSignedJson(val hexValue: String, val key: ICoseKeyJson?, val alg: CoseAlgorithm?) : JsonViewOld<ToBeSignedCbor>() {
     override fun toCbor() =
         ToBeSignedCbor(hexValue.decodeFromHex().toCborByteString(), key = key?.let { CoseKeyJson.Static.fromDTO(it).toCbor() }, alg = alg)
 

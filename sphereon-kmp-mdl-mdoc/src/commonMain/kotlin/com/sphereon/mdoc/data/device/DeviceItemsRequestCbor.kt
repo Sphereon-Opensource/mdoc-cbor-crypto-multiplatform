@@ -10,7 +10,7 @@ import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborSimple
 import com.sphereon.cbor.CborString
 import com.sphereon.cbor.CborView
-import com.sphereon.cbor.JsonView
+import com.sphereon.cbor.JsonViewOld
 import com.sphereon.cbor.cddl_tstr
 import com.sphereon.cbor.StringLabel
 import com.sphereon.cbor.toCborBool
@@ -31,7 +31,7 @@ data class DeviceItemsRequestJson(
     val docType: cddl_tstr,
     val nameSpaces: MutableMap<String, MutableMap<String, Boolean>> = mutableMapOf(),
     val requestInfo: MutableMap<String, Any>? = null
-) : JsonView<DeviceItemsRequestCbor>() {
+) : JsonViewOld<DeviceItemsRequestCbor>() {
 
     override fun toCbor(): DeviceItemsRequestCbor {
         return DeviceItemsRequestCbor(docType.toCborString(), CborMap(mutableMapOf(* nameSpaces.map {

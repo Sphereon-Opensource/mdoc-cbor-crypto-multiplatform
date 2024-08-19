@@ -9,7 +9,7 @@ import com.sphereon.cbor.CborItem
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborUInt
 import com.sphereon.cbor.CborView2
-import com.sphereon.cbor.JsonView2
+import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.NumberLabel
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.encodeToArray
@@ -57,7 +57,7 @@ class CoseKeyJson(
     override val d: String? = null,
     override val x5chain: Array<String>? = null,
     override val additional: JsonObject? = null
-) : JsonView2(), ICoseKeyJson {
+) : JsonView(), ICoseKeyJson {
     fun toDto() = object : ICoseKeyJson {
         override val kty = this@CoseKeyJson.kty
         override val kid = this@CoseKeyJson.kid

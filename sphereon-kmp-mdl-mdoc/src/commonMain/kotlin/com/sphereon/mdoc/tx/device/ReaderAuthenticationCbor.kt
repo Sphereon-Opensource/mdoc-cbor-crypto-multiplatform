@@ -7,7 +7,7 @@ import com.sphereon.cbor.CborBuilder
 import com.sphereon.cbor.CborByteString
 import com.sphereon.cbor.CborString
 import com.sphereon.cbor.CborView
-import com.sphereon.cbor.JsonView
+import com.sphereon.cbor.JsonViewOld
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.crypto.cose.COSE_Key
 import com.sphereon.mdoc.data.device.DeviceItemsRequestCbor
@@ -18,7 +18,7 @@ import kotlin.js.JsExport
 data class ReaderAuthenticationJson(
     val sessionTranscript: SessionTranscriptJson,
     val itemsRequest: DeviceItemsRequestJson
-) : JsonView<ReaderAuthenticationCbor>() {
+) : JsonViewOld<ReaderAuthenticationCbor>() {
     override fun toCbor(): ReaderAuthenticationCbor {
         TODO("Not yet implemented")
     }
@@ -58,7 +58,7 @@ data class SessionTranscriptJson(
     val deviceEngagement: DeviceEngagementJson,
     val eReaderKey: COSE_Key,
     val handover: HandoverJson<*>
-) : JsonView<SessionTranscriptCbor>() {
+) : JsonViewOld<SessionTranscriptCbor>() {
     override fun toCbor(): SessionTranscriptCbor {
         TODO("Not yet implemented")
     }
@@ -99,9 +99,9 @@ data class SessionTranscriptCbor(
 }
 
 
-sealed class HandoverJson<CborType: Any> : JsonView<CborType>()
+sealed class HandoverJson<CborType: Any> : JsonViewOld<CborType>()
 
-sealed class HandoverCbor<CborType: Any, JsonType> : CborView<CborType, JsonView<CborType>, CborArray<AnyCborItem>>(CDDL.list)
+sealed class HandoverCbor<CborType: Any, JsonType> : CborView<CborType, JsonViewOld<CborType>, CborArray<AnyCborItem>>(CDDL.list)
 class QrHandoverJson : HandoverJson<QrHandoverCbor>() {
     override fun toCbor(): QrHandoverCbor {
         return QrHandoverCbor()
@@ -113,7 +113,7 @@ class QrHandoverCbor : HandoverCbor<QrHandoverCbor, QrHandoverJson>() {
         return CborArray.builder(this).end()
     }
 
-    override fun toJson(): JsonView<QrHandoverCbor> {
+    override fun toJson(): JsonViewOld<QrHandoverCbor> {
         return QrHandoverJson()
     }
 }

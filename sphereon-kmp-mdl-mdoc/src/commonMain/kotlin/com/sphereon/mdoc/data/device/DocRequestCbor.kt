@@ -10,7 +10,7 @@ import com.sphereon.cbor.CborEncodedItem
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborTagged
 import com.sphereon.cbor.CborView
-import com.sphereon.cbor.JsonView
+import com.sphereon.cbor.JsonViewOld
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.cddl_bstr
 import com.sphereon.cbor.cddl_tstr
@@ -40,7 +40,7 @@ data class DocRequestJson(
      * ReaderAuth is used for mdoc reader authentication as defined in 9.1.4.
      */
     val readerAuth: CoseSign1Json<ReaderAuthenticationJson, ReaderAuthenticationCbor>? = null
-) : JsonView<DocRequestCbor>() {
+) : JsonViewOld<DocRequestCbor>() {
     override fun toCbor(): DocRequestCbor =
         DocRequestCbor(itemsRequest = itemsRequest.toCbor(), readerAuth = readerAuth?.toCbor())
 }

@@ -12,7 +12,7 @@ import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborString
 import com.sphereon.cbor.CborUInt
 import com.sphereon.cbor.CborView
-import com.sphereon.cbor.JsonView
+import com.sphereon.cbor.JsonViewOld
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.cborViewArrayToCborItem
 import com.sphereon.cbor.cddl_uint
@@ -36,7 +36,7 @@ data class DeviceEngagementJson(
     val serverRetrievalMethod: ServerRetrievalMethodsCbor? = null,
     val protocolInfo: ProtocolInfo? = null,
     val additionalItems: MutableMap<LongKMP, Any>? = mutableMapOf()
-) : JsonView<DeviceEngagementCbor>() {
+) : JsonViewOld<DeviceEngagementCbor>() {
     override fun toCbor(): DeviceEngagementCbor {
         TODO("Not yet implemented")
     }
@@ -129,7 +129,7 @@ typealias ProtocolInfo = AnyCborItem
 
 @JsExport
 data class ServerRetrievalMethodsJson(val Oidc: ServerRetrievalInfo?, val WebApi: ServerRetrievalInfo?) :
-    JsonView<ServerRetrievalMethodsCbor>() {
+    JsonViewOld<ServerRetrievalMethodsCbor>() {
     override fun toCbor(): ServerRetrievalMethodsCbor {
         TODO("Not yet implemented")
     }
@@ -186,7 +186,7 @@ data class ServerRetrievalInfo(val version: CborUInt, val issuerUrl: CborString,
 
 @JsExport
 data class DeviceEngagementSecurityJson(val cypherSuite: LongKMP, val eDeviceKeyBytes: CoseKeyJson) :
-    JsonView<DeviceEngagementSecurityCbor>() {
+    JsonViewOld<DeviceEngagementSecurityCbor>() {
     override fun toCbor(): DeviceEngagementSecurityCbor {
         TODO("Not yet implemented")
     }
@@ -226,7 +226,7 @@ data class DeviceRetrievalMethodJson(
     val type: cddl_uint,
     val version: cddl_uint,
     val retrievalOptions: DeviceRetrievalOptionsCbor
-) : JsonView<DeviceRetrievalMethodCbor>() {
+) : JsonViewOld<DeviceRetrievalMethodCbor>() {
     override fun toCbor(): DeviceRetrievalMethodCbor {
         TODO("Not yet implemented")
     }
@@ -296,7 +296,7 @@ data class DeviceRetrievalMethodCbor(
 }
 
 @JsExport
-sealed class DeviceRetrievalOptionsJson : JsonView<DeviceRetrievalOptionsCbor>()
+sealed class DeviceRetrievalOptionsJson : JsonViewOld<DeviceRetrievalOptionsCbor>()
 
 @JsExport
 sealed class DeviceRetrievalOptionsCbor :
@@ -392,7 +392,7 @@ data class BleOptionsCbor(
 data class NfcOptionsJson(
     val maxCommandDataFieldLength: cddl_uint,
     val maxResponseDataFieldLength: cddl_uint,
-) : JsonView<NfcOptionsCbor>() {
+) : JsonViewOld<NfcOptionsCbor>() {
     @JsName("newInstance")
     constructor(
         maxCommandDataFieldLength: Int, // maps to number in JS

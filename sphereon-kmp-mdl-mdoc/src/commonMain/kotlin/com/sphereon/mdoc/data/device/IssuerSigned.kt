@@ -14,8 +14,8 @@ import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborUInt
 import com.sphereon.cbor.CborView
 import com.sphereon.cbor.ICborItemValueJson
+import com.sphereon.cbor.JsonViewOld
 import com.sphereon.cbor.JsonView
-import com.sphereon.cbor.JsonView2
 import com.sphereon.cbor.StringLabel
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.toCborByteString
@@ -39,7 +39,7 @@ import kotlin.js.JsExport
 data class IssuerSignedJson(
     val nameSpaces: IssuerSignedNamesSpacesJson?,
     val issuerAuth: CoseSign1Json<MobileSecurityObjectJson, MobileSecurityObjectCbor>
-) : JsonView<IssuerSignedCbor>() {
+) : JsonViewOld<IssuerSignedCbor>() {
     override fun toCbor(): IssuerSignedCbor {
         return IssuerSignedCbor(
             issuerAuth = issuerAuth.toCbor(),
@@ -181,7 +181,7 @@ data class IssuerSignedItemJson(
     val key: String,
     val value: JsonElement,
     val cddl: CDDLType // We need this as otherwise we would lose type info. Strings can be (full)dates, tstr and text etc.
-) : JsonView2() {
+) : JsonView() {
     override fun toCbor(): IssuerSignedItemCbor<Any> = IssuerSignedItemCbor(
         digestID = CborUInt(this.digestID),
         random = random.toCborByteString(),

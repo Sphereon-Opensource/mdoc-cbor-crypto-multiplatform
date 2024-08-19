@@ -9,7 +9,7 @@ import com.sphereon.cbor.CborByteString
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborString
 import com.sphereon.cbor.CborView2
-import com.sphereon.cbor.JsonView2
+import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.NumberLabel
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.encodeToBase64Array
@@ -42,7 +42,7 @@ data class CoseHeaderJson(
     val iv: String? = null,
     val partialIv: String? = null,
     val x5chain: Array<String>? = null,
-) : JsonView2() {
+) : JsonView() {
 
     override fun toCbor(): CoseHeaderCbor = CoseHeaderCbor(
         alg = alg,

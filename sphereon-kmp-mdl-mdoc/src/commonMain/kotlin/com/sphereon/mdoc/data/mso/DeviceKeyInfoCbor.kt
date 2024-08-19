@@ -5,7 +5,7 @@ import com.sphereon.cbor.CDDL
 import com.sphereon.cbor.CborBuilder
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborView
-import com.sphereon.cbor.JsonView
+import com.sphereon.cbor.JsonViewOld
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.crypto.cose.COSE_Key
 import com.sphereon.crypto.cose.CoseKeyJson
@@ -20,7 +20,7 @@ data class DeviceKeyInfoJson(
     val keyAuthorizations: KeyAuthorizationsJson? = null,
     @Contextual
     val keyInfo: MutableMap<LongKMP, *>? = null,
-) : JsonView<DeviceKeyInfoCbor>() {
+) : JsonViewOld<DeviceKeyInfoCbor>() {
     override fun toCbor(): DeviceKeyInfoCbor {
         TODO("Not yet implemented")
     }

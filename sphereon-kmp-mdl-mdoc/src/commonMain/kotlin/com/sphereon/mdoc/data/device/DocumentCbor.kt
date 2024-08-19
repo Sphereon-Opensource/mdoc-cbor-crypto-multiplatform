@@ -7,7 +7,7 @@ import com.sphereon.cbor.CborBuilder
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborString
 import com.sphereon.cbor.CborView
-import com.sphereon.cbor.JsonView
+import com.sphereon.cbor.JsonViewOld
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.StringLabel
 import com.sphereon.mdoc.data.DocumentErrors
@@ -49,7 +49,7 @@ data class DocumentJson (
      */
     // fixme
     val errors: DocumentErrors?
-): JsonView<DocumentCbor>() {
+): JsonViewOld<DocumentCbor>() {
     override fun toCbor(): DocumentCbor {
         TODO("Not yet implemented")
     }

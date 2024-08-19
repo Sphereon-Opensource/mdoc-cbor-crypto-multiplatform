@@ -10,7 +10,7 @@ import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborString
 import com.sphereon.cbor.CborUInt
 import com.sphereon.cbor.CborView
-import com.sphereon.cbor.JsonView
+import com.sphereon.cbor.JsonViewOld
 import com.sphereon.cbor.cborViewArrayToCborItem
 import com.sphereon.cbor.StringLabel
 import com.sphereon.kmp.LongKMP
@@ -38,7 +38,7 @@ data class DeviceResponseJson(
 
     val status: LongKMP = LongKMP(0)
 
-) : JsonView<DeviceResponseCbor>() {
+) : JsonViewOld<DeviceResponseCbor>() {
     override fun toCbor(): DeviceResponseCbor {
         TODO("Not yet implemented")
     }

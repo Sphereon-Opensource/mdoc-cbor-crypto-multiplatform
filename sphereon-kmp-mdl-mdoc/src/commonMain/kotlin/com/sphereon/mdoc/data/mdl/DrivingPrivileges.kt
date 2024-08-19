@@ -10,7 +10,7 @@ import com.sphereon.cbor.CborFullDate
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborString
 import com.sphereon.cbor.CborView
-import com.sphereon.cbor.JsonView
+import com.sphereon.cbor.JsonViewOld
 import com.sphereon.cbor.cddl_full_date
 import com.sphereon.cbor.cddl_tstr
 import com.sphereon.cbor.cborViewListToCborItem
@@ -112,7 +112,7 @@ data class DrivingPrivilegesCbor(
 
 @JsExport
 data class DrivingPrivilegesJson(val backing: List<DrivingPrivilegeJson> = mutableListOf()) :
-    List<DrivingPrivilegeJson> by backing, JsonView<DrivingPrivilegesCbor>() {
+    List<DrivingPrivilegeJson> by backing, JsonViewOld<DrivingPrivilegesCbor>() {
     override fun toCbor(): DrivingPrivilegesCbor {
         return DrivingPrivilegesCbor(backing.map { it.toCbor() })
     }
@@ -131,7 +131,7 @@ data class DrivingPrivilegeJson(
     val expiry_date: LocalDateTimeKMP? = null,
     @SerialName("codes")
     val codes: List<DrivingPrivilegesCodeJson>? = null
-) : JsonView<DrivingPrivilegeCbor>() {
+) : JsonViewOld<DrivingPrivilegeCbor>() {
     override fun toCbor(): DrivingPrivilegeCbor {
         return DrivingPrivilegeCbor.fromSimple(this)
     }
@@ -413,7 +413,7 @@ data class DrivingPrivilegesCodeCbor(val code: CborString, val sign: CborString?
 
 @JsExport
 data class DrivingPrivilegesCodeJson(val code: cddl_tstr, val sign: cddl_tstr?, val value: cddl_tstr?) :
-    JsonView<DrivingPrivilegesCodeCbor>() {
+    JsonViewOld<DrivingPrivilegesCodeCbor>() {
 
     override fun toCbor(): DrivingPrivilegesCodeCbor =
         DrivingPrivilegesCodeCbor(code.toCborString(), sign?.toCborString(), value?.toCborString())

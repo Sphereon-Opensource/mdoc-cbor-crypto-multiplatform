@@ -7,7 +7,7 @@ import com.sphereon.cbor.CborBuilder
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborString
 import com.sphereon.cbor.CborView
-import com.sphereon.cbor.JsonView
+import com.sphereon.cbor.JsonViewOld
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.cddl_tstr
 import com.sphereon.cbor.StringLabel
@@ -20,7 +20,7 @@ import kotlin.js.JsExport
 data class DeviceRequestJson(
     val version: cddl_tstr,
     val docRequests: MutableList<DocRequestJson>
-) : JsonView<DeviceRequestCbor>() {
+) : JsonViewOld<DeviceRequestCbor>() {
     override fun toCbor(): DeviceRequestCbor {
         TODO("Not yet implemented")
     }

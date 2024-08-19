@@ -1,4 +1,4 @@
-import com.sphereon.cbor.JsonView2
+import com.sphereon.cbor.JsonView
 import com.sphereon.crypto.cose.CoseKeyJson
 import com.sphereon.mdoc.data.device.IssuerSignedItemJson
 import kotlinx.serialization.json.Json
@@ -16,7 +16,7 @@ object JsonSupport {
         // Ensures we can do polymorphic serialization of both the Key and Private Key entries using the IKeyEntry interface
 
 
-        polymorphic(JsonView2::class) {
+        polymorphic(JsonView::class) {
             subclass(CoseKeyJson::class)
             subclass(IssuerSignedItemJson::class)
         }

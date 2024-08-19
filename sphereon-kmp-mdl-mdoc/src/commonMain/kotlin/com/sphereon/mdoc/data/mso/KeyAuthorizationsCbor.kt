@@ -5,7 +5,7 @@ import com.sphereon.cbor.CDDL
 import com.sphereon.cbor.CborBuilder
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborView
-import com.sphereon.cbor.JsonView
+import com.sphereon.cbor.JsonViewOld
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.StringLabel
 import kotlin.js.JsExport
@@ -14,7 +14,7 @@ import kotlin.js.JsExport
 data class KeyAuthorizationsJson(
     val nameSpaces: Array<String>? = null,
     val dataElements: Map<String, Map<String, Array<String>>>? = null
-) : JsonView<KeyAuthorizationsCbor>() {
+) : JsonViewOld<KeyAuthorizationsCbor>() {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is KeyAuthorizationsJson) return false
