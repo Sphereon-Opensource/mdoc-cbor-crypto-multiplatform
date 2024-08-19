@@ -5,14 +5,16 @@ import com.sphereon.cbor.CDDL
 import com.sphereon.cbor.CborBuilder
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborTDate
-import com.sphereon.cbor.CborViewOld
-import com.sphereon.cbor.JsonViewOld
+import com.sphereon.cbor.CborView
+import com.sphereon.cbor.JsonView
+import com.sphereon.cbor.StringLabel
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.cddl_tdate
-import com.sphereon.cbor.StringLabel
+import kotlinx.serialization.Serializable
 import kotlin.js.JsExport
 
 @JsExport
+@Serializable
 data class ValidityInfoJson(
     val signed: cddl_tdate,
     val validFrom: cddl_tdate,
@@ -20,7 +22,7 @@ data class ValidityInfoJson(
     val expectedUpdate: cddl_tdate? = null,
 
 
-    ) : JsonViewOld<ValidityInfoCbor>() {
+    ) : JsonView() {
     override fun toCbor() = ValidityInfoCbor(CborTDate(signed),
         CborTDate(validFrom),
         CborTDate(validUntil),
@@ -33,7 +35,7 @@ data class ValidityInfoCbor(
     val validFrom: CborTDate,
     val validUntil: CborTDate,
     val expectedUpdate: CborTDate? = null
-) : CborViewOld<ValidityInfoCbor, ValidityInfoJson, CborMap<StringLabel, CborTDate>>(CDDL.map) {
+) : CborView<ValidityInfoCbor, ValidityInfoJson, CborMap<StringLabel, CborTDate>>(CDDL.map) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other == null || this::class != other::class) return false

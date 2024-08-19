@@ -15,8 +15,7 @@ import com.sphereon.kmp.Encoding
 import com.sphereon.kmp.decodeFrom
 import com.sphereon.kmp.decodeFromHex
 import com.sphereon.kmp.encodeTo
-import jsonSerializer
-import kotlinx.serialization.builtins.serializer
+import com.sphereon.mdoc.mdocJsonSerializer
 import kotlinx.serialization.encodeToString
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -106,7 +105,7 @@ class IssuerSignedTest {
     @Test
     fun shouldDecodeAndEncodeISOIssuerAuthTestVector() {
 
-        val issuerAuth = CoseSign1Cbor.cborDecode<Any, Any>(iso18013_5_IssuerAuthTestVector.decodeFromHex())
+        val issuerAuth = CoseSign1Cbor.cborDecode<Any>(iso18013_5_IssuerAuthTestVector.decodeFromHex())
         assertNotNull(issuerAuth)
         assertNotNull(issuerAuth.payload)
         assertNotNull(issuerAuth.signature)
@@ -142,15 +141,6 @@ class IssuerSignedTest {
         assertEquals("ES256", decoded.issuerAuth.protectedHeader.alg?.name)
         assertEquals(2, decoded.issuerAuth.unprotectedHeader?.x5chain?.value?.size)
         assertEquals(22, decoded.nameSpaces?.getStringLabel<CborArray<*>>("eu.europa.ec.eudi.pid.1", true)?.value?.size)
-
-        val issuerSignedJson: IssuerSignedJson = decoded.toJson()
-
-
-        val items = issuerSignedJson.nameSpaces!!.get("eu.europa.ec.eudi.pid.1")
-        var json = "{\"issuerAuth\":\"discard this data\", \"namespaces\": {\r\n\"eu.europa.ec.eudi.pid.1\": ["
-        items!!.map { json += jsonSerializer.encodeToString(it) +",\r\n" }
-        json += "]\r\n}"
-        println(json)
 
         val issuerAuthEncoded = decoded.issuerAuth.cborEncode()
         //val nameSpacesEncoded = decoded.nameSpaces?.cborEncode()
@@ -196,7 +186,7 @@ class IssuerSignedTest {
 
     @Test
     fun shouldCreateSigned() {
-        val cose = CoseSign1Cbor<Any, Any>(
+        val cose = CoseSign1Cbor<Any>(
             payload = "This is the content.".toCborByteString(),
             protectedHeader = CoseHeaderCbor(alg = CoseSignatureAlgorithm.ES256),
             unprotectedHeader = CoseHeaderCbor(kid = "11".stringToCborByteString()),

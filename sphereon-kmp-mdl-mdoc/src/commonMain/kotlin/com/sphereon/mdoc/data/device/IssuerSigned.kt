@@ -28,20 +28,20 @@ import com.sphereon.mdoc.data.DataElementIdentifier
 import com.sphereon.mdoc.data.DataElementValue
 import com.sphereon.mdoc.data.NameSpace
 import com.sphereon.mdoc.data.mso.MobileSecurityObjectCbor
-import com.sphereon.mdoc.data.mso.MobileSecurityObjectJson
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 import kotlin.js.JsExport
 
 @JsExport
+@Serializable
 data class IssuerSignedJson(
     val nameSpaces: IssuerSignedNamesSpacesJson?,
-    val issuerAuth: CoseSign1Json<MobileSecurityObjectJson, MobileSecurityObjectCbor>
+    val issuerAuth: CoseSign1Json
 ) : JsonView() {
     override fun toCbor(): IssuerSignedCbor {
         return IssuerSignedCbor(
-            issuerAuth = issuerAuth.toCbor(),
+            issuerAuth = issuerAuth.toCbor() as  COSE_Sign1<MobileSecurityObjectCbor>,
             nameSpaces = if (nameSpaces == null) null else CborMap(
                 mutableMapOf(* nameSpaces.map {
                     Pair(
@@ -80,7 +80,7 @@ data class IssuerSignedJson(
 @JsExport
 data class IssuerSignedCbor(
     val nameSpaces: IssuerSignedNamesSpacesCbor? = null,
-    val issuerAuth: COSE_Sign1<MobileSecurityObjectCbor, MobileSecurityObjectJson>
+    val issuerAuth: COSE_Sign1<MobileSecurityObjectCbor>
 ) : CborView<IssuerSignedCbor, IssuerSignedJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
     class Builder(val nameSpaces: MutableMap<NameSpace, List<IssuerSignedItemCbor<Any>>> = mutableMapOf()) {
 
@@ -108,12 +108,18 @@ data class IssuerSignedCbor(
     }
 
     override fun toJson(): IssuerSignedJson {
+        var count = 0
         return IssuerSignedJson(
             issuerAuth = issuerAuth.toJson(),
             nameSpaces = if (nameSpaces == null) null else mutableMapOf(* nameSpaces.value.map {
                 Pair(
                     it.key.value,
-                    it.value.value.map { elts -> elts.decodedValue.toJson() }
+                    it.value.value.map { elts ->
+
+                            println("* ${count++} ${elts.decodedValue.elementIdentifier.value} : ${elts.decodedValue.elementValue} ")
+                            elts.decodedValue.toJson()
+
+                    }
                         .toTypedArray()
                 )
             }.toTypedArray())

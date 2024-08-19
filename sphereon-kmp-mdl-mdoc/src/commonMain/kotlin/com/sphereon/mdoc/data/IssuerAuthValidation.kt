@@ -48,7 +48,7 @@ object IssuerAuthValidation {
      * * 1. Validate the certificate included in the MSO header according to 9.3.3.
      */
     suspend fun verifyCertificateChain(
-        issuerAuth: COSE_Sign1<MobileSecurityObjectCbor, MobileSecurityObjectJson>,
+        issuerAuth: COSE_Sign1<MobileSecurityObjectCbor>,
         x509Service: IX509Service = CryptoService.X509,
         trustedCerts: Array<String>? = x509Service.getTrustedCerts()
     ): IX509VerificationResult<ICoseKeyCbor> {
@@ -73,7 +73,7 @@ object IssuerAuthValidation {
      * validation procedure of step 1.
      */
     suspend fun verifySign1(
-        issuerAuth: COSE_Sign1<MobileSecurityObjectCbor, MobileSecurityObjectJson>,
+        issuerAuth: COSE_Sign1<MobileSecurityObjectCbor>,
         coseCryptoService: ICoseCryptoService = CryptoService.COSE,
         keyInfo: IKeyInfo<ICoseKeyCbor>?
     ): IVerifySignatureResult<ICoseKeyCbor> {
@@ -92,7 +92,7 @@ object IssuerAuthValidation {
      *  This is a READER method. FIXME: Implement
      */
     suspend fun verifyDigests(
-        issuerAuth: COSE_Sign1<MobileSecurityObjectCbor, MobileSecurityObjectJson>,
+        issuerAuth: COSE_Sign1<MobileSecurityObjectCbor>,
 //        deviceResponse: DeviceResponseCbor
     ): IVerifyResult = VerifyResult(
         error = true,
@@ -107,7 +107,7 @@ object IssuerAuthValidation {
      *
      *  This is a READER method. FIXME: Implement
      */
-    suspend fun verifyDocType(issuerAuth: COSE_Sign1<MobileSecurityObjectCbor, MobileSecurityObjectJson>): IVerifyResult =
+    suspend fun verifyDocType(issuerAuth: COSE_Sign1<MobileSecurityObjectCbor>): IVerifyResult =
         VerifyResult(
             error = true,
             critical = true,
@@ -122,7 +122,7 @@ object IssuerAuthValidation {
      * — the 'validUntil' element shall be equal or later than the current timestamp.
      */
     suspend fun verifyValidityInfo(
-        issuerAuth: COSE_Sign1<MobileSecurityObjectCbor, MobileSecurityObjectJson>,
+        issuerAuth: COSE_Sign1<MobileSecurityObjectCbor>,
         dateTimeUtils: DateTimeUtils = getDateTime(),
         timeZoneId: String? = null,
         clockSkewAllowedInSec: Int = 120,

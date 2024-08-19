@@ -6,14 +6,17 @@ import com.sphereon.cbor.CborArray
 import com.sphereon.cbor.CborBuilder
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborString
-import com.sphereon.cbor.CborViewOld
-import com.sphereon.cbor.JsonViewOld
+import com.sphereon.cbor.CborView
+import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.StringLabel
-import com.sphereon.mdoc.data.DocumentErrors
+import com.sphereon.mdoc.data.DocumentErrorsCbor
+import com.sphereon.mdoc.data.DocumentErrorsJson
+import kotlinx.serialization.Serializable
 import kotlin.js.JsExport
 
 @JsExport
+@Serializable
 data class DocumentJson (
     /**
      * In the Document structure, the document type of the returned document is indicated by the
@@ -39,7 +42,7 @@ data class DocumentJson (
      * contains either the DeviceSignature or the DeviceMac element, both are defined in 9.1.3.
      */
     // fixme
-    val deviceSigned: DeviceSigned,
+    val deviceSigned: DeviceSignedJson,
 
     /**
      * If the device retrieval mdoc response structure does not include some data element or document
@@ -48,8 +51,8 @@ data class DocumentJson (
      * If present, ErrorCode shall contain an error code according to 8.3.2.1.2.3.
      */
     // fixme
-    val errors: DocumentErrors?
-): JsonViewOld<DocumentCbor>() {
+    val errors: DocumentErrorsJson?
+): JsonView() {
     override fun toCbor(): DocumentCbor {
         TODO("Not yet implemented")
     }
@@ -81,7 +84,7 @@ data class DocumentCbor (
      * authentication. The DeviceNameSpaces structure can be an empty structure. The DeviceAuth structure
      * contains either the DeviceSignature or the DeviceMac element, both are defined in 9.1.3.
      */
-    val deviceSigned: DeviceSigned,
+    val deviceSigned: DeviceSignedCbor,
 
     /**
      * If the device retrieval mdoc response structure does not include some data element or document
@@ -89,8 +92,8 @@ data class DocumentCbor (
      * documentErrors or errors structures.
      * If present, ErrorCode shall contain an error code according to 8.3.2.1.2.3.
      */
-    val errors: DocumentErrors?
-) : CborViewOld<DocumentCbor, DocumentJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
+    val errors: DocumentErrorsCbor?
+) : CborView<DocumentCbor, DocumentJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
     override fun cborBuilder(): CborBuilder<DocumentCbor> {
         TODO("Not yet implemented")
     }

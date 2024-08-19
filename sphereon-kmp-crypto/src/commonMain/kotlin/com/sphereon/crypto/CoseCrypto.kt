@@ -12,13 +12,13 @@ import kotlin.jvm.JvmStatic
  * Not exported to JS as it has a similar interface exported using Promises instead of coroutines
  */
 interface ICoseCryptoService {
-    suspend fun <CborType, JsonType> sign1(
-        input: CoseSign1InputCbor<CborType, JsonType>,
+    suspend fun <CborType> sign1(
+        input: CoseSign1InputCbor,
         keyInfo: IKeyInfo<ICoseKeyCbor>? = null
-    ): CoseSign1Cbor<CborType, JsonType>
+    ): CoseSign1Cbor<CborType>
 
-    suspend fun <CborType, JsonType> verify1(
-        input: CoseSign1Cbor<CborType, JsonType>,
+    suspend fun <CborType> verify1(
+        input: CoseSign1Cbor<CborType>,
         keyInfo: IKeyInfo<ICoseKeyCbor>? = null
     ): IVerifySignatureResult<ICoseKeyCbor>
 }
@@ -36,10 +36,10 @@ object CoseCryptoServiceObject : CoseCryptoCallbackService {
 
     private var disabled = false
 
-    override suspend fun <CborType, JsonType> sign1(
-        input: CoseSign1InputCbor<CborType, JsonType>,
+    override suspend fun <CborType> sign1(
+        input: CoseSign1InputCbor,
         keyInfo: IKeyInfo<ICoseKeyCbor>?
-    ): CoseSign1Cbor<CborType, JsonType> {
+    ): CoseSign1Cbor<CborType> {
         if (!isEnabled()) {
             CryptoConst.LOG.info("COSE sign1 has been disabled")
             throw IllegalStateException("COSE service is disabled; cannot sign")
@@ -59,8 +59,8 @@ object CoseCryptoServiceObject : CoseCryptoCallbackService {
         return this.platformCallback.sign1(input, keyInfo)
     }
 
-    override suspend fun <CborType, JsonType> verify1(
-        input: CoseSign1Cbor<CborType, JsonType>,
+    override suspend fun <CborType> verify1(
+        input: CoseSign1Cbor<CborType>,
         keyInfo: IKeyInfo<ICoseKeyCbor>?
     ): IVerifySignatureResult<ICoseKeyCbor> {
         if (!this.isEnabled()) {

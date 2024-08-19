@@ -3,6 +3,14 @@
 
 package com.sphereon.crypto.jose
 
+import com.sphereon.cbor.CDDL
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlin.js.ExperimentalJsExport
 import kotlin.js.JsExport
 
@@ -18,6 +26,7 @@ interface JwaAlgorithm {
  * @property value The value representing the algorithm.
  */
 @JsExport
+@Serializable(with = JwaAlgorithmSerializer::class)
 sealed class JwaSignatureAlgorithm(override val value: String) : JwaAlgorithm {
     object HS256 : JwaSignatureAlgorithm("HS256")
     object HS384 : JwaSignatureAlgorithm("HS384")
@@ -51,6 +60,7 @@ sealed class JwaSignatureAlgorithm(override val value: String) : JwaAlgorithm {
  * @property value The string value representing the algorithm.
  */
 @JsExport
+@Serializable(with = JwaAlgorithmSerializer::class)
 sealed class JwaEncryptionAlgorithm(override val value: String) : JwaAlgorithm {
     object RSA1_5 : JwaEncryptionAlgorithm("RSA1_5")
     object RSA_OAEP : JwaEncryptionAlgorithm("RSA-OAEP")
@@ -68,7 +78,6 @@ sealed class JwaEncryptionAlgorithm(override val value: String) : JwaAlgorithm {
     object PBES2_HS256_A128KW : JwaEncryptionAlgorithm("PBES2-HS256+A128KW")
     object PBES2_HS384_A192KW : JwaEncryptionAlgorithm("PBES2-HS384+A192KW")
     object PBES2_HS512_A256KW : JwaEncryptionAlgorithm("PBES2-HS512+A256KW")
-
     companion object {
         val asList = listOf(
             RSA1_5,
@@ -88,12 +97,26 @@ sealed class JwaEncryptionAlgorithm(override val value: String) : JwaAlgorithm {
             PBES2_HS384_A192KW,
             PBES2_HS512_A256KW
         )
-
         fun fromValue(value: String?): JwaEncryptionAlgorithm? {
             if (value == null) {
                 return null
             }
             return asList.firstOrNull { it.value === value }
         }
+
+    }
+
+}
+
+internal object JwaAlgorithmSerializer : KSerializer<JwaAlgorithm> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("JWAAlgorithm", PrimitiveKind.STRING)
+
+    override fun serialize(encoder: Encoder, value: JwaAlgorithm) {
+        encoder.encodeString(value.value)
+    }
+
+    override fun deserialize(decoder: Decoder): JwaAlgorithm {
+        val value = decoder.decodeString()
+        return JwaSignatureAlgorithm.fromValue(value) ?: JwaEncryptionAlgorithm.fromValue(value) ?: throw IllegalArgumentException("Invalid signature algorithm")
     }
 }

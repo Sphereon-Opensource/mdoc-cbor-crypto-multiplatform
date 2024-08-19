@@ -2,18 +2,20 @@
 @file:JsExport
 package com.sphereon.crypto.jose
 
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 import kotlin.js.ExperimentalJsExport
 import kotlin.js.JsExport
 
-
-class JwtPayloadJson(val underlying: MutableMap<String, Any>) : MutableMap<String, Any> by underlying {
+@Serializable
+class JwtPayloadJson(val underlying: JsonObject) : Map<String, Any> by underlying {
     override fun get(key: String): Any? {
         return underlying[key]
     }
 
     var iss: String? = null
     var sub: String? = null
-    var aud: Any? = null // could be a string or array of string
+    var aud: Array<String>? = null // TODO:could be a string or array of string
     var exp: Int? = null
     var nbf: Int? = null
     var iat: Int? = null

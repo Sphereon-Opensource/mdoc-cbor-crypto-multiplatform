@@ -9,7 +9,9 @@ import com.sphereon.cbor.CborByteString
 import com.sphereon.cbor.CborEncodedItem
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborTagged
+import com.sphereon.cbor.CborView
 import com.sphereon.cbor.CborViewOld
+import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.JsonViewOld
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.cddl_bstr
@@ -39,10 +41,10 @@ data class DocRequestJson(
     /**
      * ReaderAuth is used for mdoc reader authentication as defined in 9.1.4.
      */
-    val readerAuth: CoseSign1Json<ReaderAuthenticationJson, ReaderAuthenticationCbor>? = null
-) : JsonViewOld<DocRequestCbor>() {
+    val readerAuth: CoseSign1Json? = null
+) : JsonView() {
     override fun toCbor(): DocRequestCbor =
-        DocRequestCbor(itemsRequest = itemsRequest.toCbor(), readerAuth = readerAuth?.toCbor())
+        DocRequestCbor(itemsRequest = itemsRequest.toCbor(), readerAuth = readerAuth?.toCbor() as COSE_Sign1<ReaderAuthenticationCbor>?)
 }
 
 /**
@@ -60,8 +62,8 @@ data class DocRequestCbor(
      * ReaderAuth is used for mdoc reader authentication as defined in 9.1.4.
      */
     // FIXME: ReaderAuth generic/type
-    val readerAuth: COSE_Sign1<ReaderAuthenticationCbor, ReaderAuthenticationJson>? = null
-) : CborViewOld<DocRequestCbor, DocRequestJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
+    val readerAuth: COSE_Sign1<ReaderAuthenticationCbor>? = null
+) : CborView<DocRequestCbor, DocRequestJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
 
     companion object {
         val ITEMS_REQUEST = StringLabel("itemsRequest")
@@ -95,7 +97,7 @@ data class DocRequestCbor(
 
     data class Builder(
         var deviceItemsRequestBuilder: DeviceItemsRequestCbor.Builder? = null,
-        var readerAuth: COSE_Sign1<ReaderAuthenticationCbor, ReaderAuthenticationJson>? = null
+        var readerAuth: COSE_Sign1<ReaderAuthenticationCbor>? = null
     ) {
 
         private fun builder() =
@@ -112,7 +114,7 @@ data class DocRequestCbor(
 
         }
 
-        fun withReaderAuth(readerAuth: COSE_Sign1<ReaderAuthenticationCbor, ReaderAuthenticationJson>) =
+        fun withReaderAuth(readerAuth: COSE_Sign1<ReaderAuthenticationCbor>) =
             apply { this.readerAuth = readerAuth }
 
 

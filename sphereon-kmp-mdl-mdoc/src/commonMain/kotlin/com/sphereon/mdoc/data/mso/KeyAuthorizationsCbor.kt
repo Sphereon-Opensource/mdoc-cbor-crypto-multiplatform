@@ -4,17 +4,19 @@ import com.sphereon.cbor.AnyCborItem
 import com.sphereon.cbor.CDDL
 import com.sphereon.cbor.CborBuilder
 import com.sphereon.cbor.CborMap
-import com.sphereon.cbor.CborViewOld
-import com.sphereon.cbor.JsonViewOld
-import com.sphereon.cbor.cborSerializer
+import com.sphereon.cbor.CborView
+import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.StringLabel
+import com.sphereon.cbor.cborSerializer
+import kotlinx.serialization.Serializable
 import kotlin.js.JsExport
 
 @JsExport
+@Serializable
 data class KeyAuthorizationsJson(
     val nameSpaces: Array<String>? = null,
     val dataElements: Map<String, Map<String, Array<String>>>? = null
-) : JsonViewOld<KeyAuthorizationsCbor>() {
+) : JsonView() {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is KeyAuthorizationsJson) return false
@@ -43,7 +45,7 @@ data class KeyAuthorizationsJson(
 data class KeyAuthorizationsCbor(
     val nameSpaces: AuthorizedNameSpaces? = null,
     val dataElements: AuthorizedDataElements? = null
-) : CborViewOld<KeyAuthorizationsCbor, KeyAuthorizationsJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
+) : CborView<KeyAuthorizationsCbor, KeyAuthorizationsJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
     override fun cborBuilder(): CborBuilder<KeyAuthorizationsCbor> =
         CborMap.builder(this).put(NAME_SPACES, nameSpaces, true).put(DATA_ELEMENTS, dataElements, true).end()
 

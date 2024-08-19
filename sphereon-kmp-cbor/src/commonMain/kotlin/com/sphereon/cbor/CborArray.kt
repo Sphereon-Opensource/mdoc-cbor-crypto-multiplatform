@@ -96,8 +96,8 @@ class CborArray<V : CborItem<*>>(value: cddl_list<V> = mutableListOf(), val inde
     }
 }
 
-fun Array<out CborViewOld<*, *, *>>.cborViewArrayToCborItem() =
+fun Array<out CborView<*, *, *>>.cborViewArrayToCborItem() =
     if (this.isEmpty()) null else CborArray(this.map { it.toCbor() as AnyCborItem }.toMutableList())
 
-fun List<CborViewOld<*, *, *>>.cborViewListToCborItem() =
+fun List<CborView<*, *, *>>.cborViewListToCborItem() =
     if (this.isEmpty()) null else CborArray(this.map { it.toCbor() as AnyCborItem }.toMutableList())

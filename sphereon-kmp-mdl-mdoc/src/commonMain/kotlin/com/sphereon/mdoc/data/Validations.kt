@@ -62,7 +62,7 @@ object Validations {
     )
 
     suspend fun fromIssuerAuth(
-        issuerAuth: COSE_Sign1<MobileSecurityObjectCbor, MobileSecurityObjectJson>,
+        issuerAuth: COSE_Sign1<MobileSecurityObjectCbor>,
         x509Service: IX509Service = CryptoService.X509,
         coseCryptoService: ICoseCryptoService = CryptoService.COSE,
         keyInfo: IKeyInfo<ICoseKeyCbor>? = null,
@@ -84,7 +84,7 @@ object Validations {
     )
 
     suspend fun withParams(
-        issuerAuth: COSE_Sign1<MobileSecurityObjectCbor, MobileSecurityObjectJson>? = null,
+        issuerAuth: COSE_Sign1<MobileSecurityObjectCbor>? = null,
         document: DocumentCbor? = null,
         mdocVerificationTypes: MdocVerificationTypes = MdocVerification.all,
         x509Service: IX509Service = CryptoService.X509,

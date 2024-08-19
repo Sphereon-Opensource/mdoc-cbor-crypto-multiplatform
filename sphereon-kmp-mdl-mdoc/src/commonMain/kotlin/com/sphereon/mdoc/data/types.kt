@@ -173,15 +173,20 @@ data class DataElementCbor(
 @JsExport
 data class DataElementSimple(val identifier: cddl_tstr, val intentToRetain: cddl_bool = true)
 
-typealias DeviceResponseDocumentError = Map<DocType, CborInt>
+typealias DeviceResponseDocumentErrorJson = Map<String, Int>
+typealias DeviceResponseDocumentErrorCbor = Map<DocType, CborInt>
 
-typealias DeviceSignedItems = Map<DataElementIdentifier, DataElementValue<Any>>
+typealias DeviceSignedItemsCbor = Map<DataElementIdentifier, DataElementValue<Any>>
+// fixme: Value should be Any
+typealias DeviceSignedItemsJson = Map<String, String>
 
 typealias ErrorCode = cddl_int
 
-typealias DocumentErrors = Map<NameSpace, DeviceResponseErrorItems>
+typealias DocumentErrorsCbor = Map<NameSpace, DeviceResponseErrorItemsCbor>
+typealias DocumentErrorsJson = Map<String, DeviceResponseErrorItemsJson>
 
-typealias DeviceResponseErrorItems = Map<DataElementIdentifier, ErrorCode>
+typealias DeviceResponseErrorItemsCbor = Map<DataElementIdentifier, ErrorCode>
+typealias DeviceResponseErrorItemsJson = Map<String, Int>
 
 typealias JWTDocumentErrors = Map<NameSpace, ErrorCodes>
 

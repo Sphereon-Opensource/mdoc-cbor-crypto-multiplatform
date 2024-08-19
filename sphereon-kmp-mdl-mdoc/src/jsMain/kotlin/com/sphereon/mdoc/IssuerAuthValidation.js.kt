@@ -52,7 +52,7 @@ object IssuerAuthValidationJS {
      * * 1. Validate the certificate included in the MSO header according to 9.3.3.
      */
     fun verifyCertificateChainAsync(
-        issuerAuth: COSE_Sign1<MobileSecurityObjectCbor, MobileSecurityObjectJson>,
+        issuerAuth: COSE_Sign1<MobileSecurityObjectCbor>,
 //        x509Service: X509Service = CryptoService.X509, // todo, look into this. Do we want to expose it here anyway?
         trustedCerts: Array<String>?// = x509Service.getTrustedCerts()
     ): Promise<IX509VerificationResult<ICoseKeyCbor>> = CoroutineScope(context = CoroutineName(NAME)).promise {
@@ -70,7 +70,7 @@ object IssuerAuthValidationJS {
      * validation procedure of step 1.
      */
     fun verifySign1Async(
-        issuerAuth: COSE_Sign1<MobileSecurityObjectCbor, MobileSecurityObjectJson>,
+        issuerAuth: COSE_Sign1<MobileSecurityObjectCbor>,
         coseCryptoService: CoseCryptoServiceJS = CryptoServiceJS.COSE, // TODO: Test this with other services
         keyInfo: IKeyInfo<ICoseKeyCbor>?
     ): Promise<IVerifySignatureResult<ICoseKeyCbor>> =
@@ -86,7 +86,7 @@ object IssuerAuthValidationJS {
      *  This is a READER method.
      */
     fun verifyDigestsAsync(
-        issuerAuth: COSE_Sign1<MobileSecurityObjectCbor, MobileSecurityObjectJson>,
+        issuerAuth: COSE_Sign1<MobileSecurityObjectCbor>,
 //        deviceResponse: DeviceResponseCbor
     ): Promise<IVerifyResult> = CoroutineScope(context = CoroutineName(NAME)).promise {
         IssuerAuthValidation.verifyDigests(issuerAuth/*, deviceResponse*/)
@@ -98,7 +98,7 @@ object IssuerAuthValidationJS {
      *
      *  This is a READER method.
      */
-    fun verifyDocTypeAsync(issuerAuth: COSE_Sign1<MobileSecurityObjectCbor, MobileSecurityObjectJson>): Promise<IVerifyResult> =
+    fun verifyDocTypeAsync(issuerAuth: COSE_Sign1<MobileSecurityObjectCbor>): Promise<IVerifyResult> =
         CoroutineScope(context = CoroutineName(NAME)).promise {
             IssuerAuthValidation.verifyDocType(issuerAuth)
         }
@@ -110,7 +110,7 @@ object IssuerAuthValidationJS {
      * — the 'validUntil' element shall be equal or later than the current timestamp.
      */
     fun verifyValidityInfoAsync(
-        issuerAuth: COSE_Sign1<MobileSecurityObjectCbor, MobileSecurityObjectJson>,
+        issuerAuth: COSE_Sign1<MobileSecurityObjectCbor>,
         dateTimeUtils: DateTimeUtils = getDateTime(),
         timeZoneId: String? = null,
         clockSkewAllowedInSec: Int = 120,

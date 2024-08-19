@@ -1,7 +1,7 @@
 package com.sphereon.mdoc.data.server
 
 import com.sphereon.cbor.cddl_tstr
-import com.sphereon.mdoc.data.DeviceResponseDocumentError
+import com.sphereon.mdoc.data.DeviceResponseDocumentErrorCbor
 import com.sphereon.mdoc.data.JWT
 
 /**
@@ -25,7 +25,7 @@ data class ServerResponse(
      * documentErrors can contain error codes for documents that are not returned.
      */
     // fixme: Does this need an array around the map?
-    val documentErrors: Array<DeviceResponseDocumentError>
+    val documentErrors: Array<DeviceResponseDocumentErrorCbor>
 
 
 ) {

@@ -5,16 +5,18 @@ import com.sphereon.cbor.CDDL
 import com.sphereon.cbor.CborBuilder
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborString
-import com.sphereon.cbor.CborViewOld
-import com.sphereon.cbor.JsonViewOld
-import com.sphereon.cbor.cborSerializer
+import com.sphereon.cbor.CborView
+import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.StringLabel
+import com.sphereon.cbor.cborSerializer
 import com.sphereon.kmp.LongKMP
 import com.sphereon.mdoc.data.DocType
 import com.sphereon.mdoc.data.NameSpace
+import kotlinx.serialization.Serializable
 import kotlin.js.JsExport
 
 @JsExport
+@Serializable
 data class MobileSecurityObjectJson(
     val version: String = "1.0",
     val digestAlgorithm: String,
@@ -22,7 +24,7 @@ data class MobileSecurityObjectJson(
     val deviceKeyInfo: DeviceKeyInfoJson,
     val docType: String,
     val validityInfo: ValidityInfoJson,
-) : JsonViewOld<MobileSecurityObjectCbor>() {
+) : JsonView() {
     override fun toCbor(): MobileSecurityObjectCbor {
         TODO("Not yet implemented")
     }
@@ -36,7 +38,7 @@ data class MobileSecurityObjectCbor(
     val deviceKeyInfo: DeviceKeyInfoCbor,
     val docType: DocType,
     val validityInfo: ValidityInfoCbor,
-) : CborViewOld<MobileSecurityObjectCbor, MobileSecurityObjectJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
+) : CborView<MobileSecurityObjectCbor, MobileSecurityObjectJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
     override fun cborBuilder(): CborBuilder<MobileSecurityObjectCbor> {
         return CborMap.builder(this).put(VERSION, version).put(DIGEST_ALGORITHM, digestAlgorithm)
             .put(VALUE_DIGESTS, valueDigests).put(DEVICE_KEY_INFO, deviceKeyInfo.toCbor()).put(DOC_TYPE, docType)

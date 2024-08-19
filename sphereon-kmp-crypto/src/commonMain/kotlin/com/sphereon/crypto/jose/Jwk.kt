@@ -13,7 +13,10 @@ import com.sphereon.crypto.toJoseCurve
 import com.sphereon.crypto.toJoseKeyOperations
 import com.sphereon.crypto.toJoseKeyType
 import com.sphereon.crypto.toJoseSignatureAlgorithm
+import kotlinx.serialization.Polymorphic
 import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 import kotlin.js.JsExport
 
 
@@ -43,6 +46,8 @@ expect interface IJwkJson: IKey {
     override val y: String?
 }
 
+
+
 /**
  * JWK [RFC 7517](https://datatracker.ietf.org/doc/html/rfc7517#section-4).
  *
@@ -70,6 +75,7 @@ expect interface IJwk : IKey {
 }
 
 @JsExport
+@Serializable
 data class Jwk(
     override val alg: JwaAlgorithm? = null,
     override val crv: JwaCurve? = null,
@@ -91,7 +97,7 @@ data class Jwk(
     override val y: String? = null,
 ) : IJwk {
 
-    override val additional: Any?
+    override val additional: JsonObject?
         get() = TODO("Not yet implemented")
 
     class Builder {
@@ -154,7 +160,7 @@ data class Jwk(
     // Name is like other extensions functions to not class with JS
     fun jwkToCoseKeyJson(): CoseKeyJson =
         CoseKeyJson.Builder()
-            .withKty(kty.toCoseKeyType() ?: throw IllegalArgumentException("kty value missing"))
+            .withKty(this@Jwk.kty.toCoseKeyType() ?: throw IllegalArgumentException("kty value missing"))
             .withAlg(alg?.toCoseSignatureAlgorithm())
             .withCrv(crv?.toCoseCurve())
             .withD(d)
@@ -181,7 +187,7 @@ data class Jwk(
         override val k: String? = this@Jwk.k
         override val key_ops: Array<String>? = this@Jwk.key_ops?.map { it.value }?.toTypedArray()
         override val kid: String? = this@Jwk.kid
-        override val kty: String = this@Jwk.kty.id
+        override val kty: String = this@Jwk.kty.value
 
         override val n: String? = this@Jwk.n
         override val use: String? = this@Jwk.use
@@ -191,7 +197,7 @@ data class Jwk(
         override val x5u: String? = this@Jwk.x5u
         override val x5t_S256: String? = this@Jwk.x5t_S256
         override val y: String? = this@Jwk.y
-        override val additional: Any?
+        override val additional: JsonObject?
             get() = TODO("Not yet implemented")
     }
 

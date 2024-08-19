@@ -9,10 +9,10 @@ import com.sphereon.cbor.CborBuilder
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborSimple
 import com.sphereon.cbor.CborString
-import com.sphereon.cbor.CborViewOld
-import com.sphereon.cbor.JsonViewOld
-import com.sphereon.cbor.cddl_tstr
+import com.sphereon.cbor.CborView
+import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.StringLabel
+import com.sphereon.cbor.cddl_tstr
 import com.sphereon.cbor.toCborBool
 import com.sphereon.cbor.toCborString
 import com.sphereon.mdoc.data.DataElementCbor
@@ -22,16 +22,21 @@ import com.sphereon.mdoc.data.IntentToRetain
 import com.sphereon.mdoc.data.RequestInfo
 import com.sphereon.mdoc.data.mdl.Mdl.MDL_NAMESPACE
 import com.sphereon.mdoc.data.mdl.Mdl.MDL_NAMESPACE_CBOR
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
 import kotlin.js.JsExport
 
 typealias deviceItemsRequestBuilder = DeviceItemsRequestCbor.Builder
 
 @JsExport
+@Serializable
 data class DeviceItemsRequestJson(
     val docType: cddl_tstr,
     val nameSpaces: MutableMap<String, MutableMap<String, Boolean>> = mutableMapOf(),
-    val requestInfo: MutableMap<String, Any>? = null
-) : JsonViewOld<DeviceItemsRequestCbor>() {
+    @Contextual
+    //fixme: The map value should be Any
+    val requestInfo: MutableMap<String, String>? = null
+) : JsonView() {
 
     override fun toCbor(): DeviceItemsRequestCbor {
         return DeviceItemsRequestCbor(docType.toCborString(), CborMap(mutableMapOf(* nameSpaces.map {
@@ -90,7 +95,7 @@ data class DeviceItemsRequestCbor(
      */
     val requestInfo: CborMap<CborString, AnyCborItem>? = null
 
-) : CborViewOld<DeviceItemsRequestCbor, DeviceItemsRequestJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
+) : CborView<DeviceItemsRequestCbor, DeviceItemsRequestJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
     companion object {
         val DOC_TYPE = StringLabel("docType")
         val NAME_SPACES = StringLabel("nameSpaces")

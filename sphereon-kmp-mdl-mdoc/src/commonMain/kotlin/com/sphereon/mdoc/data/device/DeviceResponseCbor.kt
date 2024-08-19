@@ -10,15 +10,18 @@ import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborString
 import com.sphereon.cbor.CborUInt
 import com.sphereon.cbor.CborViewOld
-import com.sphereon.cbor.JsonViewOld
-import com.sphereon.cbor.cborViewArrayToCborItem
+import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.StringLabel
+import com.sphereon.cbor.cborViewArrayToCborItem
 import com.sphereon.kmp.LongKMP
-import com.sphereon.mdoc.data.DeviceResponseDocumentError
+import com.sphereon.mdoc.data.DeviceResponseDocumentErrorCbor
+import com.sphereon.mdoc.data.DeviceResponseDocumentErrorJson
 import com.sphereon.mdoc.data.DocType
+import kotlinx.serialization.Serializable
 import kotlin.js.JsExport
 
 @JsExport
+@Serializable
 data class DeviceResponseJson(
     /**
      * version is the version for the DeviceResponse structure. In the current version of this document
@@ -34,11 +37,11 @@ data class DeviceResponseJson(
     val documents: Array<DocumentJson>?,
 
     //    fixme
-    val documentErrors: Array<DeviceResponseDocumentError>?,
+    val documentErrors: Array<DeviceResponseDocumentErrorJson>?,
 
     val status: LongKMP = LongKMP(0)
 
-) : JsonViewOld<DeviceResponseCbor>() {
+) : JsonView() {
     override fun toCbor(): DeviceResponseCbor {
         TODO("Not yet implemented")
     }
@@ -61,7 +64,7 @@ data class DeviceResponseCbor(
      */
     val documents: Array<DocumentCbor>?,
 
-    val documentErrors: Array<DeviceResponseDocumentError>?,
+    val documentErrors: Array<DeviceResponseDocumentErrorCbor>?,
 
     val status: CborUInt = CborUInt(0)
 

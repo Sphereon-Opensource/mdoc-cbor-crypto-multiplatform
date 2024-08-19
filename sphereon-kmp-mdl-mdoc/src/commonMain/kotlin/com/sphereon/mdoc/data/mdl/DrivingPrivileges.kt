@@ -9,12 +9,14 @@ import com.sphereon.cbor.CborBuilder
 import com.sphereon.cbor.CborFullDate
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborString
+import com.sphereon.cbor.CborView
 import com.sphereon.cbor.CborViewOld
+import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.JsonViewOld
+import com.sphereon.cbor.StringLabel
+import com.sphereon.cbor.cborViewListToCborItem
 import com.sphereon.cbor.cddl_full_date
 import com.sphereon.cbor.cddl_tstr
-import com.sphereon.cbor.cborViewListToCborItem
-import com.sphereon.cbor.StringLabel
 import com.sphereon.cbor.instantToDateStringISO
 import com.sphereon.cbor.localDateTimeToDateStringISO
 import com.sphereon.cbor.localDateToCborFullDate
@@ -131,7 +133,7 @@ data class DrivingPrivilegeJson(
     val expiry_date: LocalDateTimeKMP? = null,
     @SerialName("codes")
     val codes: List<DrivingPrivilegesCodeJson>? = null
-) : JsonViewOld<DrivingPrivilegeCbor>() {
+) : JsonView() {
     override fun toCbor(): DrivingPrivilegeCbor {
         return DrivingPrivilegeCbor.fromSimple(this)
     }
@@ -169,7 +171,7 @@ data class DrivingPrivilegeCbor(
     val issue_date: CborFullDate? = null,
     val expiry_date: CborFullDate? = null,
     val codes: List<DrivingPrivilegesCodeCbor>? = null
-) : CborViewOld<DrivingPrivilegeCbor, DrivingPrivilegeJson, CborMap<StringLabel,AnyCborItem>>(CDDL.map) {
+) : CborView<DrivingPrivilegeCbor, DrivingPrivilegeJson, CborMap<StringLabel,AnyCborItem>>(CDDL.map) {
 
     override fun cborBuilder(): CborBuilder<DrivingPrivilegeCbor> {
         val builder = CborMap.builder(this)
@@ -355,7 +357,7 @@ data class DrivingPrivilegeCbor(
 
 @JsExport
 data class DrivingPrivilegesCodeCbor(val code: CborString, val sign: CborString?, val value: CborString?) :
-    CborViewOld<DrivingPrivilegesCodeCbor, DrivingPrivilegesCodeJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
+    CborView<DrivingPrivilegesCodeCbor, DrivingPrivilegesCodeJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
     override fun cborBuilder(): CborBuilder<DrivingPrivilegesCodeCbor> {
         return CborMap.builder(this)
             .put(CODE, code)
@@ -413,7 +415,7 @@ data class DrivingPrivilegesCodeCbor(val code: CborString, val sign: CborString?
 
 @JsExport
 data class DrivingPrivilegesCodeJson(val code: cddl_tstr, val sign: cddl_tstr?, val value: cddl_tstr?) :
-    JsonViewOld<DrivingPrivilegesCodeCbor>() {
+    JsonView() {
 
     override fun toCbor(): DrivingPrivilegesCodeCbor =
         DrivingPrivilegesCodeCbor(code.toCborString(), sign?.toCborString(), value?.toCborString())

@@ -8,8 +8,7 @@ import com.sphereon.cbor.CborByteString
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborNull
 import com.sphereon.cbor.CborString
-import com.sphereon.cbor.CborViewOld
-import com.sphereon.cbor.JsonViewOld
+import com.sphereon.cbor.CborView
 import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.NumberLabel
 import com.sphereon.cbor.cborSerializer
@@ -23,7 +22,7 @@ import kotlin.js.JsExport
 
 @JsExport
 @Serializable
-data class CoseSign1InputJson<JsonType, CborType>(
+data class CoseSign1InputJson(
     val protectedHeader: CoseHeaderJson,
 
     val unprotectedHeader: CoseHeaderJson?,
@@ -31,7 +30,7 @@ data class CoseSign1InputJson<JsonType, CborType>(
     val payload: String?, // base64url
 
 ) : JsonView() {
-    override fun toCbor(): CoseSign1InputCbor<CborType, JsonType> = CoseSign1InputCbor(
+    override fun toCbor(): CoseSign1InputCbor = CoseSign1InputCbor(
         protectedHeader = protectedHeader.toCbor(),
         unprotectedHeader = unprotectedHeader?.toCbor(),
         payload = payload?.toCborByteString(),
@@ -39,7 +38,8 @@ data class CoseSign1InputJson<JsonType, CborType>(
 }
 
 @JsExport
-data class CoseSign1Json<JsonType, CborType>(
+@Serializable
+data class CoseSign1Json(
     val protectedHeader: CoseHeaderJson,
 
     val unprotectedHeader: CoseHeaderJson?,
@@ -48,7 +48,7 @@ data class CoseSign1Json<JsonType, CborType>(
 
     val signature: String // hex
 ) : JsonView() {
-    override fun toCbor(): CoseSign1Cbor<CborType, JsonType> = CoseSign1Cbor(
+    override fun toCbor(): CoseSign1Cbor<Any>  = CoseSign1Cbor<Any> (
         protectedHeader = protectedHeader.toCbor(),
         unprotectedHeader = unprotectedHeader?.toCbor(),
         payload = payload?.toCborByteString(),
@@ -56,7 +56,7 @@ data class CoseSign1Json<JsonType, CborType>(
     )
 
     companion object {
-        fun <JsonType, CborType> fromDTO(dto: CoseSign1Json<JsonType, CborType>) = CoseSign1Json<JsonType, CborType>(
+        fun fromDTO(dto: CoseSign1Json) = CoseSign1Json(
             protectedHeader = dto.protectedHeader,
             unprotectedHeader = dto.unprotectedHeader,
             payload = dto.payload,
@@ -66,17 +66,17 @@ data class CoseSign1Json<JsonType, CborType>(
 }
 
 @JsExport
-data class CoseSign1InputCbor<CborType, JsonType>(
+data class CoseSign1InputCbor(
     val protectedHeader: CoseHeaderCbor,
 
     val unprotectedHeader: CoseHeaderCbor?,
 
     val payload: CborByteString?,
-) : CborViewOld<CoseSign1InputCbor<CborType, JsonType>, CoseSign1InputJson<JsonType, CborType>, CborArray<AnyCborItem>>(
+) : CborView<CoseSign1InputCbor, CoseSign1InputJson, CborArray<AnyCborItem>>(
     CDDL.list
 ) {
     companion object {
-        fun <CborType, JsonType> fromCborItem(a: CborArray<AnyCborItem>): CoseSign1InputCbor<CborType, JsonType> {
+        fun fromCborItem(a: CborArray<AnyCborItem>): CoseSign1InputCbor {
             val protectedHeaderBytes: CborByteString = a.required(0)
             val unprotectedHeaders = a.optional<CborMap<NumberLabel, AnyCborItem>>(1)
             val payloadAvailable = a.value[2].value != null
@@ -87,17 +87,17 @@ data class CoseSign1InputCbor<CborType, JsonType>(
             )
         }
 
-        fun <CborType, JsonType> cborDecode(encoded: ByteArray) =
-            fromCborItem<CborType, JsonType>(cborSerializer.decode(encoded))
+        fun cborDecode(encoded: ByteArray) =
+            fromCborItem(cborSerializer.decode(encoded))
     }
 
-    override fun cborBuilder(): CborBuilder<CoseSign1InputCbor<CborType, JsonType>> {
+    override fun cborBuilder(): CborBuilder<CoseSign1InputCbor> {
         return CborArray.builder(this).add(CborByteString(protectedHeader.cborEncode()))
             .add(unprotectedHeader?.toCbor()).add(payload ?: CborNull())
             .end()
     }
 
-    override fun toJson(): CoseSign1InputJson<JsonType, CborType> = CoseSign1InputJson(
+    override fun toJson(): CoseSign1InputJson = CoseSign1InputJson(
         protectedHeader = protectedHeader.toJson(),
         unprotectedHeader = unprotectedHeader?.toJson(),
         payload = payload?.encodeTo(Encoding.BASE64URL)
@@ -107,7 +107,7 @@ data class CoseSign1InputCbor<CborType, JsonType>(
 
 
 @JsExport
-data class CoseSign1Cbor<CborType, JsonType>(
+data class CoseSign1Cbor<CborType>(
 
 
     val protectedHeader: CoseHeaderCbor,
@@ -118,7 +118,7 @@ data class CoseSign1Cbor<CborType, JsonType>(
 
     val signature: CborByteString
 
-) : CborViewOld<CoseSign1Cbor<CborType, JsonType>, CoseSign1Json<JsonType, CborType>, CborArray<AnyCborItem>>(CDDL.list) {
+) : CborView<CoseSign1Cbor<CborType>, CoseSign1Json, CborArray<AnyCborItem>>(CDDL.list) {
     fun cborDecodePayload(): CborType? {
         return payload?.value?.let { cborSerializer.decode(it) }
     }
@@ -137,11 +137,11 @@ data class CoseSign1Cbor<CborType, JsonType>(
         ToBeSignedJson(hexValue = toSignature1Structure().cborEncode().encodeTo(Encoding.HEX), key = key, alg = alg)
 
     companion object {
-        fun <CborType, JsonType> fromCborItem(a: CborArray<AnyCborItem>): CoseSign1Cbor<CborType, JsonType> {
+        fun <CborType> fromCborItem(a: CborArray<AnyCborItem>): CoseSign1Cbor<CborType> {
             val protectedHeaderBytes: CborByteString = a.required(0)
             val unprotectedHeaders = a.optional<CborMap<NumberLabel, AnyCborItem>>(1)
             val payloadAvailable = a.value[2].value != null
-            return CoseSign1Cbor(
+            return CoseSign1Cbor<CborType>(
                 CoseHeaderCbor.fromCborItem(protectedHeaderBytes.cborDecode()),
                 unprotectedHeaders?.let { CoseHeaderCbor.fromCborItem(it) },
                 if (payloadAvailable) a.required(2) else null,
@@ -149,18 +149,18 @@ data class CoseSign1Cbor<CborType, JsonType>(
             )
         }
 
-        fun <CborType, JsonType> cborDecode(encoded: ByteArray) =
-            fromCborItem<CborType, JsonType>(cborSerializer.decode(encoded))
+        fun <CborType> cborDecode(encoded: ByteArray) =
+            fromCborItem<CborType>(cborSerializer.decode(encoded))
     }
 
-    override fun cborBuilder(): CborBuilder<CoseSign1Cbor<CborType, JsonType>> {
+    override fun cborBuilder(): CborBuilder<CoseSign1Cbor<CborType>> {
         return CborArray.builder(this).add(CborByteString(protectedHeader.cborEncode()))
             .add(unprotectedHeader?.toCbor()).add(payload ?: CborNull())
             .add(signature)
             .end()
     }
 
-    override fun toJson(): CoseSign1Json<JsonType, CborType> = CoseSign1Json(
+    override fun toJson(): CoseSign1Json = CoseSign1Json(
         protectedHeader = protectedHeader.toJson(),
         unprotectedHeader = unprotectedHeader?.toJson(),
         payload = payload?.encodeTo(Encoding.BASE64URL),
@@ -168,17 +168,7 @@ data class CoseSign1Cbor<CborType, JsonType>(
     )
 
 
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is CoseSign1Cbor<*, *>) return false
 
-        if (protectedHeader != other.protectedHeader) return false
-        if (unprotectedHeader != other.unprotectedHeader) return false
-        if (payload != other.payload) return false
-        if (signature != other.signature) return false
-
-        return true
-    }
 
     override fun hashCode(): Int {
         var result = protectedHeader.hashCode()
@@ -195,7 +185,7 @@ data class CoseSign1Cbor<CborType, JsonType>(
 
 }
 
-typealias COSE_Sign1<CborType, JsonType> = CoseSign1Cbor<CborType, JsonType>
+typealias COSE_Sign1<CborType> = CoseSign1Cbor<CborType>
 
 
 @JsExport
@@ -219,7 +209,7 @@ data class CoseSignatureStructureJson(
     val signProtected: String? = null,
     val externalAad: String? = null, // todo: "" instead of null?
     val payload: String
-) : JsonViewOld<CoseSignatureStructureCbor>() {
+) : JsonView() {
     override fun toCbor(): CoseSignatureStructureCbor = throw NotImplementedError("CoseSignatureStructure Json to Cbor is not yet implemented")
 }
 
@@ -230,7 +220,7 @@ data class CoseSignatureStructureCbor(
     val signProtected: CborByteString? = null,
     val externalAad: CborByteString = CborByteString(byteArrayOf()),
     val payload: CborByteString
-) : CborViewOld<CoseSignatureStructureCbor, CoseSignatureStructureJson, CborArray<AnyCborItem>>(CDDL.list) {
+) : CborView<CoseSignatureStructureCbor, CoseSignatureStructureJson, CborArray<AnyCborItem>>(CDDL.list) {
     override fun cborBuilder(): CborBuilder<CoseSignatureStructureCbor> =
         CborArray.builder(this).addRequired(structure).addRequired(bodyProtected).add(signProtected).addRequired(externalAad).addRequired(payload)
             .end()
@@ -274,7 +264,7 @@ data class CoseSignatureStructureCbor(
 }
 
 @JsExport
-data class ToBeSignedJson(val hexValue: String, val key: ICoseKeyJson?, val alg: CoseAlgorithm?) : JsonViewOld<ToBeSignedCbor>() {
+data class ToBeSignedJson(val hexValue: String, val key: ICoseKeyJson?, val alg: CoseAlgorithm?) : JsonView() {
     override fun toCbor() =
         ToBeSignedCbor(hexValue.decodeFromHex().toCborByteString(), key = key?.let { CoseKeyJson.Static.fromDTO(it).toCbor() }, alg = alg)
 
@@ -282,7 +272,7 @@ data class ToBeSignedJson(val hexValue: String, val key: ICoseKeyJson?, val alg:
 
 @JsExport
 data class ToBeSignedCbor(val value: CborByteString, val key: ICoseKeyCbor?, val alg: CoseAlgorithm?) :
-    CborViewOld<ToBeSignedCbor, ToBeSignedJson, CborByteString>(CDDL.bstr) {
+    CborView<ToBeSignedCbor, ToBeSignedJson, CborByteString>(CDDL.bstr) {
     override fun cborBuilder(): CborBuilder<ToBeSignedCbor> = CborBuilder(value, this)
 
 

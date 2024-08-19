@@ -12,13 +12,13 @@ import kotlin.js.Promise
  */
 @JsExport
 external interface ICoseCryptoCallbackJS {
-    fun <CborType, JsonType> sign1(
-        input: CoseSign1InputCbor<CborType, JsonType>,
+    fun <CborType> sign1(
+        input: CoseSign1InputCbor,
         keyInfo: IKeyInfo<ICoseKeyCbor>?
-    ): Promise<CoseSign1Cbor<CborType, JsonType>>
+    ): Promise<CoseSign1Cbor<CborType>>
 
-    fun <CborType, JsonType> verify1(
-        input: CoseSign1Cbor<CborType, JsonType>,
+    fun <CborType> verify1(
+        input: CoseSign1Cbor<CborType>,
         keyInfo: IKeyInfo<ICoseKeyCbor>?
     ): Promise<IVerifySignatureResult<ICoseKeyCbor>>
 }
@@ -58,10 +58,10 @@ object CoseCryptoServiceJS : ICallbackServiceJS<ICoseCryptoCallbackJS>, ICoseCry
         return this
     }
 
-    override fun <CborType, JsonType> sign1(
-        input: CoseSign1InputCbor<CborType, JsonType>,
+    override fun <CborType> sign1(
+        input: CoseSign1InputCbor,
         keyInfo: IKeyInfo<ICoseKeyCbor>?
-    ): Promise<CoseSign1Cbor<CborType, JsonType>> {
+    ): Promise<CoseSign1Cbor<CborType>> {
         if (!isEnabled()) {
             CryptoConst.LOG.info("COSE sign1 (JS) has been disabled")
             throw IllegalStateException("COSE service is disabled; cannot sign")
@@ -82,8 +82,8 @@ object CoseCryptoServiceJS : ICallbackServiceJS<ICoseCryptoCallbackJS>, ICoseCry
         return this.platformCallback.sign1(input, keyInfo)
     }
 
-    override fun <CborType, JsonType> verify1(
-        input: CoseSign1Cbor<CborType, JsonType>,
+    override fun <CborType> verify1(
+        input: CoseSign1Cbor<CborType>,
         keyInfo: IKeyInfo<ICoseKeyCbor>?
     ): Promise<IVerifySignatureResult<ICoseKeyCbor>> {
         if (!isEnabled()) {
@@ -119,35 +119,35 @@ object CoseCryptoServiceJS : ICallbackServiceJS<ICoseCryptoCallbackJS>, ICoseCry
  * also the coroutines would not export nicely anyway.
  *
  */
-open class CoseCryptoServiceJSAdapter(val x509CallbackJS: CoseCryptoServiceJS = CoseCryptoServiceJS) :
+open class CoseCryptoServiceJSAdapter(val coseCallbackJS: CoseCryptoServiceJS = CoseCryptoServiceJS) :
     CoseCryptoCallbackService {
 
     override fun disable(): ICoseCryptoService {
-        this.x509CallbackJS.disable()
+        this.coseCallbackJS.disable()
         return this
     }
 
     override fun enable(): ICoseCryptoService {
-        this.x509CallbackJS.enable()
+        this.coseCallbackJS.enable()
         return this
     }
 
     override fun isEnabled(): Boolean {
-        return this.x509CallbackJS.isEnabled()
+        return this.coseCallbackJS.isEnabled()
     }
 
     override fun register(platformCallback: ICoseCryptoService): CoseCryptoCallbackService {
         throw Error("Register function should not be used on the adapter. It depends on the Javascript coseCryptoService object")
     }
 
-    override suspend fun <CborType, JsonType> sign1(
-        input: CoseSign1InputCbor<CborType, JsonType>,
+    override suspend fun <CborType> sign1(
+        input: CoseSign1InputCbor,
         keyInfo: IKeyInfo<ICoseKeyCbor>?
-    ): CoseSign1Cbor<CborType, JsonType> {
+    ): CoseSign1Cbor<CborType> {
         CryptoConst.LOG.debug("Creating COSE_Sign1 signature...")
 
         return try {
-            x509CallbackJS.sign1(input = input, keyInfo = keyInfo).await()
+            coseCallbackJS.sign1<CborType>(input = input, keyInfo = keyInfo).await()
         } catch (e: Exception) {
             throw e
         }.also {
@@ -156,13 +156,13 @@ open class CoseCryptoServiceJSAdapter(val x509CallbackJS: CoseCryptoServiceJS = 
     }
 
 
-    override suspend fun <CborType, JsonType> verify1(
-        input: CoseSign1Cbor<CborType, JsonType>,
+    override suspend fun <CborType> verify1(
+        input: CoseSign1Cbor<CborType>,
         keyInfo: IKeyInfo<ICoseKeyCbor>?
     ): IVerifySignatureResult<ICoseKeyCbor> {
         CryptoConst.LOG.debug("Verifying COSE_Sign1 signature...")
         return try {
-            x509CallbackJS.verify1(input = input, keyInfo = keyInfo).await()
+            coseCallbackJS.verify1(input = input, keyInfo = keyInfo).await()
         } catch (e: Exception) {
             CryptoConst.LOG.error(e.message ?: "COSE_Sign1 signature verification failed", e)
             VerifySignatureResult(

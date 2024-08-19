@@ -65,7 +65,7 @@ object ValidationsJS {
     )
 
     fun fromIssuerAuthAsync(
-        issuerAuth: COSE_Sign1<MobileSecurityObjectCbor, MobileSecurityObjectJson>,
+        issuerAuth: COSE_Sign1<MobileSecurityObjectCbor>,
         /*x509Service: X509Service = CryptoService.X509,
         coseCryptoService: CoseCryptoService = CryptoService.COSE,*/
         keyInfo: IKeyInfo<ICoseKeyCbor>? = null,
@@ -87,7 +87,7 @@ object ValidationsJS {
     )
 
     fun withParamsAsync(
-        issuerAuth: COSE_Sign1<MobileSecurityObjectCbor, MobileSecurityObjectJson>? = null,
+        issuerAuth: COSE_Sign1<MobileSecurityObjectCbor>? = null,
         document: DocumentCbor? = null,
         mdocVerificationTypes: MdocVerificationTypes = MdocVerification.all,
         /*x509Service: X509Service = CryptoService.X509,
