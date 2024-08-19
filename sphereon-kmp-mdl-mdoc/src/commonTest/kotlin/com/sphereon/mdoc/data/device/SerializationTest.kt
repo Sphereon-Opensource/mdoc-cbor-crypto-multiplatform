@@ -25,9 +25,9 @@ class SerializationTest {
 
     @Test
     fun shouldDecodeAndEncodeIssuerSignedItemJson() {
-        val json = "{\"digestID\":200,\"random\":\"random\",\"elementIdentifier\":\"identifier\",\"elementValue\":400,\"elementCDDL\":\"uint\"}"
+        val json = "{\"digestID\":200,\"random\":\"random\",\"key\":\"identifier\",\"value\":400,\"cddl\":\"uint\"}"
         val issuerSigned =
-            IssuerSignedItemJson(digestID = 200L.toKmpLong(), random = "random", elementValue = JsonPrimitive(400L), elementCDDL = CDDL.uint, elementIdentifier = "identifier")
+            IssuerSignedItemJson(digestID = 200L.toKmpLong(), random = "random", value = JsonPrimitive(400L), cddl = CDDL.uint, key = "identifier")
         assertEquals(json, jsonSerializer.encodeToString(issuerSigned))
         assertEquals(issuerSigned, jsonSerializer.decodeFromString(json))
         println(jsonSerializer.encodeToString(issuerSigned))

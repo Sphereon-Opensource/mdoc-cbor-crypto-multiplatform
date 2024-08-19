@@ -5,7 +5,7 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 
 abstract class CborNumber<Type : Number>(value: Type, cddl: CDDLType) : CborItem<Type>(value, cddl) {
-    override fun toJson(): JsonElement {
+    override fun toJsonSimple(): JsonElement {
         return JsonPrimitive(toValue())
     }
 }

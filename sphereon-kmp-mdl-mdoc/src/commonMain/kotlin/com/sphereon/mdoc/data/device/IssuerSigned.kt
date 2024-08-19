@@ -13,13 +13,13 @@ import com.sphereon.cbor.CborItem
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborUInt
 import com.sphereon.cbor.CborView
+import com.sphereon.cbor.ICborItemValueJson
 import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.JsonView2
 import com.sphereon.cbor.StringLabel
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.toCborByteString
 import com.sphereon.cbor.toCborString
-import com.sphereon.cbor.toCborUInt
 import com.sphereon.crypto.cose.COSE_Sign1
 import com.sphereon.crypto.cose.CoseSign1Cbor
 import com.sphereon.crypto.cose.CoseSign1Json
@@ -32,11 +32,7 @@ import com.sphereon.mdoc.data.mso.MobileSecurityObjectCbor
 import com.sphereon.mdoc.data.mso.MobileSecurityObjectJson
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonNull
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 import kotlin.js.JsExport
 
 @JsExport
@@ -181,15 +177,16 @@ interface JsonElementWithCDDL {
 data class IssuerSignedItemJson(
     val digestID: LongKMP,
     val random: String, //todo: also add hex validation
-    val elementIdentifier: String,
-    val elementValue: JsonElement,
-    val elementCDDL: CDDLType // We need this as otherwise we would lose type info. Strings can be (full)dates, tstr and text etc.
+//    val elementIdentifier: String,
+    val key: String,
+    val value: JsonElement,
+    val cddl: CDDLType // We need this as otherwise we would lose type info. Strings can be (full)dates, tstr and text etc.
 ) : JsonView2() {
     override fun toCbor(): IssuerSignedItemCbor<Any> = IssuerSignedItemCbor(
         digestID = CborUInt(this.digestID),
         random = random.toCborByteString(),
-        elementIdentifier = elementIdentifier.toCborString(),
-        elementValue = (elementCDDL as CDDL).newCborItem(elementValue) as DataElementValue<Any>
+        elementIdentifier = key.toCborString(),
+        elementValue = cddl.newCborItemFromJson(value, cddl) as DataElementValue<Any>
     )
 
     override fun equals(other: Any?): Boolean {
@@ -198,8 +195,8 @@ data class IssuerSignedItemJson(
 
         if (digestID != other.digestID) return false
         if (random != other.random) return false
-        if (elementIdentifier != other.elementIdentifier) return false
-        if (elementValue != other.elementValue) return false
+        if (key != other.key) return false
+        if (value != other.value) return false
 
         return true
     }
@@ -207,13 +204,13 @@ data class IssuerSignedItemJson(
     override fun hashCode(): Int {
         var result = digestID.hashCode()
         result = 31 * result + random.hashCode()
-        result = 31 * result + elementIdentifier.hashCode()
-        result = 31 * result + elementValue.hashCode()
+        result = 31 * result + key.hashCode()
+        result = 31 * result + value.hashCode()
         return result
     }
 
     override fun toString(): String {
-        return "IssuerSignedItemJson(digestID=$digestID, random='$random', elementIdentifier='$elementIdentifier', elementValue=$elementValue)"
+        return "IssuerSignedItemJson(digestID=$digestID, random='$random', key='$key', value=$value, cddl=${cddl.format})"
     }
 
 
@@ -234,45 +231,10 @@ data class IssuerSignedItemCbor<Type : Any>(
             ).end()
     }
 
-    /*
-        @ExperimentalSerializationApi
-        internal fun mapCborValueToJson(cborItem: CborBaseItem): JsonElement {
-            var elementVal: JsonElement
-            var elementCDDL = cborItem.cddl
-            if (elementCDDL === CDDL.list) {
-                val listVal = cborItem as (CborArray<*>)
-                elementVal = JsonArray(listVal.value.map { mapCborValueToJson(it) })
-            } else if (elementCDDL === CDDL.map) {
-                val mapVal = cborItem as (CborMap<*, *>)
-                elementVal = JsonObject(mapVal.value.entries.map { Pair(it.key.value as String, mapCborValueToJson(it.value as CborBaseItem)) }.toMap())
-    //            elementVal = JsonObject(mapVal.value.map { mapCborValueToJson(it) })
-    //            TODO("Implement map to json")
-            } else if (cborItem.cddl === CDDL.nil || cborItem.cddl === CDDL.Null || cborItem.cddl === CDDL.undefined) {
-                elementVal = JsonPrimitive(null)
-            } else if (cborItem is CborItem<*>) {
-                val value = cborItem.toJson<Number>()
-                try {
-
-                    if (value === null) {
-                        elementVal = JsonNull
-                    } else {
-                        elementVal = JsonPrimitive(value)
-                    }
-
-                } catch (e: Exception) {
-                    println("Element value was ${elementCDDL}: ${cborItem.value}")
-                    println("Element toJson ${cborItem.toJson<Any>()}")
-                    throw e
-                }
-            } else {
-                throw IllegalArgumentException("Unknown type encountered ${cborItem.cddl.format}")
-            }
-            return elementVal
-        }*/
     @ExperimentalSerializationApi
-    internal fun mapCborValueToJson(cborItem: CborBaseItem): JsonElement {
+    internal fun mapCborValueToJson(cborItem: CborBaseItem): ICborItemValueJson {
         if (cborItem is CborItem<*>) {
-            return cborItem.toJson()
+            return cborItem.toJsonCborItem()
         } else {
             throw IllegalArgumentException("Unknown type encountered ${cborItem.cddl.format}")
         }
@@ -280,14 +242,15 @@ data class IssuerSignedItemCbor<Type : Any>(
 
     override fun toJson(): IssuerSignedItemJson {
 
-
+        val json: ICborItemValueJson = mapCborValueToJson(this.elementValue)
         return IssuerSignedItemJson(
             digestID = digestID.value,
             random = random.value.encodeToBase64Url(),
-            elementIdentifier = elementIdentifier.value,
-            elementValue = mapCborValueToJson(this.elementValue),
+//            elementIdentifier = elementIdentifier.value,
+            key = elementIdentifier.value, //json.jsonObject.get("key")!!.jsonPrimitive.content,
+            value = json.value,
             // We need this as otherwise we would lose type info. Strings can be (full)dates, tstr and text etc.
-            elementCDDL = this.elementValue.cddl
+            cddl = json.cddl
 
         )
     }

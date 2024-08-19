@@ -9,7 +9,7 @@ import kotlin.math.abs
 
 @JsExport
 class NumberLabel(value: Int) : CoseLabel<LongKMP>(LongKMP(abs(value)), if (value >= 0) CDDL.uint else CDDL.nint, LabelType.Int) {
-    override fun toJson(): JsonElement {
+    override fun toJsonSimple(): JsonElement {
         return JsonPrimitive(toValue())
     }
     override fun encode(builder: ByteStringBuilder) {

@@ -7,7 +7,7 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 
 class RawCbor(value: cddl_bstr) : CborItem<ByteArray>(value, CDDL.bstr) {
-    override fun toJson(): JsonElement {
+    override fun toJsonSimple(): JsonElement {
         return JsonPrimitive(toValue().encodeTo(Encoding.BASE64URL))
     }
     override fun encode(builder: ByteStringBuilder) {

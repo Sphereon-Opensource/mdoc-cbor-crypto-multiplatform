@@ -11,7 +11,7 @@ import kotlin.js.JsExport
 open class CborByteString(value: cddl_bstr) :
     CborItem<cddl_bstr>(value, CDDL.bstr) {
 
-    override fun toJson(): JsonElement {
+    override fun toJsonSimple(): JsonElement {
         return JsonPrimitive(encodeTo(Encoding.BASE64URL))
     }
 
@@ -55,7 +55,7 @@ open class CborByteString(value: cddl_bstr) :
 fun cddl_tstr.stringToCborByteString() = CborByteString(this.encodeToByteArray())
 fun cddl_bstr.toCborByteString() = CborByteString(this)
 class CborByteStringIndefLength(value: List<cddl_bstr>) : CborItem<List<cddl_bstr>>(value, CDDL.bstr_indef_length) {
-    override fun toJson(): JsonElement {
+    override fun toJsonSimple(): JsonElement {
         TODO("Cbor bytestring indef length to JSON not implemented yet")
     }
     override fun encode(builder: ByteStringBuilder) {

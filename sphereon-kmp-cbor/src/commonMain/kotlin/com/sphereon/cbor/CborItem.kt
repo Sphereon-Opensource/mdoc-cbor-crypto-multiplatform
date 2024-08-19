@@ -3,11 +3,19 @@
 package com.sphereon.cbor
 
 
+import com.sphereon.cbor.CborConst.CDDL_LITERAL
+import com.sphereon.cbor.CborConst.KEY_LITERAL
+import com.sphereon.cbor.CborConst.VALUE_LITERAL
 import kotlinx.io.bytestring.ByteStringBuilder
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlin.js.JsExport
-
 
 
 /**
@@ -17,7 +25,7 @@ import kotlin.js.JsExport
 sealed class CborItem<Type>(
     val value: Type,
     cddl: CDDLType
-) : CborBaseItem(cddl) {
+) : HasCborJsonRepresentation, CborBaseItem(cddl) {
     protected val HEX_DIGITS = "0123456789abcdef".toCharArray()
 
     internal abstract fun encode(builder: ByteStringBuilder)
@@ -66,7 +74,28 @@ sealed class CborItem<Type>(
         return value
     }
 
-    abstract fun toJson(): JsonElement
+    override fun toJsonSimple(): JsonElement {
+        throw IllegalArgumentException("Because of boxing this method must be implemented in subclasses")
+    }
+
+    override fun toJson(includeCDDL: Boolean): JsonElement {
+        return if (includeCDDL) toJsonWithCDDL() else toJsonSimple()
+    }
+
+    override fun toJsonWithCDDL(): JsonElement {
+        val cddl = JsonPrimitive(this.cddl.format)
+        println("-CborItem(JSONObject(CDDL:$cddl, value:${toJsonSimple()} (jsonsimple))")
+        return JsonObject(mapOf(Pair(CDDL_LITERAL, cddl), Pair(VALUE_LITERAL, toJsonSimple())))
+    }
+
+    override fun toJsonCborItem(): ICborItemValueJson {
+        return object : ICborItemValueJson {
+            override val cddl: CDDLType
+                get() = this@CborItem.cddl
+            override val value: JsonElement
+                get() = this@CborItem.toJsonWithCDDL()
+        }
+    }
 
     @Suppress("UNCHECKED_CAST")
     val asMap: cddl_map<Any, Any>
@@ -116,7 +145,7 @@ sealed class CborItem<Type>(
     }
 
     override fun toString(): String {
-        return "CborItem(value=$value, cddl=$cddl)"
+        return "CborItem($VALUE_LITERAL=$value, $CDDL_LITERAL=$cddl)"
     }
 
     override fun equals(other: Any?): Boolean {
@@ -143,10 +172,139 @@ sealed class CborItem<Type>(
     }
 
 }
+
 @JsExport
 abstract class CborCollectionItem<Type>(value: Type, cddl: CDDLType) : CborItem<Type>(value, cddl)
 
 
 typealias AnyCborItem = CborItem<*>
 
+/**
+ * Json representation
+ */
+interface ICborItemValueJson {
+    val cddl: CDDLType
+    val value: JsonElement
+}
 
+/**
+ * Json representation
+ */
+interface ICborItemJson : ICborItemValueJson {
+    val key: String
+}
+
+interface HasCborJsonRepresentation {
+    fun toJsonWithCDDL(): JsonElement // Array or Object
+    fun toJson(includeCDDL: Boolean = false): JsonElement
+    fun toJsonSimple(): JsonElement
+    fun toJsonCborItem(): ICborItemValueJson
+
+}
+
+@Serializable
+data class CborItemJson(override val key: String, override val value: JsonElement, override val cddl: CDDLType) : HasCborJsonRepresentation,
+    ICborItemJson {
+    override fun toJsonWithCDDL() =
+        JsonObject(
+            mapOf(
+                Pair(
+                    JsonPrimitive(key).content,
+                    JsonObject(mapOf(Pair(VALUE_LITERAL, value), Pair(CDDL_LITERAL, JsonPrimitive(cddl.format))))
+                ),
+            )
+        )
+
+    override fun toJsonSimple() = JsonObject(mapOf(Pair(JsonPrimitive(key).content, value)))
+    override fun toJson(includeCDDL: Boolean) = if (includeCDDL) toJsonWithCDDL() else toJsonSimple()
+    override fun toJsonCborItem(): ICborItemValueJson = this
+
+
+    object Static {
+        fun isCborItemValueJson(jsonElement: JsonElement): Boolean {
+            if (jsonElement !is JsonObject) {
+                return false
+            }
+            if (jsonElement.size == 2 || jsonElement.size == 3) {
+                return jsonElement.containsKey(CDDL_LITERAL) && jsonElement.containsKey(VALUE_LITERAL)
+            }
+            return false
+        }
+
+        fun isCborItemJson(jsonElement: JsonElement): Boolean {
+            if (jsonElement !is JsonObject) {
+                return false
+            }
+            if (jsonElement.size == 3) {
+                return jsonElement.containsKey(CDDL_LITERAL) && jsonElement.containsKey(VALUE_LITERAL) && jsonElement.containsKey(KEY_LITERAL)
+            }
+            return false
+        }
+
+
+        fun fromJsonPrimitive(jsonPrimitive: JsonPrimitive, cddl: CDDLType, key: String? = null): ICborItemValueJson {
+            if (key !== null) {
+                return CborItemJson(key, jsonPrimitive, cddl)
+            }
+
+            return object : ICborItemValueJson {
+                override val cddl: CDDLType
+                    get() = cddl
+                override val value: JsonElement
+                    get() = jsonPrimitive
+            }
+        }
+
+        fun fromJsonArray(jsonArray: JsonArray): Array<ICborItemValueJson> {
+            return jsonArray.map {
+                if (it as? JsonObject !== null) {
+                    fromJsonObjectAsValueJson(it.jsonObject)
+                } else if (it as? JsonPrimitive !== null) {
+                    if (it.isString) {
+                        fromJsonPrimitive(it.jsonPrimitive, CDDL.tstr)
+                    } else {
+                        fromJsonPrimitive(it.jsonPrimitive, CDDL.any)
+                    }
+                } else if (it as? JsonArray !== null) {
+                    fromJsonArray(it.jsonArray)
+                }
+                throw IllegalStateException("JsonObject does not contain 3 elements from a Cbor Json Item")
+
+            }.toTypedArray()
+        }
+
+        fun fromJsonObjectAsCborItemJson(jsonObject: JsonObject): ICborItemJson {
+            if (!isCborItemJson(jsonObject)) {
+                throw IllegalStateException("JsonObject does not contain 3 elements from a Cbor Json Item")
+            }
+            return fromJsonObjectAsValueJson(jsonObject) as ICborItemJson
+        }
+
+        fun fromJsonObjectAsValueJson(jsonObject: JsonObject): ICborItemValueJson {
+            if (!isCborItemValueJson(jsonObject) && !isCborItemValueJson(jsonObject)) {
+                throw IllegalStateException("JsonObject does not contain 2 or 3 elements from a Cbor Json Item")
+            }
+            val value = jsonObject[VALUE_LITERAL] ?: throw IllegalStateException("value not available")
+            val cddl = CDDL.util.fromFormat(
+                jsonObject[CDDL_LITERAL]?.jsonPrimitive?.content ?: throw IllegalStateException("cddl key not available")
+            )
+            if (jsonObject.containsKey(KEY_LITERAL)) {
+                return object : ICborItemJson {
+                    override val cddl = cddl
+                    override val key = jsonObject[KEY_LITERAL]?.jsonPrimitive?.content ?: throw IllegalStateException("'key' key not available")
+                    override val value = value
+                }
+            }
+            return object : ICborItemValueJson {
+                override val cddl = cddl
+                override val value = value
+            }
+        }
+
+        fun fromDTO(cborItemJson: ICborItemJson): CborItemJson {
+            return CborItemJson(cborItemJson.key, cborItemJson.value, cborItemJson.cddl)
+        }
+    }
+}
+
+fun JsonObject.jsonObjectToCborJsonItem() = CborItemJson.Static.fromJsonObjectAsValueJson(this)

@@ -6,7 +6,6 @@ package com.sphereon.cbor
 import com.sphereon.kmp.decodeFromHex
 import kotlinx.io.bytestring.ByteStringBuilder
 import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonPrimitive
 import kotlin.js.JsExport
 
 
@@ -32,9 +31,13 @@ open class CborEncodedItem<Type>(
     value: CborByteString = cborSerializeViewOrItem(decodedValue)
 ) : CborItem<CborTagged<cddl_bstr>>(CborTagged(24, value), CDDL.bstr) {
 
-    override fun toJson(): JsonElement {
+    override fun toJsonSimple(): JsonElement {
         // TODO. Do we want to use the decoded value?
-        return value.toJson()
+        return value.toJsonSimple()
+    }
+
+    override fun toJsonWithCDDL(): JsonElement {
+        return super.toJsonWithCDDL()
     }
 
     fun <Type : AnyCborItem> cborDecode(): Type {

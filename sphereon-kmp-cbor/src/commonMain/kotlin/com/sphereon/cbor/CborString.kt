@@ -8,7 +8,6 @@ import kotlinx.io.bytestring.ByteStringBuilder
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 import kotlin.js.JsExport
-import kotlin.uuid.Uuid
 
 @JsExport
 class CborString(value: cddl_tstr) : CborItem<cddl_tstr>(value, CDDL.tstr) {
@@ -27,7 +26,7 @@ class CborString(value: cddl_tstr) : CborItem<cddl_tstr>(value, CDDL.tstr) {
         }
     }
 
-    override fun toJson(): JsonElement {
+    override fun toJsonSimple(): JsonElement {
         return JsonPrimitive(toValue())
     }
 }

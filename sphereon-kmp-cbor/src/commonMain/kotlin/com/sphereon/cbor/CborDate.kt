@@ -17,7 +17,7 @@ import kotlin.js.JsExport
 
 @JsExport
 class CborTDate(value: cddl_tdate) : CborTagged<cddl_tdate>(CDDL.tdate.info!!, CborString(value)) {
-    override fun toJson(): JsonElement {
+    override fun toJsonSimple(): JsonElement {
         return JsonPrimitive(toValue())
     }
 }
@@ -26,7 +26,7 @@ class CborTDate(value: cddl_tdate) : CborTagged<cddl_tdate>(CDDL.tdate.info!!, C
 class CborFullDate(
     value: cddl_full_date
 ) : CborTagged<cddl_full_date>(CDDL.full_date.info!!, CborString(value)) {
-    override fun toJson(): JsonElement {
+    override fun toJsonSimple(): JsonElement {
         return JsonPrimitive(toValue())
     }
 }

@@ -41,7 +41,7 @@ class CborFloat32(value: cddl_float32) : CborFloat(value, CDDL.float32)
 
 @JsExport
 class CborDouble(value: cddl_float64) : CborItem<cddl_float64>(value, CDDL.float64) {
-    override fun toJson(): JsonElement {
+    override fun toJsonSimple(): JsonElement {
         return JsonPrimitive(toValue())
     }
 

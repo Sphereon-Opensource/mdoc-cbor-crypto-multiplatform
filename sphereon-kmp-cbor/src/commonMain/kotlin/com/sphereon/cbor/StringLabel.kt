@@ -7,7 +7,7 @@ import kotlin.js.JsExport
 
 @JsExport
 class StringLabel(value: cddl_tstr) : CoseLabel<cddl_tstr>(value, CDDL.tstr, LabelType.String) {
-    override fun toJson(): JsonElement {
+    override fun toJsonSimple(): JsonElement {
         return JsonPrimitive(toValue())
     }
 

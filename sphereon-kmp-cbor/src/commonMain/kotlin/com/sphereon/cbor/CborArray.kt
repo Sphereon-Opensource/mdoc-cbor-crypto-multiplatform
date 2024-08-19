@@ -19,8 +19,19 @@ class CborArray<V : CborItem<*>>(value: cddl_list<V> = mutableListOf(), val inde
         return value.getOrNull(idx) as T
     }
 
-    override fun toJson(): JsonArray {
-        return JsonArray(value.map { it.toJson() })
+    override fun toJsonSimple(): JsonArray {
+        return JsonArray(value.map { it.toJsonSimple() })
+    }
+
+    override fun toJsonWithCDDL(): JsonArray {
+        return JsonArray(value.map { it.toJsonWithCDDL() })
+    }
+
+    override fun toJsonCborItem(): ICborItemValueJson {
+        return object : ICborItemValueJson {
+            override val cddl = this@CborArray.cddl
+            override val value = this@CborArray.toJsonWithCDDL()
+        }
     }
 
     override fun encode(builder: ByteStringBuilder) {

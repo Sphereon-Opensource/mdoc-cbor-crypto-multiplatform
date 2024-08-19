@@ -1,28 +1,124 @@
 package com.sphereon.cbor
 
+import com.sphereon.cbor.CborArray
+import com.sphereon.cbor.CborConst.CDDL_LITERAL
+import com.sphereon.cbor.CborConst.VALUE_LITERAL
 import kotlinx.io.bytestring.ByteStringBuilder
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlin.js.JsExport
 
 
 @Suppress("UNCHECKED_CAST")
 @JsExport
 open class CborMap<K : AnyCborItem, V : AnyCborItem?>(
-    value: MutableMap<K, V> = mutableMapOf(),
-    val indefiniteLength: Boolean = false
+    value: MutableMap<K, V> = mutableMapOf(), val indefiniteLength: Boolean = false
 ) : CborCollectionItem<MutableMap<K, V>>(value, CDDL.map) {
     operator fun <T> get(key: K): T {
         return value[key] as T
     }
 
 
-    override fun toJson(): JsonObject {
+    override fun toJsonSimple(): JsonObject {
+        println("jsonSimple Map:")
         return JsonObject(value.entries.map {
+            val key = it.key.toJsonSimple().jsonPrimitive.content
+            println(" =simple= key: ${key}")
+            val value =
+                if (it.value is CborItem<*>) (it.value as CborItem<Any>).toJsonSimple() else throw IllegalArgumentException("Map must contain cbor values")
+            println("      =simple= key: ${key}, value: ${value}")
             Pair(
-                it.key.toJson().toString(),
-                if (it.value is CborItem<*>) (it.value as CborItem<Any>).toJson() else throw IllegalArgumentException("Map must contain cbor values")
+                key,
+                value
             )
         }.toMap())
+    }
+
+
+    override fun toJsonWithCDDL(): JsonArray {
+        println("==Array:")
+        return JsonArray(
+            value.entries.map {
+                val json =
+                    if (it.value is CborItem<*>) (it.value as CborItem<Any>).toJsonWithCDDL() else throw IllegalArgumentException("Map must contain cbor values")
+                val arrayElement = json as? JsonArray
+                val isArray = arrayElement !== null
+                val objectElement = json as? JsonObject
+                val isObject = objectElement !== null
+                val primitiveElement = json as? JsonPrimitive
+                val isPrimitive = primitiveElement !== null
+                val key = it.key.toJsonSimple().jsonPrimitive
+                val cddl = if (isArray) JsonPrimitive(CDDL.list.format) else if (isPrimitive) JsonPrimitive(
+                    it.value?.cddl?.format ?: CDDL.nil.format
+                ) else json.jsonObject[CDDL_LITERAL]!!
+
+                val value = primitiveElement ?: arrayElement ?: json.jsonObject[VALUE_LITERAL]!!
+                println("   ==Object {cddl(${cddl}), value($value)}")
+                JsonObject(
+                    mapOf(
+                        Pair(
+                            "key",
+                            key
+                        ),
+                        Pair(
+                            CDDL_LITERAL,
+                            cddl
+                        ),
+                        Pair(VALUE_LITERAL, value),
+                    )
+                )
+
+            }
+        )
+    }
+
+    fun toJsonWithCDDLObject(): JsonObject {
+        println("==Object:")
+        return JsonObject(
+            mapOf(*value.entries.map {
+                val json =
+                    if (it.value is CborItem<*>) (it.value as CborItem<Any>).toJsonWithCDDL() else throw IllegalArgumentException("Map must contain cbor values")
+                val arrayElement = json as? JsonArray
+                val isArray = arrayElement !== null
+                val objectElement = json as? JsonObject
+                val isObject = objectElement !== null
+                val primitiveElement = json as? JsonPrimitive
+                val isPrimitive = primitiveElement !== null
+
+
+                val key = it.key.toJsonSimple().jsonPrimitive.content
+                val cddl = if (isArray) JsonPrimitive(CDDL.list.format) else if (isPrimitive) JsonPrimitive(
+                    it.value?.cddl?.format ?: CDDL.nil.format
+                ) else json.jsonObject[CDDL_LITERAL]!!
+
+                val value = primitiveElement ?: arrayElement ?: json.jsonObject[VALUE_LITERAL]!!
+                println("key: ${it.key.toJsonSimple().jsonPrimitive.content}\r\n           => OBJECT {cddl(${cddl}), value($value)}")
+                Pair(
+                    key,
+                    JsonObject(
+                        mapOf(
+                            Pair(
+                                CDDL_LITERAL,
+                                cddl
+                            ),
+//                            Pair("key", it.key.toJsonSimple().jsonPrimitive),
+                            Pair(VALUE_LITERAL, value),
+                        )
+                    )
+                )
+            }.toTypedArray())
+        )
+    }
+
+    override fun toJsonCborItem(): ICborItemValueJson {
+        return object : ICborItemValueJson {
+            override val cddl = CDDL.map
+            override val value = this@CborMap.toJsonWithCDDL()
+        }
     }
 
     fun <T> getStringLabel(key: cddl_tstr, required: Boolean? = false): T {
@@ -92,8 +188,7 @@ open class CborMap<K : AnyCborItem, V : AnyCborItem?>(
         }
 
         internal fun decode(
-            encodedCbor: ByteArray,
-            offset: Int
+            encodedCbor: ByteArray, offset: Int
         ): Pair<Int, CborMap<AnyCborItem, AnyCborItem>> {
             val lowBits = encodedCbor[offset].toInt().and(0x1f)
             if (lowBits == 31) {

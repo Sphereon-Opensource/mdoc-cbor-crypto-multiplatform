@@ -13,5 +13,5 @@ class CborUndefined : CborSimple<cddl_null>(Unit, CDDL.undefined) {
         }
     }
 
-    override fun toJson(): JsonElement = JsonPrimitive(null)
+    override fun toJsonSimple(): JsonElement = JsonPrimitive(null)
 }

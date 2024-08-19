@@ -4,7 +4,6 @@ import kotlinx.io.bytestring.ByteStringBuilder
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
-import kotlinx.serialization.json.JsonPrimitive
 import kotlin.js.JsExport
 
 class CborStringIndefLength(value: List<cddl_tstr>) : CborItem<List<cddl_tstr>>(value, CDDL.tstr_indef_length) {
@@ -43,7 +42,7 @@ class CborStringIndefLength(value: List<cddl_tstr>) : CborItem<List<cddl_tstr>>(
         }
     }
 
-        override fun toJson(): JsonArray {
+        override fun toJsonSimple(): JsonArray {
             TODO("Indef lengt to json not implemented yet")
         }
 
@@ -57,7 +56,7 @@ class CborNil : CborSimple<cddl_nil>(null, CDDL.nil) {
         }
     }
 
-    override fun toJson(): JsonElement {
+    override fun toJsonSimple(): JsonElement {
         return JsonNull
     }
 }
@@ -71,7 +70,7 @@ class CborNull : CborSimple<cddl_null>(null, CDDL.Null) {
         }
     }
 
-    override fun toJson(): JsonElement {
+    override fun toJsonSimple(): JsonElement {
         return JsonNull
     }
 }

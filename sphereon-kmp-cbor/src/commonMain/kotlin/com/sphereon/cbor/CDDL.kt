@@ -2,8 +2,12 @@
 
 package com.sphereon.cbor
 
+import com.sphereon.cbor.CDDL.any
+import com.sphereon.cbor.CborConst.CDDL_LITERAL
+import com.sphereon.cbor.CborConst.KEY_LITERAL
 import com.sphereon.cbor.CborTagged.Companion.DATE_TIME_STRING
 import com.sphereon.kmp.Encoding
+import com.sphereon.kmp.Logger
 import com.sphereon.kmp.LongKMP
 import com.sphereon.kmp.decodeFrom
 import com.sphereon.kmp.numberToKmpLong
@@ -19,13 +23,11 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
-import kotlinx.serialization.json.JsonNull.content
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.double
 import kotlinx.serialization.json.float
-import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -70,8 +72,9 @@ sealed interface CDDLType {
     val info: Int?
     val aliasFor: Array<CDDLType>
     fun toTag(additionalInfo: Int? = null): String
+    fun newCborItemFromJson(value: JsonElement?, cddl: CDDLType? = any): CborItem<out Any?>
 
-//    fun newCborItem(value: Any?): CborItem<out Any?>
+    fun <T : Any> newCborItem(origValue: T?): CborItem<out Any?>
 
 }
 
@@ -99,21 +102,74 @@ sealed class CDDL(
     override val aliasFor: Array<CDDLType> = arrayOf(),
 ) : CDDLType {
 
-    /*fun <T : Any?> anyToType(value: T): CDDLType {
-        if (value == null) {
-            return nil
-        } else if (value == Unit) {
-            return undefined
+    override fun newCborItemFromJson(element: JsonElement?, cddl: CDDLType?): CborItem<out Any?> {
+        val jsonPrimitive: JsonPrimitive? = (element as? JsonPrimitive)?.jsonPrimitive
+        val jsonArray: JsonArray? = (element as? JsonArray)?.jsonArray
+        val jsonObject: JsonObject? = (element as? JsonObject)?.jsonObject
+        val isNull: Boolean = element == JsonNull || element === null
+        val isString: Boolean = jsonPrimitive?.isString == true
+
+        if (isNull) {
+            return CborNull()
+        } else if (isString && jsonPrimitive !== null) {
+            return CborString(jsonPrimitive.content)
+        } else if (jsonArray !== null) {
+            return list.fromJson(jsonArray)
+        } else if (jsonObject !== null) {
+            if (CborItemJson.Static.isCborItemValueJson(jsonObject)) {
+
+                val key = if (CborItemJson.Static.isCborItemJson(jsonObject)) jsonObject["key"]?.jsonPrimitive?.content else null
+                val cddlStr = jsonObject["cddl"]?.jsonPrimitive?.content
+
+                if (cddlStr === null) {
+                    Logger.tag("CDDL").warn("cddl key found, but wasn't a primitive, returning a null value")
+                    return CborNull()
+                }
+                val cddlObject = util.fromFormat(cddlStr)
+                val cborObject = newCborItemFromJson(jsonObject[jsonObject.keys.find { it != CDDL_LITERAL && it != KEY_LITERAL }], cddlObject)
+                println("CBOR ITEM AS JSON ENCOUNTERED: key:${key}, cddl:${cddlStr}, object: ${cborObject}")
+                if (key === null) {
+                    return cborObject
+                }
+                return CborMap(mutableMapOf(Pair(CborString(key), cborObject)))
+            }
+            // number label keys?
+            return CborMap(mutableMapOf(* jsonObject.map { Pair(CborString(it.key), newCborItemFromJson(it.value)) }.toTypedArray()))
+
+        } else if (jsonPrimitive !== null) {
+            if (cddl == null) {
+                return newCborItem(jsonPrimitive)
+            }
+            return when (cddl) {
+                // Needed because we cannot have inheritance with Kotlin to JS, unfortunately. The fromJson would cause clashes if we put it in the interface
+                tstr -> tstr.fromJson(jsonPrimitive)
+                Null -> CborNull()
+                False -> CborSimple.FALSE
+                True -> CborSimple.TRUE
+                bool -> bool.fromJson(jsonPrimitive)
+                bstr -> bstr.fromJson(jsonPrimitive)
+                bytes -> bytes.fromJson(jsonPrimitive)
+                float -> float.fromJson(jsonPrimitive)
+                float16 -> float16.fromJson(jsonPrimitive)
+                float32 -> float32.fromJson(jsonPrimitive)
+                float64 -> float64.fromJson(jsonPrimitive)
+                full_date -> full_date.fromJson(jsonPrimitive)
+                int -> int.fromJson(jsonPrimitive)
+                nil -> nil.newNil()
+                nint -> nint.fromJson(jsonPrimitive)
+                tdate -> tdate.fromJson(jsonPrimitive)
+                text -> text.fromJson(jsonPrimitive)
+                time -> time.fromJson(jsonPrimitive)
+                uint -> uint.fromJson(jsonPrimitive)
+                undefined -> undefined.newUndefined()
+                else -> cddl.newCborItem(jsonPrimitive)
+            }
         }
-        return when (value) {
-            is cddl_tstr -> tstr
-            is LongKMP -> if (value.toLong() < 0L) nint else uint
-            is cddl_bstr -> bstr
-            else -> throw IllegalArgumentException("could not determine type for $value")
-        }
+        return newCborItem(element)
+
     }
-*/
-    fun <T : Any> newCborItem(origValue: T?): CborItem<out Any?> {
+
+    override fun <T : Any> newCborItem(origValue: T?): CborItem<out Any?> {
         // We are not using inheritance for the methods as that would impact JS export.
         // Since this is a sealed class anyway that is not too bad
         var value = origValue
@@ -181,7 +237,11 @@ sealed class CDDL(
                     if (it.key is AnyCborItem) it.key as AnyCborItem else any.newCborItem(it.key),
                     if (it.value is AnyCborItem) it.value as AnyCborItem else any.newCborItem(it.value)
                 )
-            }.toTypedArray())) /* fixme. Needs inspection of keys and values and map type*/ else map.fromJson(jsonElement.jsonObject)
+            }.toTypedArray())) /* fixme. Needs inspection of keys and values and map type*/ else {
+                println("===========================================")
+                println("JSON ELEMENT: ${jsonElement}")
+                return map.fromJson(jsonElement.jsonObject)
+            }
 
             nil -> nil.newNil()
             nint -> if (jsonElement === null) nint.newNInt(if (value is Number) value.toKmpLong() else value as LongKMP) else nint.fromJson(
@@ -400,7 +460,10 @@ sealed class CDDL(
             when (elt) {
                 is JsonPrimitive -> any.fromJson(elt)
                 is JsonArray -> fromJson(elt)
-                is JsonObject -> map.fromJson(elt)
+                is JsonObject -> if (CborItemJson.Static.isCborItemValueJson(elt)) newCborItemFromJson(
+                    elt,
+                    elt[CDDL_LITERAL]?.jsonPrimitive?.content?.let { CDDL.util.fromFormat(it) }) else map.fromJson(elt)
+
                 else -> throw IllegalArgumentException("Unknown type encountered")
             }
         }.toMutableList())
@@ -412,7 +475,11 @@ sealed class CDDL(
             "any"
         ) {
         fun newAny(value: cddl_any) = CborAny(value)
-        fun fromJson(value: JsonElement): CborAny<Any> = TODO("Json any to cbor not implemeted yet")
+        fun fromJson(value: JsonElement): CborItem<*> {
+            println("any to json: ${value}")
+            return newCborItemFromJson(value)
+//            TODO("Json any to cbor not implemeted yet")
+        }
     }
 
 

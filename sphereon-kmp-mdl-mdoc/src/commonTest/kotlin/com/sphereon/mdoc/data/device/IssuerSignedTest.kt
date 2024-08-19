@@ -2,6 +2,8 @@ package com.sphereon.mdoc.data.device
 
 import com.sphereon.cbor.CborArray
 import com.sphereon.cbor.CborByteString
+import com.sphereon.cbor.stringToCborByteString
+import com.sphereon.cbor.toCborByteString
 import com.sphereon.crypto.cose.CoseCurve
 import com.sphereon.crypto.cose.CoseHeaderCbor
 import com.sphereon.crypto.cose.CoseKeyJson
@@ -9,12 +11,13 @@ import com.sphereon.crypto.cose.CoseKeyType
 import com.sphereon.crypto.cose.CoseSign1Cbor
 import com.sphereon.crypto.cose.CoseSignatureAlgorithm
 import com.sphereon.crypto.cose.CoseSignatureStructureCbor
-import com.sphereon.cbor.stringToCborByteString
-import com.sphereon.cbor.toCborByteString
 import com.sphereon.kmp.Encoding
 import com.sphereon.kmp.decodeFrom
 import com.sphereon.kmp.decodeFromHex
 import com.sphereon.kmp.encodeTo
+import jsonSerializer
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.encodeToString
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -103,7 +106,7 @@ class IssuerSignedTest {
     @Test
     fun shouldDecodeAndEncodeISOIssuerAuthTestVector() {
 
-        val issuerAuth = CoseSign1Cbor.cborDecode<Any,Any>(iso18013_5_IssuerAuthTestVector.decodeFromHex())
+        val issuerAuth = CoseSign1Cbor.cborDecode<Any, Any>(iso18013_5_IssuerAuthTestVector.decodeFromHex())
         assertNotNull(issuerAuth)
         assertNotNull(issuerAuth.payload)
         assertNotNull(issuerAuth.signature)
@@ -116,7 +119,8 @@ class IssuerSignedTest {
         assertNotNull(sigStructure)
         assertEquals(iso18013_5_SignatureStructureTestVector, sigStructure.cborEncode().encodeTo(Encoding.HEX))
 
-        val isoSigStructure: CoseSignatureStructureCbor = CoseSignatureStructureCbor.cborDecode(iso18013_5_SignatureStructureTestVector.decodeFromHex())
+        val isoSigStructure: CoseSignatureStructureCbor =
+            CoseSignatureStructureCbor.cborDecode(iso18013_5_SignatureStructureTestVector.decodeFromHex())
         assertNotNull(isoSigStructure)
         assertEquals(iso18013_5_SignatureStructureTestVector, isoSigStructure.cborEncode().encodeTo(Encoding.HEX))
 
@@ -139,6 +143,14 @@ class IssuerSignedTest {
         assertEquals(2, decoded.issuerAuth.unprotectedHeader?.x5chain?.value?.size)
         assertEquals(22, decoded.nameSpaces?.getStringLabel<CborArray<*>>("eu.europa.ec.eudi.pid.1", true)?.value?.size)
 
+        val issuerSignedJson: IssuerSignedJson = decoded.toJson()
+
+
+        val items = issuerSignedJson.nameSpaces!!.get("eu.europa.ec.eudi.pid.1")
+        var json = "{\"issuerAuth\":\"discard this data\", \"namespaces\": {\r\n\"eu.europa.ec.eudi.pid.1\": ["
+        items!!.map { json += jsonSerializer.encodeToString(it) +",\r\n" }
+        json += "]\r\n}"
+        println(json)
 
         val issuerAuthEncoded = decoded.issuerAuth.cborEncode()
         //val nameSpacesEncoded = decoded.nameSpaces?.cborEncode()
@@ -174,8 +186,11 @@ class IssuerSignedTest {
     @Test
     fun shouldConvertToJsonAndBack() {
         val issuerSignedCbor = IssuerSignedCbor.cborDecode(sprindFunkeTestVector.decodeFromHex())
-        val issuerSignedJson = issuerSignedCbor.toJson()
-        assertEquals(issuerSignedCbor, issuerSignedJson.toCbor())
+        val issuerSignedJson: IssuerSignedJson = issuerSignedCbor.toJson()
+        issuerSignedJson.nameSpaces?.values?.forEach { items -> items.map { item -> println(item.toString()) } }
+        val issuerSignedCborFromJson = issuerSignedJson.toCbor()
+
+        assertEquals(issuerSignedCbor, issuerSignedCborFromJson)
     }
 
 

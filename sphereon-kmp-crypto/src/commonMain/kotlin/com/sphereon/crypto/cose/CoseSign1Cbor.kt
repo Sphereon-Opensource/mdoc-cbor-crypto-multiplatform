@@ -16,6 +16,7 @@ import com.sphereon.cbor.toCborByteString
 import com.sphereon.kmp.Encoding
 import com.sphereon.kmp.decodeFromHex
 import com.sphereon.kmp.encodeTo
+import kotlinx.serialization.Serializable
 import kotlin.js.JsExport
 
 

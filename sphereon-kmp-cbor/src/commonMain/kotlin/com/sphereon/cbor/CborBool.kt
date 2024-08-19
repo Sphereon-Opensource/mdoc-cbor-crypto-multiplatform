@@ -6,7 +6,7 @@ import kotlin.js.JsExport
 
 @JsExport
 abstract class CborBool(value: cddl_bool, cddl: CDDL) : CborSimple<cddl_bool>(value, cddl) {
-    override fun toJson(): JsonElement {
+    override fun toJsonSimple(): JsonElement {
         return JsonPrimitive(toValue())
     }
 }
