@@ -51,7 +51,7 @@ data class KeyAuthorizationsCbor(
     val dataElements: AuthorizedDataElements? = null
 ) : CborView<KeyAuthorizationsCbor, KeyAuthorizationsJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
     override fun cborBuilder(): CborBuilder<KeyAuthorizationsCbor> =
-        CborMap.builder(this).put(Static.NAME_SPACES, nameSpaces, true).put(Static.DATA_ELEMENTS, dataElements, true).end()
+        CborMap.Static.builder(this).put(Static.NAME_SPACES, nameSpaces, true).put(Static.DATA_ELEMENTS, dataElements, true).end()
 
     override fun toJson(): KeyAuthorizationsJson {
         TODO("Not yet implemented")

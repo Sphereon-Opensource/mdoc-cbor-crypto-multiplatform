@@ -74,7 +74,7 @@ data class DeviceResponseCbor(
 
 ) : CborView<DeviceResponseCbor, DeviceResponseJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
     override fun cborBuilder(): CborBuilder<DeviceResponseCbor> {
-        return CborMap.builder(this)
+        return CborMap.Static.builder(this)
             .put(Static.VERSION, version, false)
             .put(
                 Static.DOCUMENTS,

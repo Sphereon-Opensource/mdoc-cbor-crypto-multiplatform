@@ -33,33 +33,33 @@ class CborFullDate(
 
 
 @JsExport
-fun CborTDate.cborTDateToEpochSeconds(utils: DateTimeUtils = DateTimeUtils.DEFAULT, timeZoneId: String? = null) =
+fun CborTDate.cborTDateToEpochSeconds(utils: DateTimeUtils = DateTimeUtils.Static.DEFAULT, timeZoneId: String? = null) =
     LongKMP(this.cborTDateToLocalDateTime(utils, timeZoneId).toInstant(utils.timeZone(timeZoneId)).epochSeconds)
 
 
 @JsExport
-fun CborFullDate.cborFullDateToEpochSeconds(utils: DateTimeUtils = DateTimeUtils.DEFAULT, timeZoneId: String? = null) =
+fun CborFullDate.cborFullDateToEpochSeconds(utils: DateTimeUtils = DateTimeUtils.Static.DEFAULT, timeZoneId: String? = null) =
     LongKMP(this.cborFullDateToLocalDateTime(utils, timeZoneId).toInstant(utils.timeZone(timeZoneId)).epochSeconds)
 
-fun CborTDate.cborTDateToLocalDateTime(utils: DateTimeUtils = DateTimeUtils.DEFAULT, timeZoneId: String? = null) =
+fun CborTDate.cborTDateToLocalDateTime(utils: DateTimeUtils = DateTimeUtils.Static.DEFAULT, timeZoneId: String? = null) =
     this.value.toLocalDateTime(utils, timeZoneId)
 
-fun CborFullDate.cborFullDateToLocalDateTime(utils: DateTimeUtils = DateTimeUtils.DEFAULT, timeZoneId: String? = null) =
+fun CborFullDate.cborFullDateToLocalDateTime(utils: DateTimeUtils = DateTimeUtils.Static.DEFAULT, timeZoneId: String? = null) =
     this.value.toLocalDateTime(utils, timeZoneId)
 
-fun cddl_full_date.toLocalDateTime(utils: DateTimeUtils = DateTimeUtils.DEFAULT, timeZoneId: String? = null) =
-    utils.dateTime(timeZoneId, LocalDateTimeKMP.fromString(this).toEpochSeconds(timeZoneId).toInt()).toKotlin()
+fun cddl_full_date.toLocalDateTime(utils: DateTimeUtils = DateTimeUtils.Static.DEFAULT, timeZoneId: String? = null) =
+    utils.dateTime(timeZoneId, LocalDateTimeKMP.Static.fromString(this).toEpochSeconds(timeZoneId).toInt()).toKotlin()
 
 @JsExport
-fun cddl_full_date.toCborFullDate(utils: DateTimeUtils = DateTimeUtils.DEFAULT, timeZoneId: String? = null) =
+fun cddl_full_date.toCborFullDate(utils: DateTimeUtils = DateTimeUtils.Static.DEFAULT, timeZoneId: String? = null) =
     CborFullDate(this.toLocalDateTime(utils, timeZoneId).date.toString())
 
-fun Instant.instantToDateStringISO(utils: DateTimeUtils = DateTimeUtils.DEFAULT, timeZoneId: String? = null) =
+fun Instant.instantToDateStringISO(utils: DateTimeUtils = DateTimeUtils.Static.DEFAULT, timeZoneId: String? = null) =
     utils.dateISO(timeZoneId, epochSeconds = this.epochSeconds.toInt())
 
 @JsExport
 fun LocalDateTimeKMP.localDateToDateStringISO(
-    utils: DateTimeUtils = DateTimeUtils.DEFAULT,
+    utils: DateTimeUtils = DateTimeUtils.Static.DEFAULT,
     timeZoneId: String? = null
 ) =
     utils.dateISO(timeZoneId, this.delegate.toInstant(TimeZone.of(timeZoneId ?: utils.timeZoneId)).epochSeconds.toInt())

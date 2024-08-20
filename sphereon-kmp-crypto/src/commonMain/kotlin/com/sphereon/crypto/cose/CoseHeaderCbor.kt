@@ -79,7 +79,7 @@ data class CoseHeaderCbor(
     val partialIv: CborByteString? = null,
     val x5chain: CborArray<CborByteString>? = null,
 ) : CborView<CoseHeaderCbor, CoseHeaderJson, CborMap<NumberLabel, AnyCborItem>>(CDDL.map) {
-    companion object {
+    object Static {
         val ALG = NumberLabel(1)
         val CRIT = NumberLabel(2)
         val CONTENT_TYPE = NumberLabel(3)
@@ -115,15 +115,15 @@ data class CoseHeaderCbor(
     }
 
     override fun cborBuilder(): CborBuilder<CoseHeaderCbor> {
-        return CborMap.builder(this).put(ALG, alg?.value?.numberToKmpLong()?.toInt()?.toNumberLabel(), true)
-            .put(CRIT, crit, true).put(CONTENT_TYPE, contentType, true).put(KID, kid, true).put(IV, iv, true)
-            .put(PARTIAL_IV, partialIv, true)
+        return CborMap.Static.builder(this).put(Static.ALG, alg?.value?.numberToKmpLong()?.toInt()?.toNumberLabel(), true)
+            .put(Static.CRIT, crit, true).put(Static.CONTENT_TYPE, contentType, true).put(Static.KID, kid, true).put(Static.IV, iv, true)
+            .put(Static.PARTIAL_IV, partialIv, true)
             /**
              * If a single certificate is conveyed, it is placed in a CBOR byte string.
              * If multiple certificates are conveyed, a CBOR array of byte strings is used, with each certificate being in its own byte string.
              *
              */
-            .put(X5CHAIN, if (x5chain?.value?.size == 1) x5chain.value[0] else x5chain, true).end()
+            .put(Static.X5CHAIN, if (x5chain?.value?.size == 1) x5chain.value[0] else x5chain, true).end()
 
     }
 

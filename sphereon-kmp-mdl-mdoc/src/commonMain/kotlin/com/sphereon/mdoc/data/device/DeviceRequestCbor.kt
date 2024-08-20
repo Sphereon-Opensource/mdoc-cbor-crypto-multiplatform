@@ -70,7 +70,7 @@ data class DeviceRequestCbor(
 
 ) : CborView<DeviceRequestCbor, DeviceRequestJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
     override fun cborBuilder(): CborBuilder<DeviceRequestCbor> =
-        CborMap.builder(this).put(Static.VERSION, version, optional = false).put(
+        CborMap.Static.builder(this).put(Static.VERSION, version, optional = false).put(
             Static.DOC_REQUESTS,
             CborArray(docRequests.map { it.toCbor() }.toMutableList()),
             optional = false

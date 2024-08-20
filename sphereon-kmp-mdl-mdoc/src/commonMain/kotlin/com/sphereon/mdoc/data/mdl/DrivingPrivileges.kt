@@ -67,7 +67,7 @@ data class DrivingPrivilegesCbor(
     }
 
     override fun cborBuilder(): CborBuilder<DrivingPrivilegesCbor> {
-        return CborArray.builder(this).addCborArray(this.backing.cborViewListToCborItem()).end()
+        return CborArray.Static.builder(this).addCborArray(this.backing.cborViewListToCborItem()).end()
     }
 
     override fun toJson(): DrivingPrivilegesJson {
@@ -171,7 +171,7 @@ data class DrivingPrivilegeCbor(
 ) : CborView<DrivingPrivilegeCbor, DrivingPrivilegeJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
 
     override fun cborBuilder(): CborBuilder<DrivingPrivilegeCbor> {
-        val builder = CborMap.builder(this)
+        val builder = CborMap.Static.builder(this)
             .put(Static.VEHICLE_CATEGORY_CODE, vehicle_category_code)
             .put(Static.ISSUE_DATE, issue_date, true)
             .put(Static.EXPIRY_DATE, expiry_date, true)
@@ -182,8 +182,8 @@ data class DrivingPrivilegeCbor(
     override fun toJson(): DrivingPrivilegeJson {
         return DrivingPrivilegeJson(
             this.vehicle_category_code.value,
-            issue_date?.value?.let { LocalDateTimeKMP.fromString(it) },
-            expiry_date?.value?.let { LocalDateTimeKMP.fromString(it) },
+            issue_date?.value?.let { LocalDateTimeKMP.Static.fromString(it) },
+            expiry_date?.value?.let { LocalDateTimeKMP.Static.fromString(it) },
             codes?.map { it.toJson() }
         )
     }
@@ -242,7 +242,7 @@ data class DrivingPrivilegeCbor(
 
         fun withIssueDateUsingLocalDateTime(
             issueDate: LocalDateTimeKMP,
-            utils: DateTimeUtils = DateTimeUtils.DEFAULT,
+            utils: DateTimeUtils = DateTimeUtils.Static.DEFAULT,
             timeZoneId: String? = null
         ) =
             apply {
@@ -251,7 +251,7 @@ data class DrivingPrivilegeCbor(
 
         fun withIssueDateUsingLocalDate(
             issueDate: LocalDate,
-            utils: DateTimeUtils = DateTimeUtils.DEFAULT,
+            utils: DateTimeUtils = DateTimeUtils.Static.DEFAULT,
             timeZoneId: String? = null
         ) =
             apply { this.issueDate = CborFullDate(issueDate.localDateToDateStringISO(utils, timeZoneId)) }
@@ -259,7 +259,7 @@ data class DrivingPrivilegeCbor(
 
         fun withIssueDateUsingEpochSeconds(
             epochSeconds: Int,
-            utils: DateTimeUtils = DateTimeUtils.DEFAULT,
+            utils: DateTimeUtils = DateTimeUtils.Static.DEFAULT,
             timeZoneId: String? = null
         ) =
             apply { this.issueDate = CborFullDate(getDateTime(utils).dateISO(timeZoneId, epochSeconds)) }
@@ -268,7 +268,7 @@ data class DrivingPrivilegeCbor(
 
         fun withExpiryDateUsingLocalDateTime(
             issueDate: LocalDateTimeKMP,
-            utils: DateTimeUtils = DateTimeUtils.DEFAULT,
+            utils: DateTimeUtils = DateTimeUtils.Static.DEFAULT,
             timeZoneId: String? = null
         ) =
             apply {
@@ -277,14 +277,14 @@ data class DrivingPrivilegeCbor(
 
         fun withExpiryDateUsingLocalDate(
             issueDate: LocalDate,
-            utils: DateTimeUtils = DateTimeUtils.DEFAULT,
+            utils: DateTimeUtils = DateTimeUtils.Static.DEFAULT,
             timeZoneId: String? = null
         ) =
             apply { this.expiryDate = CborFullDate(issueDate.localDateToDateStringISO(utils, timeZoneId)) }
 
         fun withExpiryDateUsingInstant(
             issueDate: Instant,
-            utils: DateTimeUtils = DateTimeUtils.DEFAULT,
+            utils: DateTimeUtils = DateTimeUtils.Static.DEFAULT,
             timeZoneId: String? = null
         ) =
             apply { this.expiryDate = CborFullDate(issueDate.instantToDateStringISO(utils, timeZoneId)) }
@@ -359,7 +359,7 @@ data class DrivingPrivilegeCbor(
 data class DrivingPrivilegesCodeCbor(val code: CborString, val sign: CborString?, val value: CborString?) :
     CborView<DrivingPrivilegesCodeCbor, DrivingPrivilegesCodeJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
     override fun cborBuilder(): CborBuilder<DrivingPrivilegesCodeCbor> {
-        return CborMap.builder(this)
+        return CborMap.Static.builder(this)
             .put(Static.CODE, code)
             .put(Static.SIGN, sign, true)
             .put(Static.VALUE, value, true).end()

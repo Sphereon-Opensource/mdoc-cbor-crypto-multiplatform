@@ -25,9 +25,9 @@ enum class DataHandlingError(
         "These error codes may be used for application-specific purposes."
     );
 
-    companion object {
+    object Static {
         fun fromErrorCode(errorCode: cddl_int): DataHandlingError {
-            return entries.find { it.errorCode == DataHandlingErrorCode.fromErrorCodeValue(errorCode) }!!
+            return entries.find { it.errorCode == DataHandlingErrorCode.Static.fromErrorCodeValue(errorCode) }!!
         }
     }
 }
@@ -35,7 +35,7 @@ enum class DataHandlingError(
 enum class DataHandlingErrorCode(val value: cddl_int) {
     OK(LongKMP(0)), RFU(LongKMP(1)), APPLICATION_SPECIFIC(LongKMP(-1));
 
-    companion object {
+    object Static {
         fun fromErrorCodeValue(errorCode: cddl_int): DataHandlingErrorCode {
             return if (errorCode == OK.value) {
                 OK

@@ -59,7 +59,7 @@ data class ArrayBuilder<T>(private val parent: T, private val array: CborArray<C
      * @param encodedCbor the bytes of the encoded CBOR.
      */
     fun <T:AnyCborItem>addTaggedEncodedCbor(encodedCbor: ByteArray) = apply {
-        array.value.add(CborTagged(CborTagged.ENCODED_CBOR, CborByteString(encodedCbor)))
+        array.value.add(CborTagged(CborTagged.Static.ENCODED_CBOR, CborByteString(encodedCbor)))
     }
 
     /**

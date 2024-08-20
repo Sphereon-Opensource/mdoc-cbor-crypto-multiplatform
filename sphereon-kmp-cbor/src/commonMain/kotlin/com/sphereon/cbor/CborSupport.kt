@@ -29,7 +29,7 @@ object CborSupport {
     }
 
     fun <Type : AnyCborItem> dataItemToValue(value: CborEncodedItem<Type>): Type {
-        return CborEncodedItem.toDecodedValue(value)
+        return CborEncodedItem.Static.toDecodedValue(value)
     }
 
     fun <Type> dataItemToByteArray(

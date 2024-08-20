@@ -43,7 +43,7 @@ sealed class JwaSignatureAlgorithm(override val value: String) : JwaAlgorithm {
     object PS512 : JwaSignatureAlgorithm("PS512")
     object EdDSA : JwaSignatureAlgorithm("EdDSA")
 
-    companion object {
+    object Static {
         val asList = listOf(HS256, HS384, HS512, RS256, RS384, RS512, ES256, ES384, ES512, ES256K, PS256, PS384, PS512, EdDSA)
         fun fromValue(value: String?): JwaSignatureAlgorithm? {
             if (value == null) {
@@ -78,7 +78,7 @@ sealed class JwaEncryptionAlgorithm(override val value: String) : JwaAlgorithm {
     object PBES2_HS256_A128KW : JwaEncryptionAlgorithm("PBES2-HS256+A128KW")
     object PBES2_HS384_A192KW : JwaEncryptionAlgorithm("PBES2-HS384+A192KW")
     object PBES2_HS512_A256KW : JwaEncryptionAlgorithm("PBES2-HS512+A256KW")
-    companion object {
+    object Static {
         val asList = listOf(
             RSA1_5,
             RSA_OAEP,
@@ -117,6 +117,6 @@ internal object JwaAlgorithmSerializer : KSerializer<JwaAlgorithm> {
 
     override fun deserialize(decoder: Decoder): JwaAlgorithm {
         val value = decoder.decodeString()
-        return JwaSignatureAlgorithm.fromValue(value) ?: JwaEncryptionAlgorithm.fromValue(value) ?: throw IllegalArgumentException("Invalid signature algorithm")
+        return JwaSignatureAlgorithm.Static.fromValue(value) ?: JwaEncryptionAlgorithm.Static.fromValue(value) ?: throw IllegalArgumentException("Invalid signature algorithm")
     }
 }

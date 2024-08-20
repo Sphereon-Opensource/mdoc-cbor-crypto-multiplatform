@@ -25,6 +25,10 @@ import com.sphereon.kmp.LongKMP
 import com.sphereon.kmp.numberToKmpLong
 import com.sphereon.kmp.toKmpLong
 import com.sphereon.mdoc.mdocJsonSerializer
+import com.sphereon.mdoc.tx.device.WifiOptionsCbor.Static.CHANNEL_INFO_CHANNEL_NUMBER
+import com.sphereon.mdoc.tx.device.WifiOptionsCbor.Static.CHANNEL_INFO_OPERATING_CLASS
+import com.sphereon.mdoc.tx.device.WifiOptionsCbor.Static.PASS_PHRASE
+import com.sphereon.mdoc.tx.device.WifiOptionsCbor.Static.SUPPORTED_BANDS
 import kotlinx.serialization.encodeToString
 import kotlin.js.JsExport
 import kotlin.js.JsName
@@ -55,7 +59,7 @@ data class DeviceEngagementCbor(
     val additionalItems: CborMap<NumberLabel, AnyCborItem>? = CborMap(mutableMapOf())
 ) : CborView<DeviceEngagementCbor, DeviceEngagementJson, CborMap<NumberLabel, AnyCborItem>>(CDDL.map) {
 
-    companion object {
+    object Static {
         val VERSION = NumberLabel(0)
         val SECURITY = NumberLabel(1)
         val DEVICE_RETRIEVAL_METHODS = NumberLabel(2)
@@ -66,8 +70,8 @@ data class DeviceEngagementCbor(
         fun fromCborItem(m: CborMap<NumberLabel, AnyCborItem>): DeviceEngagementCbor {
             return DeviceEngagementCbor(
                 VERSION.required(m),
-                DeviceEngagementSecurityCbor.fromCborItem(SECURITY.required(m)),
-                DeviceRetrievalMethodCbor.fromDeviceEngagementCborItem(DEVICE_RETRIEVAL_METHODS.optional(m)),
+                DeviceEngagementSecurityCbor.Static.fromCborItem(SECURITY.required(m)),
+                DeviceRetrievalMethodCbor.Static.fromDeviceEngagementCborItem(DEVICE_RETRIEVAL_METHODS.optional(m)),
                 SERVER_RETRIEVAL_METHOD.optional(m),
                 PROTOCOL_INFO.optional(m),
             )
@@ -78,16 +82,16 @@ data class DeviceEngagementCbor(
     }
 
     override fun cborBuilder(): CborBuilder<DeviceEngagementCbor> {
-        val mapBuilder = CborMap.builder(this)
-            .put(VERSION, version)
-            .put(SECURITY, security.toCbor())
+        val mapBuilder = CborMap.Static.builder(this)
+            .put(Static.VERSION, version)
+            .put(Static.SECURITY, security.toCbor())
             .put(
-                DEVICE_RETRIEVAL_METHODS,
+                Static.DEVICE_RETRIEVAL_METHODS,
                 deviceRetrievalMethods?.cborViewArrayToCborItem(),
                 true
             )
-            .put(SERVER_RETRIEVAL_METHOD, serverRetrievalMethod?.toCbor(), true)
-            .put(PROTOCOL_INFO, protocolInfo, true)
+            .put(Static.SERVER_RETRIEVAL_METHOD, serverRetrievalMethod?.toCbor(), true)
+            .put(Static.PROTOCOL_INFO, protocolInfo, true)
         if (additionalItems?.value?.isNotEmpty() == true) {
             additionalItems.value.map { mapBuilder.put(it.key, it.value) }
         }
@@ -143,9 +147,9 @@ data class ServerRetrievalMethodsJson(val Oidc: ServerRetrievalInfo?, val WebApi
 data class ServerRetrievalMethodsCbor(val Oidc: ServerRetrievalInfo?, val WebApi: ServerRetrievalInfo?) :
     CborView<ServerRetrievalMethodsCbor, ServerRetrievalMethodsJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
     override fun cborBuilder(): CborBuilder<ServerRetrievalMethodsCbor> {
-        return CborMap.builder(this)
-            .put(OIDC, Oidc?.cborBuilder()?.build(), true)
-            .put(WEB_API, WebApi?.cborBuilder()?.build(), true)
+        return CborMap.Static.builder(this)
+            .put(Static.OIDC, Oidc?.cborBuilder()?.build(), true)
+            .put(Static.WEB_API, WebApi?.cborBuilder()?.build(), true)
             .end()
     }
 
@@ -153,7 +157,7 @@ data class ServerRetrievalMethodsCbor(val Oidc: ServerRetrievalInfo?, val WebApi
         TODO("Not yet implemented")
     }
 
-    companion object {
+    object Static {
         val OIDC = StringLabel("Oidc")
         val WEB_API = StringLabel("WebApi")
         fun fromCbor(encodedServerRetrievalMethods: ByteArray) {
@@ -169,7 +173,7 @@ data class ServerRetrievalMethodsCbor(val Oidc: ServerRetrievalInfo?, val WebApi
 @JsExport
 data class ServerRetrievalInfo(val version: CborUInt, val issuerUrl: CborString, val serverRetrievalToken: CborString) {
     fun cborBuilder(): CborBuilder<ServerRetrievalInfo> {
-        return CborArray.builder(this)
+        return CborArray.Static.builder(this)
             .add(version)
             .add(issuerUrl)
             .add(serverRetrievalToken)
@@ -180,7 +184,7 @@ data class ServerRetrievalInfo(val version: CborUInt, val issuerUrl: CborString,
         return cborBuilder().encodedBuild()
     }
 
-    companion object {
+    object Static {
         fun fromCbor(serverRetrievalInfo: ByteArray): ServerRetrievalInfo {
             val items: CborArray<AnyCborItem> = Cbor.decode(serverRetrievalInfo)
             return ServerRetrievalInfo(items.required(0), items.required(1), items.required(2))
@@ -201,7 +205,7 @@ data class DeviceEngagementSecurityJson(val cypherSuite: LongKMP, val eDeviceKey
 data class DeviceEngagementSecurityCbor(val cypherSuite: CborUInt, val eDeviceKeyBytes: CoseKeyCbor) :
     CborView<DeviceEngagementSecurityCbor, DeviceEngagementSecurityJson, CborArray<AnyCborItem>>(CDDL.list) {
     override fun cborBuilder(): CborBuilder<DeviceEngagementSecurityCbor> {
-        return CborArray.builder(this)
+        return CborArray.Static.builder(this)
             .add(cypherSuite)
             .add(CborEncodedItem(eDeviceKeyBytes.toCbor(), CborByteString(eDeviceKeyBytes.cborEncode())))
             .end()
@@ -212,7 +216,7 @@ data class DeviceEngagementSecurityCbor(val cypherSuite: CborUInt, val eDeviceKe
     }
 
 
-    companion object {
+    object Static {
         fun fromCborItem(a: CborArray<AnyCborItem>): DeviceEngagementSecurityCbor {
             val ekeyBytes: CborEncodedItem<CborMap<NumberLabel, AnyCborItem>> = a.required(1)
             return DeviceEngagementSecurityCbor(
@@ -245,7 +249,7 @@ enum class DeviceRetrievalMethodType(val type: Int) {
         return CborUInt(type.numberToKmpLong())
     }
 
-    companion object {
+    object Static {
         fun fromCborItem(item: CborUInt): DeviceRetrievalMethodType {
             return entries.first { it.type == item.value.toInt() }
         }
@@ -260,7 +264,7 @@ data class DeviceRetrievalMethodCbor(
 ) : CborView<DeviceRetrievalMethodCbor, DeviceRetrievalMethodJson, CborArray<AnyCborItem>>(CDDL.list) {
 
     override fun cborBuilder(): CborBuilder<DeviceRetrievalMethodCbor> {
-        return CborArray.builder(this)
+        return CborArray.Static.builder(this)
             .add(type)
             .add(version)
             .add(retrievalOptions.toCbor())
@@ -272,7 +276,7 @@ data class DeviceRetrievalMethodCbor(
         TODO("Not yet implemented")
     }
 
-    companion object {
+    object Static {
         fun fromDeviceEngagementCborItem(items: CborArray<AnyCborItem>?): Array<DeviceRetrievalMethodCbor>? {
             if (items == null || items.value.isEmpty()) {
                 return null
@@ -283,10 +287,10 @@ data class DeviceRetrievalMethodCbor(
 
         fun fromCborItem(items: CborArray<AnyCborItem>): DeviceRetrievalMethodCbor {
             val type: CborUInt = items.required(0)
-            val retrievalOptions = when (DeviceRetrievalMethodType.fromCborItem(type)) {
-                DeviceRetrievalMethodType.NFC -> NfcOptionsCbor.fromCborItem(items.required(2))
-                DeviceRetrievalMethodType.BLE -> BleOptionsCbor.fromCborItem(items.required(2))
-                DeviceRetrievalMethodType.WIFI_WARE -> WifiOptionsCbor.fromCborItem(items.required(2))
+            val retrievalOptions = when (DeviceRetrievalMethodType.Static.fromCborItem(type)) {
+                DeviceRetrievalMethodType.NFC -> NfcOptionsCbor.Static.fromCborItem(items.required(2))
+                DeviceRetrievalMethodType.BLE -> BleOptionsCbor.Static.fromCborItem(items.required(2))
+                DeviceRetrievalMethodType.WIFI_WARE -> WifiOptionsCbor.Static.fromCborItem(items.required(2))
                 else -> throw IllegalArgumentException("Unknown device retrieval method type received ${type}")
             }
             return DeviceRetrievalMethodCbor(
@@ -317,7 +321,7 @@ data class WifiOptionsCbor(
 ) : DeviceRetrievalOptionsCbor() {
 
     override fun cborBuilder(): CborBuilder<DeviceRetrievalOptionsCbor> {
-        return CborMap.builder(this as DeviceRetrievalOptionsCbor)
+        return CborMap.Static.builder(this as DeviceRetrievalOptionsCbor)
             .put(PASS_PHRASE, passPhrase, true)
             .put(CHANNEL_INFO_OPERATING_CLASS, channelInfoOperatingClass, true)
             .put(CHANNEL_INFO_CHANNEL_NUMBER, channelInfoChannelNumber, true)
@@ -330,7 +334,7 @@ data class WifiOptionsCbor(
         TODO("Not yet implemented")
     }
 
-    companion object {
+    object Static {
         val PASS_PHRASE = NumberLabel(0)
         val CHANNEL_INFO_OPERATING_CLASS = NumberLabel(1)
         val CHANNEL_INFO_CHANNEL_NUMBER = NumberLabel(2)
@@ -361,12 +365,12 @@ data class BleOptionsCbor(
     val peripheralServerModeDeviceAddress: CborByteString? = null,
 ) : DeviceRetrievalOptionsCbor() {
     override fun cborBuilder(): CborBuilder<DeviceRetrievalOptionsCbor> {
-        return CborMap.builder(this as DeviceRetrievalOptionsCbor)
-            .put(PERIPHERAL_SERVER_MODE, peripheralServerMode)
-            .put(CENTRAL_CLIENT_MODE, centralClientMode)
-            .put(PERIPHERAL_SERVER_MODE_UUID, peripheralServerModeUUID, true)
-            .put(CENTRAL_CLIENT_MODE_UUID, centralClientModeUUID, true)
-            .put(PERIPHERAL_SERVER_MODE_DEVICE_ADDRESS, peripheralServerModeDeviceAddress, true)
+        return CborMap.Static.builder(this as DeviceRetrievalOptionsCbor)
+            .put(Static.PERIPHERAL_SERVER_MODE, peripheralServerMode)
+            .put(Static.CENTRAL_CLIENT_MODE, centralClientMode)
+            .put(Static.PERIPHERAL_SERVER_MODE_UUID, peripheralServerModeUUID, true)
+            .put(Static.CENTRAL_CLIENT_MODE_UUID, centralClientModeUUID, true)
+            .put(Static.PERIPHERAL_SERVER_MODE_DEVICE_ADDRESS, peripheralServerModeDeviceAddress, true)
             .end()
     }
 
@@ -374,7 +378,7 @@ data class BleOptionsCbor(
         TODO("Not yet implemented")
     }
 
-    companion object {
+    object Static {
         val PERIPHERAL_SERVER_MODE = NumberLabel(0)
         val CENTRAL_CLIENT_MODE = NumberLabel(1)
         val PERIPHERAL_SERVER_MODE_UUID = NumberLabel(10)
@@ -417,9 +421,9 @@ data class NfcOptionsCbor(
     val maxResponseDataFieldLength: CborUInt,
 ) : DeviceRetrievalOptionsCbor() {
     override fun cborBuilder(): CborBuilder<DeviceRetrievalOptionsCbor> {
-        return CborMap.builder(this as DeviceRetrievalOptionsCbor)
-            .put(MAX_COMMAND_DATA_FIELD_LENGTH, maxCommandDataFieldLength)
-            .put(MAX_RESPONSE_DATA_FIELD_LENGTH, maxResponseDataFieldLength)
+        return CborMap.Static.builder(this as DeviceRetrievalOptionsCbor)
+            .put(Static.MAX_COMMAND_DATA_FIELD_LENGTH, maxCommandDataFieldLength)
+            .put(Static.MAX_RESPONSE_DATA_FIELD_LENGTH, maxResponseDataFieldLength)
             .end()
     }
 
@@ -430,7 +434,7 @@ data class NfcOptionsCbor(
         ) as DeviceRetrievalOptionsJson
     }
 
-    companion object {
+    object Static {
         val MAX_COMMAND_DATA_FIELD_LENGTH = NumberLabel(0)
         val MAX_RESPONSE_DATA_FIELD_LENGTH = NumberLabel(1)
         fun fromSimple(nfcOptions: NfcOptionsJson): NfcOptionsCbor {

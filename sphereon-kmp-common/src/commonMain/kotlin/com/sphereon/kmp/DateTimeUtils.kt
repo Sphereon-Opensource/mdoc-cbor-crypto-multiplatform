@@ -31,7 +31,7 @@ class DateTimeUtils(
     fun dateISO(timeZoneId: String?, epochSeconds: Int? = epochSeconds()) =
         dateTime(timeZoneId ?: this.timeZoneId, epochSeconds).toKotlin().date.format(ISO)
 
-    companion object {
+    object Static {
         val DEFAULT: DateTimeUtils = DateTimeUtils()
     }
 
@@ -49,7 +49,7 @@ object DefaultDateTimeUtils {
 }
 
 fun LocalDateTimeKMP.toKotlin(): LocalDateTime = LocalDateTime.parse(this.toString())
-fun LocalDateTime.toKMP(): LocalDateTimeKMP = LocalDateTimeKMP.fromString(this.toString())
+fun LocalDateTime.toKMP(): LocalDateTimeKMP = LocalDateTimeKMP.Static.fromString(this.toString())
 
 fun Long.toLocalDateTimeKMP(dateTimeUtils: DateTimeUtils? = null): LocalDateTimeKMP =
     getDateTime(dateTimeUtils).dateTimeLocal(this.toInt())

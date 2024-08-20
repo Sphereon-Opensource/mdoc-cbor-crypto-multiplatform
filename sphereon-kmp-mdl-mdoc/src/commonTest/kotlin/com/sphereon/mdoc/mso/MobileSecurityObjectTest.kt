@@ -36,7 +36,7 @@ class MobileSecurityObjectTest {
     @Test
     fun shouldEncodeRawDeviceEngagement() {
 
-        val decoded = DeviceEngagementCbor.cborDecode(isoTestVector.decodeFromHex())
+        val decoded = DeviceEngagementCbor.Static.cborDecode(isoTestVector.decodeFromHex())
         assertNotNull(decoded)
         assertNotNull(decoded.security)
 
@@ -73,7 +73,7 @@ class MobileSecurityObjectTest {
 
         expect(isoTestVector) { bytes.toHexString() }
 
-        val result = DeviceEngagementCbor.cborDecode(bytes)
+        val result = DeviceEngagementCbor.Static.cborDecode(bytes)
         println("Decoded object:")
         println(result)
         assertEquals(result, engagement)

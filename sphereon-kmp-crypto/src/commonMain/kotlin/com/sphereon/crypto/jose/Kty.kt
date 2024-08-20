@@ -28,7 +28,7 @@ enum class JwaKeyType(val value: String) {
     oct("oct"),
     OKP("OKP");
 
-    companion object {
+    object Static {
         fun fromValue(value: String): JwaKeyType {
             return JwaKeyType.entries.find { entry -> entry.value == value }
                 ?: throw IllegalArgumentException("Unknown value $value")
@@ -46,7 +46,7 @@ internal object JwaKeyTypeSerializer : KSerializer<JwaKeyType> {
 
     override fun deserialize(decoder: Decoder): JwaKeyType {
         val value = decoder.decodeString()
-        return JwaKeyType.fromValue(value)
+        return JwaKeyType.Static.fromValue(value)
     }
 }
 

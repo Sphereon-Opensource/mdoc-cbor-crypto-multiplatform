@@ -242,7 +242,7 @@ class CoseKeyCbor(
 ) : ICoseKeyCbor, CborView<CoseKeyCbor, CoseKeyJson, CborMap<NumberLabel, AnyCborItem>>(CDDL.map) {
 
     override fun cborBuilder(): CborBuilder<CoseKeyCbor> {
-        val mapBuilder = CborMap.builder(this)
+        val mapBuilder = CborMap.Static.builder(this)
         additional?.value?.map { mapBuilder.put(it.key, it.value) }
         // doing these last to make sure the additional map does not overwrite known props
         mapBuilder

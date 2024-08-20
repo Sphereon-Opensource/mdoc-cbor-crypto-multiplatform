@@ -90,8 +90,8 @@ data class CoseSign1InputCbor(
             val unprotectedHeaders = a.optional<CborMap<NumberLabel, AnyCborItem>>(1)
             val payloadAvailable = a.value[2].value != null
             return CoseSign1InputCbor(
-                CoseHeaderCbor.fromCborItem(protectedHeaderBytes.cborDecode()),
-                unprotectedHeaders?.let { CoseHeaderCbor.fromCborItem(it) },
+                CoseHeaderCbor.Static.fromCborItem(protectedHeaderBytes.cborDecode()),
+                unprotectedHeaders?.let { CoseHeaderCbor.Static.fromCborItem(it) },
                 if (payloadAvailable) a.required(2) else null,
             )
         }
@@ -102,7 +102,7 @@ data class CoseSign1InputCbor(
     }
 
     override fun cborBuilder(): CborBuilder<CoseSign1InputCbor> {
-        return CborArray.builder(this).add(CborByteString(protectedHeader.cborEncode()))
+        return CborArray.Static.builder(this).add(CborByteString(protectedHeader.cborEncode()))
             .add(unprotectedHeader?.toCbor()).add(payload ?: CborNull())
             .end()
     }
@@ -155,8 +155,8 @@ data class CoseSign1Cbor<CborType>(
             val unprotectedHeaders = a.optional<CborMap<NumberLabel, AnyCborItem>>(1)
             val payloadAvailable = a.value[2].value != null
             return CoseSign1Cbor<CborType>(
-                CoseHeaderCbor.fromCborItem(protectedHeaderBytes.cborDecode()),
-                unprotectedHeaders?.let { CoseHeaderCbor.fromCborItem(it) },
+                CoseHeaderCbor.Static.fromCborItem(protectedHeaderBytes.cborDecode()),
+                unprotectedHeaders?.let { CoseHeaderCbor.Static.fromCborItem(it) },
                 if (payloadAvailable) a.required(2) else null,
                 a.required(3)
             )
@@ -168,7 +168,7 @@ data class CoseSign1Cbor<CborType>(
     }
 
     override fun cborBuilder(): CborBuilder<CoseSign1Cbor<CborType>> {
-        return CborArray.builder(this).add(CborByteString(protectedHeader.cborEncode()))
+        return CborArray.Static.builder(this).add(CborByteString(protectedHeader.cborEncode()))
             .add(unprotectedHeader?.toCbor()).add(payload ?: CborNull())
             .add(signature)
             .end()
@@ -236,7 +236,7 @@ data class CoseSignatureStructureCbor(
     val payload: CborByteString
 ) : CborView<CoseSignatureStructureCbor, CoseSignatureStructureJson, CborArray<AnyCborItem>>(CDDL.list) {
     override fun cborBuilder(): CborBuilder<CoseSignatureStructureCbor> =
-        CborArray.builder(this).addRequired(structure).addRequired(bodyProtected).add(signProtected).addRequired(externalAad).addRequired(payload)
+        CborArray.Static.builder(this).addRequired(structure).addRequired(bodyProtected).add(signProtected).addRequired(externalAad).addRequired(payload)
             .end()
 
     @JsName("toBeSigned")

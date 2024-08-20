@@ -42,7 +42,7 @@ enum class DeviceRetrievalStatusCode(
                 "continue the transaction."
     );
 
-    companion object {
+    object Static {
         fun fromStatusCode(statusCode: cddl_uint) = entries.first {
             it.statusCode == statusCode
         }

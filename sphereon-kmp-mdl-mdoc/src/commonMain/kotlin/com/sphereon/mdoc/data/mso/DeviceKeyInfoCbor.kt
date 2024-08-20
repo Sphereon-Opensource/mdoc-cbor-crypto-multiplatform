@@ -39,7 +39,7 @@ data class DeviceKeyInfoCbor(
     val keyInfo: KeyInfoCbor? = null,
 ) : CborView<DeviceKeyInfoCbor, DeviceKeyInfoJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
     override fun cborBuilder(): CborBuilder<DeviceKeyInfoCbor> =
-        CborMap.builder(this).put(Static.DEVICE_KEY, deviceKey.toCbor())
+        CborMap.Static.builder(this).put(Static.DEVICE_KEY, deviceKey.toCbor())
             .put(Static.KEY_AUTHORIZATIONS, keyAuthorizations?.toCbor(), true).put(
                 Static. KEY_INFO, keyInfo, true
             ).end()

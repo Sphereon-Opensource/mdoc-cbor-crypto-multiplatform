@@ -19,7 +19,7 @@ class CborStringIndefLength(value: List<cddl_tstr>) : CborItem<List<cddl_tstr>>(
         builder.append(0xff.toByte())
     }
 
-    companion object {
+    object Static {
         internal fun decode(encodedCbor: ByteArray, offset: Int): Pair<Int, CborStringIndefLength> {
             val majorTypeShifted = (MajorType.UNICODE_STRING.type shl 5)
             val marker = (majorTypeShifted + 31).toByte()

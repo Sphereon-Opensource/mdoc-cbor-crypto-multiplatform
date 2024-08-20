@@ -85,9 +85,9 @@ data class DocRequestCbor(
     }
 
     override fun cborBuilder(): CborBuilder<DocRequestCbor> {
-        return CborMap.builder(this).putTagged(
+        return CborMap.Static.builder(this).putTagged(
             Static.ITEMS_REQUEST,
-            CborTagged.ENCODED_CBOR,
+            CborTagged.Static.ENCODED_CBOR,
             CborByteString(cborSerializer.encode(itemsRequest.toCbor()))
         )
             .put(Static.READER_AUTH, readerAuth?.toCbor(), true)

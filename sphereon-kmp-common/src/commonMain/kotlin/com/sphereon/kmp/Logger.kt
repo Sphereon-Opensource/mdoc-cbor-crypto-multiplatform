@@ -22,7 +22,7 @@ class Logger(val tag: String = "") {
         Logger.e(tag = tag, messageString = message, throwable = throwable)
     }
 
-    companion object {
+    object Static {
         fun tag(tag: String = "") = Logger(tag)
     }
 

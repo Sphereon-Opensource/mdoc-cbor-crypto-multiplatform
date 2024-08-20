@@ -1,6 +1,8 @@
 package com.sphereon.cbor
 
-import com.sphereon.cbor.NumberLabeledMap.Companion.decodeNumberLabeledMap
+
+import com.sphereon.cbor.NumberLabeledMap.Static.decodeNumberLabeledMap
+
 import kotlin.js.JsExport
 
 
@@ -61,7 +63,7 @@ sealed class CoseLabel<ItemType>(
         return optional(map)
     }
 
-    companion object {
+    object Static {
         fun <ItemType : Any> fromCborItem(cborItem: CborItem<ItemType>): CoseLabel<out Comparable<*>> =
             when (cborItem) {
                 is CborUInt -> NumberLabel(cborItem.value.toInt())
@@ -164,7 +166,7 @@ open class NumberLabeledMap(
         return labeledItems.hashCode()
     }
 
-    companion object {
+    object Static {
         fun decodeNumberLabeledMap(numberMappedObject: ByteArray): NumberLabeledMap {
             val map : CborMap<NumberLabel, AnyCborItem> = Cbor.decode(numberMappedObject)
             return NumberLabeledMap(map)

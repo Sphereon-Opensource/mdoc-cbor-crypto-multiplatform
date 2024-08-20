@@ -153,7 +153,7 @@ object Cbor {
     fun decodeWithOffset(encodedCbor: ByteArray, offset: Int): Pair<Int, AnyCborItem> {
         try {
             val first = encodedCbor[offset]
-            val majorType = MajorType.fromInt(first.toInt().and(0xff) ushr 5)
+            val majorType = MajorType.Static.fromInt(first.toInt().and(0xff) ushr 5)
             val additionalInformation = first.toInt().and(0x1f)
             val (newOffset, item) = when (majorType) {
                 MajorType.UNSIGNED_INTEGER -> {
@@ -162,7 +162,7 @@ object Cbor {
                             "Additional information 31 not allowed for majorType $majorType"
                         )
                     }
-                    CborUInt.decode(encodedCbor, offset)
+                    CborUInt.Static.decode(encodedCbor, offset)
                 }
 
                 MajorType.NEGATIVE_INTEGER -> {
@@ -171,52 +171,52 @@ object Cbor {
                             "Additional information 31 not allowed for majorType $majorType"
                         )
                     }
-                    CborNInt.decode(encodedCbor, offset)
+                    CborNInt.Static.decode(encodedCbor, offset)
                 }
 
                 MajorType.BYTE_STRING -> {
                     if (additionalInformation == 31) {
-                        CborByteStringIndefLength.decode(encodedCbor, offset)
+                        CborByteStringIndefLength.Static.decode(encodedCbor, offset)
                     } else {
-                        CborByteString.decode(encodedCbor, offset)
+                        CborByteString.Static.decode(encodedCbor, offset)
                     }
                 }
 
                 MajorType.UNICODE_STRING -> {
                     if (additionalInformation == 31) {
-                        CborStringIndefLength.decode(encodedCbor, offset)
+                        CborStringIndefLength.Static.decode(encodedCbor, offset)
                     } else {
-                        CborString.decode(encodedCbor, offset)
+                        CborString.Static.decode(encodedCbor, offset)
                     }
                 }
 
-                MajorType.ARRAY -> CborArray.decode(encodedCbor, offset)
-                MajorType.MAP -> CborMap.decode(encodedCbor, offset)
+                MajorType.ARRAY -> CborArray.Static.decode(encodedCbor, offset)
+                MajorType.MAP -> CborMap.Static.decode(encodedCbor, offset)
                 MajorType.TAG -> {
                     if (additionalInformation == 31) {
                         throw IllegalArgumentException(
                             "Additional information 31 not allowed for majorType 6"
                         )
                     }
-                    CborTagged.decode(encodedCbor, offset)
+                    CborTagged.Static.decode(encodedCbor, offset)
                 }
 
                 MajorType.SPECIAL -> {
                     if (additionalInformation < 24) {
-                        CborSimple.decode(encodedCbor, offset)
+                        CborSimple.Static.decode(encodedCbor, offset)
                     } else if (additionalInformation == 25) {
                         val raw = (encodedCbor[offset + 1].toInt().and(0xff) shl 8) +
                                 encodedCbor[offset + 2].toInt().and(0xff)
                         Pair(offset + 3, CborFloat16(fromRawHalfFloat(raw)))
                     } else if (additionalInformation == 26) {
-                        CborFloat.decode(encodedCbor, offset)
+                        CborFloat.Static.decode(encodedCbor, offset)
                     } else if (additionalInformation == 27) {
-                        CborDouble.decode(encodedCbor, offset)
+                        CborDouble.Static.decode(encodedCbor, offset)
                     } else if (additionalInformation == 31) {
                         throw IllegalArgumentException("BREAK outside indefinite-length item")
                     } else {
                         CborConst.LOG.warn("fixme: decoding ${MajorType.SPECIAL} probably currently doesn't work")
-                        CborSimple.decode(encodedCbor, offset)
+                        CborSimple.Static.decode(encodedCbor, offset)
                     }
                 }
             }
@@ -256,7 +256,7 @@ object Cbor {
     ): Boolean {
         for (item in items) {
             if (options.contains(DiagnosticOption.EMBEDDED_CBOR) &&
-                item is CborTagged && item.tagNumber == CborTagged.ENCODED_CBOR
+                item is CborTagged && item.tagNumber == CborTagged.Static.ENCODED_CBOR
             ) {
                 return false
             }
@@ -331,7 +331,7 @@ object Cbor {
                     }
 
                     is CborByteString -> {
-                        if (tagNumberOfParent != null && tagNumberOfParent == CborTagged.ENCODED_CBOR) {
+                        if (tagNumberOfParent != null && tagNumberOfParent == CborTagged.Static.ENCODED_CBOR) {
                             sb.append("<< ")
                             try {
                                 val embeddedItem: AnyCborItem = decode(item.value)
@@ -462,10 +462,10 @@ object Cbor {
                 when (item) {
                     is CborSimple -> {
                         when (item) {
-                            CborSimple.FALSE -> sb.append("false")
-                            CborSimple.TRUE -> sb.append("true")
-                            CborSimple.NULL -> sb.append("null")
-                            CborSimple.UNDEFINED -> sb.append("undefined")
+                            CborSimple.Static.FALSE -> sb.append("false")
+                            CborSimple.Static.TRUE -> sb.append("true")
+                            CborSimple.Static.NULL -> sb.append("null")
+                            CborSimple.Static.UNDEFINED -> sb.append("undefined")
                             else -> sb.append("simple(${item.value})")
                         }
                     }

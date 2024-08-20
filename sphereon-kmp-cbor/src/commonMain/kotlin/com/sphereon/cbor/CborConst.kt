@@ -8,5 +8,5 @@ object CborConst {
     val KEY_LITERAL = "key"
     val VALUE_LITERAL = "value"
     val LOG_NAMESPACE = "sphereon:kmp:${CBOR_LITERAL}"
-    val LOG = Logger.tag(LOG_NAMESPACE)
+    val LOG = Logger.Static.tag(LOG_NAMESPACE)
 }

@@ -22,7 +22,7 @@ open class CborUInt(value: LongKMP /*UInt*/) : AbstractCborInt<cddl_uint>(value/
         Cbor.encodeLength(builder, majorType!!, value.toULong())
     }
 
-    companion object {
+    object Static {
         internal fun decode(encodedCbor: ByteArray, offset: Int): Pair<Int, CborUInt> {
             val (newOffset, value) = Cbor.decodeLength(encodedCbor, offset)
             return Pair(newOffset, CborUInt(value.ulongToKmpLong()))

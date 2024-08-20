@@ -112,7 +112,7 @@ data class DeviceItemsRequestCbor(
     }
 
     override fun cborBuilder(): CborBuilder<DeviceItemsRequestCbor> {
-        val builder = CborMap.builder(this)
+        val builder = CborMap.Static.builder(this)
             .put(Static.DOC_TYPE, docType)
             .put(Static.NAME_SPACES, nameSpaces)
             .put(Static.REQUEST_INFO, requestInfo, true)
@@ -239,7 +239,7 @@ data class DeviceRequestNameSpace(val nameSpace: CborString, val dataElements: M
     ) {
 
         fun add(identifier: cddl_tstr, intentToRetain: Boolean = false) = apply {
-            dataElements[CborString(identifier)] = if (intentToRetain) CborSimple.TRUE else CborSimple.FALSE
+            dataElements[CborString(identifier)] = if (intentToRetain) CborSimple.Static.TRUE else CborSimple.Static.FALSE
         }
 
         fun addElements(vararg elements: DataElementCbor) = apply {

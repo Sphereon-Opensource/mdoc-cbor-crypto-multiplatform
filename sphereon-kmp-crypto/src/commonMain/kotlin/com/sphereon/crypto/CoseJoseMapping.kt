@@ -84,7 +84,7 @@ sealed class CurveMapping(
     object Ed25519 : CurveMapping(CoseCurve.Ed25519, JwaCurve.Ed25519)
     object X25519 : CurveMapping(CoseCurve.X25519, JwaCurve.X25519)
 
-    companion object {
+    object Static {
         val asList = listOf(P_256, P_384, P_521, Secp256k1, Ed25519, X25519)
         fun toJose(cose: CoseCurve) = asList.find { it.coseCurve === cose }?.joseCurve
             ?: throw IllegalArgumentException("cose Curve $cose not found")
@@ -95,10 +95,10 @@ sealed class CurveMapping(
 }
 
 @JsExport
-fun CoseCurve.toJoseCurve() = CurveMapping.toJose(this)
+fun CoseCurve.toJoseCurve() = CurveMapping.Static.toJose(this)
 
 @JsExport
-fun JwaCurve.toCoseCurve() = CurveMapping.toCose(this)
+fun JwaCurve.toCoseCurve() = CurveMapping.Static.toCose(this)
 
 
 @JsExport

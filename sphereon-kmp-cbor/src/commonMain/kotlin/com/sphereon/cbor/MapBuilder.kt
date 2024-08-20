@@ -86,7 +86,7 @@ class MapBuilder<T>(private val parent: T, private val map: CborMap<AnyCborItem,
      * @param encodedCbor the bytes of the encoded CBOR.
      */
     fun <T:AnyCborItem> putTaggedEncodedCbor(key: AnyCborItem, encodedCbor: ByteArray) = apply {
-        putTagged(key, CborTagged.ENCODED_CBOR, CborByteString(encodedCbor))
+        putTagged(key, CborTagged.Static.ENCODED_CBOR, CborByteString(encodedCbor))
     }
 
 

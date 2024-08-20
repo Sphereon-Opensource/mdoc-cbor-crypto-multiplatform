@@ -27,7 +27,7 @@ enum class JoseKeyOperations(val value: String, val description: String) {
     MAC_CREATE("MAC create", "The key is used for creating MACs. "),
     MAC_VERIFY("MAC verify",  "The key is used for validating MACs.");
 
-    companion object {
+    object Static {
         fun fromValue(value: String): JoseKeyOperations {
             return entries.find { entry -> entry.value == value }
                 ?: throw IllegalArgumentException("Unknown value $value")
@@ -44,6 +44,6 @@ internal object JoseKeyOperationsSerializer : KSerializer<JoseKeyOperations> {
 
     override fun deserialize(decoder: Decoder): JoseKeyOperations {
         val value = decoder.decodeString()
-        return JoseKeyOperations.fromValue(value)
+        return JoseKeyOperations.Static.fromValue(value)
     }
 }

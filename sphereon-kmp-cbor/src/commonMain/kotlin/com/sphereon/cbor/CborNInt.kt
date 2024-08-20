@@ -21,7 +21,7 @@ class CborNInt(value: cddl_nint) : AbstractCborInt<cddl_nint>(value, CDDL.nint) 
     }
 
 
-    companion object {
+    object Static {
         internal fun decode(encodedCbor: ByteArray, offset: Int): Pair<Int, CborNInt> {
             val (newOffset, value) = Cbor.decodeLength(encodedCbor, offset)
             return Pair(newOffset, CborNInt(LongKMP(value.toLong() + 1L)))

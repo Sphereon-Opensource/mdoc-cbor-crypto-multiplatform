@@ -105,7 +105,7 @@ data class IssuerSignedCbor(
     }
 
     override fun cborBuilder(): CborBuilder<IssuerSignedCbor> {
-        val builder = CborMap.builder(this)
+        val builder = CborMap.Static.builder(this)
             .put(Static.NAME_SPACES, nameSpaces, true)
             .put(Static.ISSUER_AUTH, issuerAuth.toCbor(), false)
         return builder.end()
@@ -238,7 +238,7 @@ data class IssuerSignedItemCbor<Type : Any>(
     val elementValue: DataElementValue<Type>
 ) : CborView<IssuerSignedItemCbor<Type>, IssuerSignedItemJson, Map<StringLabel, AnyCborItem>>(CDDL.map) {
     override fun cborBuilder(): CborBuilder<IssuerSignedItemCbor<Type>> {
-        return CborMap.builder(this).put(static.DIGEST_ID, digestID).put(static.RANDOM, random)
+        return CborMap.Static.builder(this).put(static.DIGEST_ID, digestID).put(static.RANDOM, random)
             .put(static.ELEMENT_IDENTIFIER, elementIdentifier).put(
                 static.ELEMENT_VALUE, elementValue
             ).end()

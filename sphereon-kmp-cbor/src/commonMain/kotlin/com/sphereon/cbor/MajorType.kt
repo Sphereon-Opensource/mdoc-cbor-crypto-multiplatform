@@ -99,7 +99,7 @@ enum class MajorType(val type: Int) {
      */
     SPECIAL(7);
 
-    companion object {
+    object Static {
         /**
          * Gets a [MajorType] instance from type.
          *

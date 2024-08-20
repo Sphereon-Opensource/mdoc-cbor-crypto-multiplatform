@@ -46,10 +46,10 @@ class LocalDateTimeKMP(
     }
 
     fun toEpochSeconds(timeZoneId: String? = TimeZone.UTC.id): LongKMP {
-        return LongKMP(delegate.toInstant(DateTimeUtils.DEFAULT.timeZone(timeZoneId)).epochSeconds)
+        return LongKMP(delegate.toInstant(DateTimeUtils.Static.DEFAULT.timeZone(timeZoneId)).epochSeconds)
     }
 
-    companion object {
+    object Static {
         fun fromString(value: String): LocalDateTimeKMP {
             val parsed = LocalDateTime.parse(value)
             return LocalDateTimeKMP(

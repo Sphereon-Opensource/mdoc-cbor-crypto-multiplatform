@@ -17,7 +17,7 @@ class CborString(value: cddl_tstr) : CborItem<cddl_tstr>(value, CDDL.tstr) {
         builder.append(value.encodeToByteArray())
     }
 
-    companion object {
+    object Static {
         internal fun decode(encodedCbor: ByteArray, offset: Int): Pair<Int, CborString> {
             val (payloadBegin, length) = Cbor.decodeLength(encodedCbor, offset)
             val payloadEnd = payloadBegin + length.toInt()

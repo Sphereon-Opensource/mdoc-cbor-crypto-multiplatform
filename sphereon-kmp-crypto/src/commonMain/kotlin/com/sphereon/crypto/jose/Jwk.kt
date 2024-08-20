@@ -13,7 +13,6 @@ import com.sphereon.crypto.toJoseCurve
 import com.sphereon.crypto.toJoseKeyOperations
 import com.sphereon.crypto.toJoseKeyType
 import com.sphereon.crypto.toJoseSignatureAlgorithm
-import kotlinx.serialization.Polymorphic
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
@@ -202,17 +201,17 @@ data class Jwk(
     }
 
 
-    companion object {
-        fun fromJsonObject(jwk: IJwkJson): Jwk = with(jwk) {
+    object Static {
+        fun fromJson(jwk: IJwkJson): Jwk = with(jwk) {
             return Jwk(
-                alg = JwaSignatureAlgorithm.fromValue(alg),
-                crv = JwaCurve.fromValue(crv),
+                alg = JwaSignatureAlgorithm.Static.fromValue(alg),
+                crv = JwaCurve.Static.fromValue(crv),
                 d = d,
                 e = e,
                 k = k,
-                key_ops = key_ops?.map { JoseKeyOperations.fromValue(it) }?.toSet(),
+                key_ops = key_ops?.map { JoseKeyOperations.Static.fromValue(it) }?.toSet(),
                 kid = kid,
-                kty = JwaKeyType.fromValue(kty),
+                kty = JwaKeyType.Static.fromValue(kty),
                 n = n,
                 use = use,
                 x = x,
@@ -278,7 +277,7 @@ data class Jwk(
 
 
 @JsExport
-fun CoseKeyCbor.cborToJwk() = Jwk.fromCoseKey(this)
+fun CoseKeyCbor.cborToJwk() = Jwk.Static.fromCoseKey(this)
 
 @JsExport
-fun CoseKeyJson.jsonToJwk() = Jwk.fromCoseKeyJson(this)
+fun CoseKeyJson.jsonToJwk() = Jwk.Static.fromCoseKeyJson(this)

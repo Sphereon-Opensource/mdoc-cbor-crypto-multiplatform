@@ -36,7 +36,7 @@ data class ReaderAuthenticationCbor(
     val itemsRequest: DeviceItemsRequestCbor
 ) : CborView<ReaderAuthenticationCbor, ReaderAuthenticationJson, CborArray<AnyCborItem>>(CDDL.list) {
     override fun cborBuilder(): CborBuilder<ReaderAuthenticationCbor> {
-        return CborArray.builder(this).add(Static.READER_AUTHENTICATION).add(sessionTranscript.toCbor())
+        return CborArray.Static.builder(this).add(Static.READER_AUTHENTICATION).add(sessionTranscript.toCbor())
             .add(itemsRequest.toCbor()).end()
     }
 
@@ -79,9 +79,9 @@ data class SessionTranscriptCbor(
     val handover: HandoverCbor<*, *>
 ) : CborView<SessionTranscriptCbor, SessionTranscriptJson, CborArray<AnyCborItem>>(CDDL.list) {
     override fun cborBuilder(): CborBuilder<SessionTranscriptCbor> {
-        return CborArray.builder(this)
-            .add(CborByteString.fromCborItem(deviceEngagement.toCbor()))
-            .add(CborByteString.fromCborItem(eReaderKey.toCbor()))
+        return CborArray.Static.builder(this)
+            .add(CborByteString.Static.fromCborItem(deviceEngagement.toCbor()))
+            .add(CborByteString.Static.fromCborItem(eReaderKey.toCbor()))
             .add(handover.toCbor())
             .end()
     }
@@ -97,7 +97,7 @@ data class SessionTranscriptCbor(
 
         @JsName("fromCborItem")
         fun fromCborItem(a: CborArray<AnyCborItem>) = SessionTranscriptCbor(
-            DeviceEngagementCbor.fromCborItem(
+            DeviceEngagementCbor.Static.fromCborItem(
                 cborSerializer.decode(a.required(DEVICE_ENGAGEMENT))
             ), CoseKeyCbor.Static.cborDecode(a.required(ENGAGEMENT_READER_KEY)), a.required(HANDOVER)
         )
@@ -121,7 +121,7 @@ class QrHandoverJson : HandoverJson<QrHandoverCbor>() {
 
 class QrHandoverCbor : HandoverCbor<QrHandoverCbor, QrHandoverJson>() {
     override fun cborBuilder(): CborBuilder<QrHandoverCbor> {
-        return CborArray.builder(this).end()
+        return CborArray.Static.builder(this).end()
     }
 
     override fun toJson(): JsonView {
@@ -140,7 +140,7 @@ data class NfcHandoverSimple(val handoverSelectMessage: CborByteString?) :
 data class NfcHandoverCbor(val handoverSelectMessage: CborByteString, val handoverRequestMessage: CborByteString?) :
     HandoverCbor<NfcHandoverCbor, NfcHandoverSimple>() {
     override fun cborBuilder(): CborBuilder<NfcHandoverCbor> =
-        CborArray.builder(this)
+        CborArray.Static.builder(this)
             .addRequired(handoverSelectMessage)
             .add(handoverRequestMessage)
             .end()

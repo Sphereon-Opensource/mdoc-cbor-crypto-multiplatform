@@ -1,5 +1,8 @@
 package com.sphereon.cbor
 
+import com.sphereon.cbor.CborSimple.Static.NULL
+import com.sphereon.cbor.CborSimple.Static.TRUE
+import com.sphereon.cbor.CborSimple.Static.UNDEFINED
 import kotlinx.io.bytestring.ByteStringBuilder
 import kotlin.experimental.or
 
@@ -32,7 +35,7 @@ abstract class CborSimple<Type : Any?>(value: Type, cddl: CDDL) :
         builder.append(majorTypeShifted.or(info!!.toByte()))
     }
 
-    companion object {
+    object Static {
         /** The [Simple] value for FALSE */
         val FALSE = CborFalse()
 
@@ -78,10 +81,10 @@ abstract class CborSimple<Type : Any?>(value: Type, cddl: CDDL) :
     override fun hashCode(): Int = value.hashCode()
 
     override fun toString() = when (this) {
-        FALSE -> "Simple(FALSE)"
-        TRUE -> "Simple(TRUE)"
-        NULL -> "Simple(NULL)"
-        UNDEFINED -> "Simple(UNDEFINED)"
+        Static.FALSE -> "Simple(FALSE)"
+        Static.TRUE -> "Simple(TRUE)"
+        Static.NULL -> "Simple(NULL)"
+        Static.UNDEFINED -> "Simple(UNDEFINED)"
         else -> "Simple($value)"
     }
 

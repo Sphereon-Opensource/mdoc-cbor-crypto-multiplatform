@@ -17,7 +17,7 @@ class StringLabel(value: cddl_tstr) : CoseLabel<cddl_tstr>(value, CDDL.tstr, Lab
         builder.append(value.encodeToByteArray())
     }
 
-    companion object {
+    object Static {
         internal fun decode(encodedCbor: ByteArray, offset: Int): Pair<Int, CborString> {
             val (newOffset, value) = Cbor.decodeLength(encodedCbor, offset)
             return Pair(newOffset, CborString(value.toString()))

@@ -132,7 +132,7 @@ sealed class CborItem<Type>(
     val asTaggedEncodedCbor: CborItem<Type>
         get() {
             require(this is CborTagged)
-            require(this.tagNumber == CborTagged.ENCODED_CBOR)
+            require(this.tagNumber == CborTagged.Static.ENCODED_CBOR)
             val child = this.taggedItem
             require(child is CborByteString)
             return Cbor.decode(child.value)

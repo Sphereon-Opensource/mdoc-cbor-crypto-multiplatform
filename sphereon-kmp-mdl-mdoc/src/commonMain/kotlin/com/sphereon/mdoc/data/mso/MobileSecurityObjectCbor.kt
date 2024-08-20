@@ -44,7 +44,7 @@ data class MobileSecurityObjectCbor(
     val validityInfo: ValidityInfoCbor,
 ) : CborView<MobileSecurityObjectCbor, MobileSecurityObjectJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
     override fun cborBuilder(): CborBuilder<MobileSecurityObjectCbor> {
-        return CborMap.builder(this).put(Static.VERSION, version).put(Static.DIGEST_ALGORITHM, digestAlgorithm)
+        return CborMap.Static.builder(this).put(Static.VERSION, version).put(Static.DIGEST_ALGORITHM, digestAlgorithm)
             .put(Static.VALUE_DIGESTS, valueDigests).put(Static.DEVICE_KEY_INFO, deviceKeyInfo.toCbor()).put(Static.DOC_TYPE, docType)
             .put(
                 Static.VALIDITY_INFO, validityInfo.toCbor()

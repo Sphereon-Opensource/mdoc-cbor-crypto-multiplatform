@@ -95,7 +95,7 @@ class CoseLabelTest {
         }*//*
 
 
-        companion object {
+        object Static {
             fun decodeFromTestBleOptions(encodedBleOptions: ByteArray): TestBleOptions {
                 val bleOptions = BleOptions.cborDecodeFromBleOptions(encodedBleOptions)
                 return TestBleOptions(map.requiredLabel(0), map.requiredLabel(1), map.optionalLabel(10), map.optionalLabel(11), map.optionalLabel(20))

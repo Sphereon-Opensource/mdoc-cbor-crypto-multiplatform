@@ -18,7 +18,7 @@ open class CborTagged<T>(val tagNumber: Int, val taggedItem: CborItem<T>) :
         return taggedItem.toJsonSimple()
     }
 
-    companion object {
+    object Static {
         /**
          * Standard date/time string.
          *

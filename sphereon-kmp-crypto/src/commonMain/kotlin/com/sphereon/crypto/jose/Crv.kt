@@ -31,7 +31,7 @@ enum class JwaCurve(val value: String) {
     X25519("X25519"),
     Secp256k1("secp256k1");
 
-    companion object {
+    object Static {
         fun fromValue(value: String?): JwaCurve? {
             return JwaCurve.entries.find { entry -> entry.value == value }
         }
@@ -47,6 +47,6 @@ internal object JwaCurveSerializer : KSerializer<JwaCurve> {
 
     override fun deserialize(decoder: Decoder): JwaCurve {
         val value = decoder.decodeString()
-        return JwaCurve.fromValue(value) ?: throw IllegalArgumentException("Invalid jwa curve")
+        return JwaCurve.Static.fromValue(value) ?: throw IllegalArgumentException("Invalid jwa curve")
     }
 }

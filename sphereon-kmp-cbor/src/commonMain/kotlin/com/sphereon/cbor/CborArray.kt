@@ -48,7 +48,7 @@ class CborArray<V : CborItem<*>>(value: cddl_list<V> = mutableListOf(), val inde
 
     fun cborEncode() = Cbor.encode(this)
 
-    companion object {
+    object Static {
         /**
          * Creates a new builder.
          *

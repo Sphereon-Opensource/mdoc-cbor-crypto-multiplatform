@@ -22,7 +22,7 @@ open class CborFloat(value: Float, cddl: CDDLType) : CborNumber<Float>(value, cd
 
     }
 
-    companion object {
+    object Static {
         internal fun decode(encodedCbor: ByteArray, offset: Int): Pair<Int, CborFloat> {
             val raw = (encodedCbor[offset + 1].toInt().and(0xff) shl 24) +
                     (encodedCbor[offset + 2].toInt().and(0xff) shl 16) +
@@ -62,7 +62,7 @@ class CborDouble(value: cddl_float64) : CborItem<cddl_float64>(value, CDDL.float
         }
 
 
-    companion object {
+    object Static {
         internal fun decode(encodedCbor: ByteArray, offset: Int): Pair<Int, CborDouble> {
             val raw = (encodedCbor[offset + 1].toLong().and(0xffL) shl 56) +
                     (encodedCbor[offset + 2].toLong().and(0xffL) shl 48) +

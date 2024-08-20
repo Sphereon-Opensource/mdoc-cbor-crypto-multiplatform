@@ -5,7 +5,8 @@ package com.sphereon.cbor
 import com.sphereon.cbor.CDDL.any
 import com.sphereon.cbor.CborConst.CDDL_LITERAL
 import com.sphereon.cbor.CborConst.KEY_LITERAL
-import com.sphereon.cbor.CborTagged.Companion.DATE_TIME_STRING
+import com.sphereon.cbor.CborTagged.Static.DATE_TIME_STRING
+
 import com.sphereon.kmp.Encoding
 import com.sphereon.kmp.Logger
 import com.sphereon.kmp.LongKMP
@@ -122,7 +123,7 @@ sealed class CDDL(
                 val cddlStr = jsonObject["cddl"]?.jsonPrimitive?.content
 
                 if (cddlStr === null) {
-                    Logger.tag("CDDL").warn("cddl key found, but wasn't a primitive, returning a null value")
+                    Logger.Static.tag("CDDL").warn("cddl key found, but wasn't a primitive, returning a null value")
                     return CborNull()
                 }
                 val cddlObject = util.fromFormat(cddlStr)
@@ -144,8 +145,8 @@ sealed class CDDL(
                 // Needed because we cannot have inheritance with Kotlin to JS, unfortunately. The fromJson would cause clashes if we put it in the interface
                 tstr -> tstr.fromJson(jsonPrimitive)
                 Null -> CborNull()
-                False -> CborSimple.FALSE
-                True -> CborSimple.TRUE
+                False -> CborSimple.Static.FALSE
+                True -> CborSimple.Static.TRUE
                 bool -> bool.fromJson(jsonPrimitive)
                 bstr -> bstr.fromJson(jsonPrimitive)
                 bytes -> bytes.fromJson(jsonPrimitive)
@@ -339,7 +340,7 @@ sealed class CDDL(
 
     @Serializable(with = CDDLSerializer::class)
     object full_date : CDDL(
-        "full-date", MajorType.TAG, CborTagged.FULL_DATE_STRING
+        "full-date", MajorType.TAG, CborTagged.Static.FULL_DATE_STRING
     ) // #6.1004(tstr) In accordance with RFC 8943, a full-date data item shall contain a full-datestring as specified in RFC 3339.
     {
         fun newFullDate(value: cddl_full_date) = CborFullDate(value)
@@ -348,7 +349,7 @@ sealed class CDDL(
 
     @Serializable(with = CDDLSerializer::class)
     object time : CDDL(
-        "time", MajorType.TAG, CborTagged.DATE_TIME_NUMBER
+        "time", MajorType.TAG, CborTagged.Static.DATE_TIME_NUMBER
     ) // RFC 7049, section 2.4.1, a tdate data item shall contain a date-time number as specified in RFC 3339
     {
         fun newTime(value: cddl_time) = CborTime(value)
@@ -381,41 +382,41 @@ sealed class CDDL(
 
     @Serializable(with = CDDLSerializer::class)
     object False : CDDL("false", MajorType.SPECIAL, 20) {
-        fun newFalse() = CborSimple.FALSE
-        fun fromJson(value: JsonPrimitive) = CborSimple.FALSE
+        fun newFalse() = CborSimple.Static.FALSE
+        fun fromJson(value: JsonPrimitive) = CborSimple.Static.FALSE
     }
 
     @Serializable(with = CDDLSerializer::class)
     object True : CDDL("true", MajorType.SPECIAL, 21) {
-        fun newTrue() = CborSimple.TRUE
-        fun fromJson(value: JsonPrimitive) = CborSimple.TRUE
+        fun newTrue() = CborSimple.Static.TRUE
+        fun fromJson(value: JsonPrimitive) = CborSimple.Static.TRUE
     }
 
     @Serializable(with = CDDLSerializer::class)
     object bool :
         CDDL("bool", MajorType.SPECIAL, aliasFor = arrayOf(False, True)) {
-        fun newBool(value: cddl_bool) = if (value) CborSimple.TRUE else CborSimple.FALSE
-        fun fromJson(value: JsonPrimitive) = if (value.boolean) CborSimple.TRUE else CborSimple.FALSE
+        fun newBool(value: cddl_bool) = if (value) CborSimple.Static.TRUE else CborSimple.Static.FALSE
+        fun fromJson(value: JsonPrimitive) = if (value.boolean) CborSimple.Static.TRUE else CborSimple.Static.FALSE
     }
 
     @Serializable(with = CDDLSerializer::class)
     object nil : CDDL("nil", MajorType.SPECIAL, 22) {
-        fun newNil() = CborSimple.NULL
-        fun fromJson(value: JsonElement) = CborSimple.NULL
+        fun newNil() = CborSimple.Static.NULL
+        fun fromJson(value: JsonElement) = CborSimple.Static.NULL
 
     }
 
     @Serializable(with = CDDLSerializer::class)
     object Null : CDDL("null", MajorType.SPECIAL, 22, arrayOf(nil)) {
-        fun newNull() = CborSimple.NULL
-        fun fromJson(value: JsonElement) = CborSimple.NULL
+        fun newNull() = CborSimple.Static.NULL
+        fun fromJson(value: JsonElement) = CborSimple.Static.NULL
     }
 
     @Serializable(with = CDDLSerializer::class)
     object undefined :
         CDDL("undefined", MajorType.SPECIAL, 23) {
-        fun newUndefined() = CborSimple.UNDEFINED
-        fun fromJson(value: JsonElement) = CborSimple.UNDEFINED
+        fun newUndefined() = CborSimple.Static.UNDEFINED
+        fun fromJson(value: JsonElement) = CborSimple.Static.UNDEFINED
     }
 
     @Serializable(with = CDDLSerializer::class)
@@ -568,14 +569,14 @@ sealed class CDDL(
                 return any
             }
             val majorVal = parts[1].toIntOrNull()
-            return fromMajorType(majorVal?.let { MajorType.fromInt(it) }, parts[2].toIntOrNull())
+            return fromMajorType(majorVal?.let { MajorType.Static.fromInt(it) }, parts[2].toIntOrNull())
         }
 
         fun fromBytes(input: Int): CDDL {
             val majorType = input shr 5
 
             // todo additionalInto
-            return fromMajorType(MajorType.fromInt(majorType))
+            return fromMajorType(MajorType.Static.fromInt(majorType))
         }
 
         fun fromMajorType(majorType: MajorType? = null, additionalInfo: Int? = null) = entries.first {

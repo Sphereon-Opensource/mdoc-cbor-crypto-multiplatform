@@ -39,7 +39,7 @@ open class CborByteString(value: cddl_bstr) :
         return sb.toString()
     }
 
-    companion object {
+    object Static {
         fun fromCborItem(value: AnyCborItem) = CborByteString(cborSerializer.encode(value))
 
         internal fun decode(encodedCbor: ByteArray, offset: Int): Pair<Int, CborByteString> {
@@ -68,7 +68,7 @@ class CborByteStringIndefLength(value: List<cddl_bstr>) : CborItem<List<cddl_bst
         builder.append(0xff.toByte())
     }
 
-    companion object {
+    object Static {
         internal fun decode(encodedCbor: ByteArray, offset: Int): Pair<Int, CborByteStringIndefLength> {
             val majorTypeShifted = (MajorType.BYTE_STRING.type shl 5)
             val marker = (majorTypeShifted + 31).toByte()

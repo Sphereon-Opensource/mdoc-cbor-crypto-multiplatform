@@ -175,7 +175,7 @@ open class CborMap<K : AnyCborItem, V : AnyCborItem?>(
     }
 
 
-    companion object {
+    object Static {
         /**
          * Creates a new builder.
          *

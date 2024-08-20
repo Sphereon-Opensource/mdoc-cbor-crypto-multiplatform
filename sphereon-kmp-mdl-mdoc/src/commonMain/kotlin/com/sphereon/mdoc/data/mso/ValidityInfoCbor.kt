@@ -60,7 +60,7 @@ data class ValidityInfoCbor(
     }
 
     override fun cborBuilder(): CborBuilder<ValidityInfoCbor> =
-        CborMap.builder(this).put(Static.SIGNED, signed).put(Static.VALID_FROM, validFrom).put(Static.VALID_UNTIL, validUntil)
+        CborMap.Static.builder(this).put(Static.SIGNED, signed).put(Static.VALID_FROM, validFrom).put(Static.VALID_UNTIL, validUntil)
             .put(Static.EXPECTED_UPDATE, expectedUpdate, true).end()
 
 

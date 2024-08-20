@@ -28,7 +28,7 @@ class CborHexEncodedItem(hex: String) : CborByteString(
 @JsExport
 open class CborEncodedItem<Type>(
     val decodedValue: Type,
-    value: CborByteString = cborSerializeViewOrItem(decodedValue)
+    value: CborByteString = Static.cborSerializeViewOrItem(decodedValue)
 ) : CborItem<CborTagged<cddl_bstr>>(CborTagged(24, value), CDDL.bstr) {
 
     override fun toJsonSimple(): JsonElement {
@@ -48,7 +48,7 @@ open class CborEncodedItem<Type>(
         }
     }
 
-    companion object {
+    object Static {
         fun cborSerializeViewOrItem(deserializedValue: Any?): CborByteString {
             return when (deserializedValue) {
                 is AnyCborItem -> CborByteString(cborSerializer.encode(deserializedValue))
