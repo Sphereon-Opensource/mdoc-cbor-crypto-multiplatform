@@ -12,8 +12,11 @@ import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.StringLabel
 import com.sphereon.mdoc.data.DocumentErrorsCbor
 import com.sphereon.mdoc.data.DocumentErrorsJson
+import com.sphereon.mdoc.mdocJsonSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
 import kotlin.js.JsExport
+import kotlin.js.JsName
 
 @JsExport
 @Serializable
@@ -53,6 +56,7 @@ data class DocumentJson (
     // fixme
     val errors: DocumentErrorsJson?
 ): JsonView() {
+    override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
     override fun toCbor(): DocumentCbor {
         TODO("Not yet implemented")
     }
@@ -102,12 +106,13 @@ data class DocumentCbor (
         TODO("Not yet implemented")
     }
 
-    companion object {
+    object Static {
         val DOC_TYPE = StringLabel("docType")
         val ISSUER_SIGNED = StringLabel("issuerSigned")
         val DEVICE_SIGNED = StringLabel("deviceSigned")
         val ERRORS = StringLabel("errors")
 
+        @JsName("fromDeviceResponse")
         fun fromDeviceResponse(items: CborArray<AnyCborItem>?): Array<DocumentCbor>? {
             if (items == null || items.value.isEmpty()) {
                 return null
@@ -116,9 +121,11 @@ data class DocumentCbor (
 
         }
 
+        @JsName("fromCborItem")
         fun fromCborItem(m: CborMap<StringLabel, AnyCborItem>) =
-            DocumentCbor(DOC_TYPE.required(m), IssuerSignedCbor.fromCborItem(ISSUER_SIGNED.required(m)), DEVICE_SIGNED.required(m), ERRORS.optional(m))
+            DocumentCbor(DOC_TYPE.required(m), IssuerSignedCbor.Static.fromCborItem(ISSUER_SIGNED.required(m)), DEVICE_SIGNED.required(m), ERRORS.optional(m))
 
+        @JsName("cborDecode")
         fun cborDecode(data: ByteArray): DocumentCbor = fromCborItem(cborSerializer.decode(data))
     }
 }

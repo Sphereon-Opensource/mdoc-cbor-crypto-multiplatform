@@ -10,9 +10,7 @@ import com.sphereon.cbor.CborFullDate
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborString
 import com.sphereon.cbor.CborView
-import com.sphereon.cbor.CborViewOld
 import com.sphereon.cbor.JsonView
-import com.sphereon.cbor.JsonViewOld
 import com.sphereon.cbor.StringLabel
 import com.sphereon.cbor.cborViewListToCborItem
 import com.sphereon.cbor.cddl_full_date
@@ -26,13 +24,11 @@ import com.sphereon.kmp.DateTimeUtils
 import com.sphereon.kmp.LocalDateTimeKMP
 import com.sphereon.kmp.getDateTime
 import com.sphereon.kmp.toKotlin
-import com.sphereon.mdoc.data.mdl.DrivingPrivilegeCbor.Companion.CODES
-import com.sphereon.mdoc.data.mdl.DrivingPrivilegeCbor.Companion.EXPIRY_DATE
-import com.sphereon.mdoc.data.mdl.DrivingPrivilegeCbor.Companion.ISSUE_DATE
-import com.sphereon.mdoc.data.mdl.DrivingPrivilegeCbor.Companion.VEHICLE_CATEGORY_CODE
+import com.sphereon.mdoc.mdocJsonSerializer
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.SerialName
+import kotlinx.serialization.encodeToString
 import kotlin.js.JsExport
 import kotlin.js.JsName
 
@@ -43,7 +39,7 @@ typealias CborDrivingPrivilegesBuilder = DrivingPrivilegesCbor.Builder
 data class DrivingPrivilegesCbor(
     private val backing: List<DrivingPrivilegeCbor> = mutableListOf()
 ) : List<DrivingPrivilegeCbor> by backing,
-    CborViewOld<DrivingPrivilegesCbor, DrivingPrivilegesJson, CborArray<CborMap<StringLabel, AnyCborItem>>>(CDDL.list) {
+    CborView<DrivingPrivilegesCbor, DrivingPrivilegesJson, CborArray<CborMap<StringLabel, AnyCborItem>>>(CDDL.list) {
     @JsName("fromVarArgs")
     constructor(vararg drivingPrivileges: DrivingPrivilegeCbor) : this(drivingPrivileges.toMutableList())
 
@@ -51,10 +47,10 @@ data class DrivingPrivilegesCbor(
     constructor(list: CborArray<CborMap<StringLabel, AnyCborItem>>) :
             this(list.value.map {
                 DrivingPrivilegeCbor(
-                    VEHICLE_CATEGORY_CODE.required(it),
-                    ISSUE_DATE.optional(it),
-                    EXPIRY_DATE.optional(it),
-                    CODES.optional(it)
+                    DrivingPrivilegeCbor.Static.VEHICLE_CATEGORY_CODE.required(it),
+                    DrivingPrivilegeCbor.Static.ISSUE_DATE.optional(it),
+                    DrivingPrivilegeCbor.Static.EXPIRY_DATE.optional(it),
+                    DrivingPrivilegeCbor.Static.CODES.optional(it)
                 )
             })
 
@@ -95,12 +91,13 @@ data class DrivingPrivilegesCbor(
         return backing.hashCode()
     }
 
-    companion object {
-        fun fromSimple(simple: DrivingPrivilegesJson): DrivingPrivilegesCbor {
+    object Static {
+        @JsName("fromJson")
+        fun fromJson(simple: DrivingPrivilegesJson): DrivingPrivilegesCbor {
             return DrivingPrivilegesCbor(simple.backing.map { it.toCbor() })
         }
 
-
+        @JsName("cborDecode")
         fun cborDecode(encodedDrivingPrivilegesCbor: ByteArray): DrivingPrivilegesCbor {
             val cborArray: CborArray<CborMap<StringLabel, AnyCborItem>> = Cbor.decode(encodedDrivingPrivilegesCbor)
             return DrivingPrivilegesCbor(cborArray)
@@ -108,13 +105,12 @@ data class DrivingPrivilegesCbor(
     }
 
 
-
-
 }
 
 @JsExport
 data class DrivingPrivilegesJson(val backing: List<DrivingPrivilegeJson> = mutableListOf()) :
-    List<DrivingPrivilegeJson> by backing, JsonViewOld<DrivingPrivilegesCbor>() {
+    List<DrivingPrivilegeJson> by backing, JsonView() {
+    override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
     override fun toCbor(): DrivingPrivilegesCbor {
         return DrivingPrivilegesCbor(backing.map { it.toCbor() })
     }
@@ -134,8 +130,9 @@ data class DrivingPrivilegeJson(
     @SerialName("codes")
     val codes: List<DrivingPrivilegesCodeJson>? = null
 ) : JsonView() {
+    override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
     override fun toCbor(): DrivingPrivilegeCbor {
-        return DrivingPrivilegeCbor.fromSimple(this)
+        return DrivingPrivilegeCbor.Static.fromJson(this)
     }
 
     override fun equals(other: Any?): Boolean {
@@ -171,14 +168,14 @@ data class DrivingPrivilegeCbor(
     val issue_date: CborFullDate? = null,
     val expiry_date: CborFullDate? = null,
     val codes: List<DrivingPrivilegesCodeCbor>? = null
-) : CborView<DrivingPrivilegeCbor, DrivingPrivilegeJson, CborMap<StringLabel,AnyCborItem>>(CDDL.map) {
+) : CborView<DrivingPrivilegeCbor, DrivingPrivilegeJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
 
     override fun cborBuilder(): CborBuilder<DrivingPrivilegeCbor> {
         val builder = CborMap.builder(this)
-            .put(VEHICLE_CATEGORY_CODE, vehicle_category_code)
-            .put(ISSUE_DATE, issue_date, true)
-            .put(EXPIRY_DATE, expiry_date, true)
-            .put(CODES, codes?.cborViewListToCborItem(), true)
+            .put(Static.VEHICLE_CATEGORY_CODE, vehicle_category_code)
+            .put(Static.ISSUE_DATE, issue_date, true)
+            .put(Static.EXPIRY_DATE, expiry_date, true)
+            .put(Static.CODES, codes?.cborViewListToCborItem(), true)
         return builder.end()
     }
 
@@ -191,12 +188,14 @@ data class DrivingPrivilegeCbor(
         )
     }
 
-    companion object {
+    object Static {
         val VEHICLE_CATEGORY_CODE = StringLabel("vehicle_category_code")
         val ISSUE_DATE = StringLabel("issue_date")
         val EXPIRY_DATE = StringLabel("expiry_date")
         val CODES = StringLabel("codes")
-        fun fromSimple(simple: DrivingPrivilegeJson): DrivingPrivilegeCbor {
+
+        @JsName("fromJson")
+        fun fromJson(simple: DrivingPrivilegeJson): DrivingPrivilegeCbor {
             return DrivingPrivilegeCbor(
                 simple.vehicle_category_code.toCborString(),
                 simple.issue_date?.localDateToCborFullDate(),
@@ -205,6 +204,7 @@ data class DrivingPrivilegeCbor(
             )
         }
 
+        @JsName("cborDecode")
         fun cborDecode(encodedDrivingPrivilegeCbor: ByteArray): DrivingPrivilegeCbor {
             val m: CborMap<StringLabel, AnyCborItem> = Cbor.decode(encodedDrivingPrivilegeCbor)
             return DrivingPrivilegeCbor(
@@ -360,21 +360,22 @@ data class DrivingPrivilegesCodeCbor(val code: CborString, val sign: CborString?
     CborView<DrivingPrivilegesCodeCbor, DrivingPrivilegesCodeJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
     override fun cborBuilder(): CborBuilder<DrivingPrivilegesCodeCbor> {
         return CborMap.builder(this)
-            .put(CODE, code)
-            .put(SIGN, sign, true)
-            .put(VALUE, value, true).end()
+            .put(Static.CODE, code)
+            .put(Static.SIGN, sign, true)
+            .put(Static.VALUE, value, true).end()
     }
 
     override fun toJson(): DrivingPrivilegesCodeJson =
         DrivingPrivilegesCodeJson(code.value, sign?.value, value?.value)
 
 
-    companion object {
+    object Static {
         val CODE = StringLabel("code")
         val SIGN = StringLabel("sign")
         val VALUE = StringLabel("value")
 
-        fun fromSimple(simple: DrivingPrivilegesCodeJson): DrivingPrivilegesCodeCbor {
+        @JsName("fromJson")
+        fun fromJson(simple: DrivingPrivilegesCodeJson): DrivingPrivilegesCodeCbor {
             return DrivingPrivilegesCodeCbor(
                 simple.code.toCborString(),
                 simple.sign?.toCborString(),
@@ -382,6 +383,7 @@ data class DrivingPrivilegesCodeCbor(val code: CborString, val sign: CborString?
             )
         }
 
+        @JsName("cborDecode")
         fun cborDecode(encoded: ByteArray): DrivingPrivilegeCbor {
             val m: CborMap<StringLabel, AnyCborItem> = Cbor.decode(encoded)
             return DrivingPrivilegeCbor(CODE.required(m), SIGN.optional(m), VALUE.optional(m))
@@ -416,6 +418,7 @@ data class DrivingPrivilegesCodeCbor(val code: CborString, val sign: CborString?
 @JsExport
 data class DrivingPrivilegesCodeJson(val code: cddl_tstr, val sign: cddl_tstr?, val value: cddl_tstr?) :
     JsonView() {
+    override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
 
     override fun toCbor(): DrivingPrivilegesCodeCbor =
         DrivingPrivilegesCodeCbor(code.toCborString(), sign?.toCborString(), value?.toCborString())

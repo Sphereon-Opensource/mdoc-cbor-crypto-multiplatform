@@ -5,12 +5,15 @@ import com.sphereon.cbor.CborByteString
 import com.sphereon.cbor.CborItem
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborUInt
+import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.NumberLabel
 import com.sphereon.crypto.IKey
+import com.sphereon.crypto.cryptoJsonSerializer
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.encodeToDynamic
 
 @JsExport
-actual external interface ICoseKeyJson : IKey {
+actual external sealed interface ICoseKeyJson : IKey {
     actual override val kty: CoseKeyType
     actual override val kid: String?
     actual override val alg: CoseAlgorithm?
@@ -25,7 +28,9 @@ actual external interface ICoseKeyJson : IKey {
     @JsName("x5chain") //x5c in JWK
     actual val x5chain: Array<String>?
     actual override val additional: JsonObject?
+
 }
+
 
 /**
  * The CDDL grammar describing COSE_Key and COSE_KeySet is:
@@ -47,11 +52,13 @@ actual external interface ICoseKeyCbor : IKey {
     actual override val kid: CborByteString?
     actual override val alg: CborUInt?
     actual override val key_ops: CborArray<CborUInt>?
+    @JsName("baseIV")
     actual val baseIV: CborByteString?
     actual override val crv: CborUInt?
     actual override val x: CborByteString?
     actual override val y: CborByteString?
     actual override val d: CborByteString?
+    @JsName("x5chain")
     actual val x5chain: CborArray<CborByteString>?
     actual override val additional: CborMap<NumberLabel, CborItem<*>>?
 }

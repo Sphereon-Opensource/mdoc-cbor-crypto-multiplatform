@@ -105,7 +105,7 @@ class IssuerSignedTest {
     @Test
     fun shouldDecodeAndEncodeISOIssuerAuthTestVector() {
 
-        val issuerAuth = CoseSign1Cbor.cborDecode<Any>(iso18013_5_IssuerAuthTestVector.decodeFromHex())
+        val issuerAuth = CoseSign1Cbor.Static.cborDecode<Any>(iso18013_5_IssuerAuthTestVector.decodeFromHex())
         assertNotNull(issuerAuth)
         assertNotNull(issuerAuth.payload)
         assertNotNull(issuerAuth.signature)
@@ -119,7 +119,7 @@ class IssuerSignedTest {
         assertEquals(iso18013_5_SignatureStructureTestVector, sigStructure.cborEncode().encodeTo(Encoding.HEX))
 
         val isoSigStructure: CoseSignatureStructureCbor =
-            CoseSignatureStructureCbor.cborDecode(iso18013_5_SignatureStructureTestVector.decodeFromHex())
+            CoseSignatureStructureCbor.Static.cborDecode(iso18013_5_SignatureStructureTestVector.decodeFromHex())
         assertNotNull(isoSigStructure)
         assertEquals(iso18013_5_SignatureStructureTestVector, isoSigStructure.cborEncode().encodeTo(Encoding.HEX))
 
@@ -133,7 +133,7 @@ class IssuerSignedTest {
     @Test
     fun shouldDecodeAndEncodeSprindFunkeIssuerAuthTestVector() {
 
-        val decoded = IssuerSignedCbor.cborDecode(sprindFunkeTestVector.decodeFromHex())
+        val decoded = IssuerSignedCbor.Static.cborDecode(sprindFunkeTestVector.decodeFromHex())
         assertNotNull(decoded)
         assertNotNull(decoded.issuerAuth)
         assertNotNull(decoded.issuerAuth.payload)
@@ -158,7 +158,7 @@ class IssuerSignedTest {
     @Test
     fun shouldConvertToJsonForSprindFunkeIssuerAuthTestVector() {
 
-        val issuerSignedCbor = IssuerSignedCbor.cborDecode(sprindFunkeTestVector.decodeFromHex())
+        val issuerSignedCbor = IssuerSignedCbor.Static.cborDecode(sprindFunkeTestVector.decodeFromHex())
         assertNotNull(issuerSignedCbor)
         println(issuerSignedCbor)
         val issuerSignedJson = issuerSignedCbor.toJson()
@@ -175,7 +175,7 @@ class IssuerSignedTest {
 
     @Test
     fun shouldConvertToJsonAndBack() {
-        val issuerSignedCbor = IssuerSignedCbor.cborDecode(sprindFunkeTestVector.decodeFromHex())
+        val issuerSignedCbor = IssuerSignedCbor.Static.cborDecode(sprindFunkeTestVector.decodeFromHex())
         val issuerSignedJson: IssuerSignedJson = issuerSignedCbor.toJson()
         issuerSignedJson.nameSpaces?.values?.forEach { items -> items.map { item -> println(item.toString()) } }
         val issuerSignedCborFromJson = issuerSignedJson.toCbor()

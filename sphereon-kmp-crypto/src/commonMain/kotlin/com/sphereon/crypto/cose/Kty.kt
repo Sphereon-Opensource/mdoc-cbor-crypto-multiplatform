@@ -2,6 +2,7 @@ package com.sphereon.crypto.cose
 
 import com.sphereon.cbor.CborUInt
 import kotlin.js.JsExport
+import kotlin.js.JsName
 
 
 /**
@@ -20,11 +21,13 @@ enum class CoseKeyType(val value: Int, val description: String) {
     Symmetric(4, "Symmetric Keys"),
     Reserved(0, "Reserved");
 
+    @JsName("toCbor")
     fun toCbor(): CborUInt {
         return CborUInt(this.value)
     }
 
-    companion object {
+    object Static {
+        @JsName("fromValue")
         fun fromValue(value: Int): CoseKeyType {
             return CoseKeyType.entries.find { entry -> entry.value == value }
                 ?: throw IllegalArgumentException("Unknown value $value")

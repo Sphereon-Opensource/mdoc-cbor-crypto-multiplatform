@@ -34,5 +34,6 @@ external interface ICallbackServiceJS<PlatformCallbackType> {
      *
      * External developers use this as an entry point for their platform code
      */
+    @JsName("register")
     fun register(platformCallback: PlatformCallbackType): ICallbackServiceJS<PlatformCallbackType>
 }

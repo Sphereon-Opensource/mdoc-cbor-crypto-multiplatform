@@ -6,12 +6,15 @@ import com.sphereon.cbor.CborArray
 import com.sphereon.cbor.CborBuilder
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborString
-import com.sphereon.cbor.CborViewOld
-import com.sphereon.cbor.JsonViewOld
+import com.sphereon.cbor.CborView
+import com.sphereon.cbor.JsonView
+import com.sphereon.cbor.StringLabel
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.cddl_tstr
-import com.sphereon.cbor.StringLabel
+import com.sphereon.mdoc.mdocJsonSerializer
+import kotlinx.serialization.encodeToString
 import kotlin.js.JsExport
+import kotlin.js.JsName
 
 /**
  * 8.3.2.1.2.1 Device retrieval mdoc request
@@ -20,7 +23,8 @@ import kotlin.js.JsExport
 data class DeviceRequestJson(
     val version: cddl_tstr,
     val docRequests: MutableList<DocRequestJson>
-) : JsonViewOld<DeviceRequestCbor>() {
+) : JsonView() {
+    override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
     override fun toCbor(): DeviceRequestCbor {
         TODO("Not yet implemented")
     }
@@ -64,10 +68,10 @@ data class DeviceRequestCbor(
      */
     val docRequests: Array<DocRequestCbor>
 
-) : CborViewOld<DeviceRequestCbor, DeviceRequestJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
+) : CborView<DeviceRequestCbor, DeviceRequestJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
     override fun cborBuilder(): CborBuilder<DeviceRequestCbor> =
-        CborMap.builder(this).put(VERSION, version, optional = false).put(
-            DOC_REQUESTS,
+        CborMap.builder(this).put(Static.VERSION, version, optional = false).put(
+            Static.DOC_REQUESTS,
             CborArray(docRequests.map { it.toCbor() }.toMutableList()),
             optional = false
         )
@@ -99,19 +103,21 @@ data class DeviceRequestCbor(
     }
 
 
-    companion object {
+    object Static {
         val VERSION = StringLabel("version")
         val DOC_REQUESTS = StringLabel("docRequests")
 
+        @JsName("fromCborItem")
         fun fromCborItem(m: CborMap<StringLabel, AnyCborItem>): DeviceRequestCbor {
             return DeviceRequestCbor(
                 VERSION.required(m),
                 DOC_REQUESTS.required<CborArray<CborMap<StringLabel, AnyCborItem>>>(m).value.map {
-                    DocRequestCbor.fromCborItem(it)
+                    DocRequestCbor.Static.fromCborItem(it)
                 }.toTypedArray()
             )
         }
 
+        @JsName("cborDecode")
         fun cborDecode(encoded: ByteArray): DeviceRequestCbor = fromCborItem(cborSerializer.decode(encoded))
     }
 

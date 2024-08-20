@@ -24,6 +24,8 @@ import com.sphereon.crypto.cose.CoseKeyJson
 import com.sphereon.kmp.LongKMP
 import com.sphereon.kmp.numberToKmpLong
 import com.sphereon.kmp.toKmpLong
+import com.sphereon.mdoc.mdocJsonSerializer
+import kotlinx.serialization.encodeToString
 import kotlin.js.JsExport
 import kotlin.js.JsName
 
@@ -37,6 +39,7 @@ data class DeviceEngagementJson(
     val protocolInfo: ProtocolInfo? = null,
     val additionalItems: MutableMap<LongKMP, Any>? = mutableMapOf()
 ) : JsonView() {
+    override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
     override fun toCbor(): DeviceEngagementCbor {
         TODO("Not yet implemented")
     }
@@ -130,6 +133,7 @@ typealias ProtocolInfo = AnyCborItem
 @JsExport
 data class ServerRetrievalMethodsJson(val Oidc: ServerRetrievalInfo?, val WebApi: ServerRetrievalInfo?) :
     JsonView() {
+    override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
     override fun toCbor(): ServerRetrievalMethodsCbor {
         TODO("Not yet implemented")
     }
@@ -187,6 +191,7 @@ data class ServerRetrievalInfo(val version: CborUInt, val issuerUrl: CborString,
 @JsExport
 data class DeviceEngagementSecurityJson(val cypherSuite: LongKMP, val eDeviceKeyBytes: CoseKeyJson) :
     JsonView() {
+    override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
     override fun toCbor(): DeviceEngagementSecurityCbor {
         TODO("Not yet implemented")
     }
@@ -212,7 +217,7 @@ data class DeviceEngagementSecurityCbor(val cypherSuite: CborUInt, val eDeviceKe
             val ekeyBytes: CborEncodedItem<CborMap<NumberLabel, AnyCborItem>> = a.required(1)
             return DeviceEngagementSecurityCbor(
                 a.required(0),
-                CoseKeyCbor.fromCborItem(ekeyBytes.cborDecode<CborMap<NumberLabel, AnyCborItem>>())
+                CoseKeyCbor.Static.fromCborItem(ekeyBytes.cborDecode<CborMap<NumberLabel, AnyCborItem>>())
             )
         }
 
@@ -227,6 +232,7 @@ data class DeviceRetrievalMethodJson(
     val version: cddl_uint,
     val retrievalOptions: DeviceRetrievalOptionsCbor
 ) : JsonView() {
+    override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
     override fun toCbor(): DeviceRetrievalMethodCbor {
         TODO("Not yet implemented")
     }
@@ -399,6 +405,7 @@ data class NfcOptionsJson(
         maxResponseDataFieldLength: Int // maps to number in JS
     ) : this(maxCommandDataFieldLength.toKmpLong(), maxResponseDataFieldLength.toKmpLong())
 
+    override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
     override fun toCbor(): NfcOptionsCbor {
         TODO("Not yet implemented")
     }

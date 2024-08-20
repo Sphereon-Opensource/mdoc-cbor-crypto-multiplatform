@@ -131,14 +131,14 @@ class JWKTest {
 
     @Test
     fun shouldConvertECCoseKeyToJWKandBack(): TestResult = runTest {
-        val cborKey = CoseKeyCbor.cborDecode(HEX_ENCODED_CBOR_KEY.decodeFrom(Encoding.HEX))
+        val cborKey = CoseKeyCbor.Static.cborDecode(HEX_ENCODED_CBOR_KEY.decodeFrom(Encoding.HEX))
         assertEquals(cborKey, cborKey.cborToJwk().jwkToCoseKeyCbor())
     }
 
 
     @Test
     fun shouldHaveSomeFunWithConversion(): TestResult = runTest {
-        val cborKey = CoseKeyCbor.cborDecode(HEX_ENCODED_CBOR_KEY.decodeFrom(Encoding.HEX))
+        val cborKey = CoseKeyCbor.Static.cborDecode(HEX_ENCODED_CBOR_KEY.decodeFrom(Encoding.HEX))
         assertEquals(cborKey, cborKey.cborToJwk().jwkToCoseKeyJson().jsonToJwk().jwkToCoseKeyCbor().cborToJwk().jwkToCoseKeyCbor())
     }
 

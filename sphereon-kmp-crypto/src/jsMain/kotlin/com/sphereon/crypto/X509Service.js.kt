@@ -9,6 +9,7 @@ import kotlin.js.Promise
  */
 @JsExport
 external interface IX509ServiceJS {
+    @JsName("verifyCertificateChainJS")
     fun <KeyType: IKey> verifyCertificateChainJS(
         chainDER: Array<ByteArray>?,
         chainPEM: Array<String>?,
@@ -82,6 +83,7 @@ object X509ServiceObjectJS : ICallbackServiceJS<IX509ServiceJS>, IX509ServiceJS 
         )
     }
 
+    @JsName("setTrustedCerts")
     fun setTrustedCerts(trustedCerts: Array<String>? = null) {
         this.trustedCerts = trustedCerts?.toSet()
     }

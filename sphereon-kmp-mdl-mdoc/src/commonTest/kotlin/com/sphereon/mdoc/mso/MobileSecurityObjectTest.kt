@@ -4,6 +4,7 @@ import com.sphereon.cbor.CborHexEncodedItem
 import com.sphereon.cbor.CborUInt
 import com.sphereon.crypto.cose.COSE_Key
 import com.sphereon.cbor.toCborBool
+import com.sphereon.crypto.cose.CoseKeyCbor
 import com.sphereon.kmp.numberToKmpLong
 import com.sphereon.kmp.decodeFromHex
 import com.sphereon.mdoc.tx.device.BleOptionsCbor
@@ -40,7 +41,7 @@ class MobileSecurityObjectTest {
         assertNotNull(decoded.security)
 
 
-        val coseKey = COSE_Key.cborDecode(coseKeyBytes.decodeFromHex())
+        val coseKey = CoseKeyCbor.Static.cborDecode(coseKeyBytes.decodeFromHex())
         assertEquals(coseKey.kty, decoded.security.eDeviceKeyBytes.kty)
         assertEquals(coseKey.crv, decoded.security.eDeviceKeyBytes.crv)
         assertEquals(coseKey.x, decoded.security.eDeviceKeyBytes.x)

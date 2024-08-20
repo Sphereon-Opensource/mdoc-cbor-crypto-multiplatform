@@ -20,7 +20,7 @@ sealed class KeyTypeMapping(private val coseKeyType: CoseKeyType, private val jo
     object RSA : KeyTypeMapping(CoseKeyType.RSA, JwaKeyType.RSA)
 
 
-    companion object {
+    object Static {
         val asList = listOf(OKP, EC2, RSA)
         fun toJose(cose: CoseKeyType) = asList.find { it.coseKeyType === cose }?.joseKeyType
             ?: throw IllegalArgumentException("coseKeyType $cose not found")
@@ -31,10 +31,10 @@ sealed class KeyTypeMapping(private val coseKeyType: CoseKeyType, private val jo
 }
 
 @JsExport
-fun CoseKeyType.toJoseKeyType() = KeyTypeMapping.toJose(this)
+fun CoseKeyType.toJoseKeyType() = KeyTypeMapping.Static.toJose(this)
 
 @JsExport
-fun JwaKeyType.toCoseKeyType() = KeyTypeMapping.toCose(this)
+fun JwaKeyType.toCoseKeyType() = KeyTypeMapping.Static.toCose(this)
 
 
 @JsExport
@@ -54,7 +54,7 @@ sealed class SignatureAlgorithmMapping(
     object PS384 : SignatureAlgorithmMapping(CoseSignatureAlgorithm.PS384, JwaSignatureAlgorithm.PS384)
     object PS512 : SignatureAlgorithmMapping(CoseSignatureAlgorithm.PS512, JwaSignatureAlgorithm.PS512)
 
-    companion object {
+    object Static {
         val asList = listOf(EdDSA, ES256K, ES256, ES384, ES512, HS256, HS384, HS512, PS256, PS384, PS512)
         fun toJose(cose: CoseAlgorithm) = asList.find { it.coseAlgorithm === cose }?.joseAlgorithm
             ?: throw IllegalArgumentException("coseKeyType $cose not found")
@@ -65,10 +65,10 @@ sealed class SignatureAlgorithmMapping(
 }
 
 @JsExport
-fun CoseAlgorithm.toJoseSignatureAlgorithm() = SignatureAlgorithmMapping.toJose(this)
+fun CoseAlgorithm.toJoseSignatureAlgorithm() = SignatureAlgorithmMapping.Static.toJose(this)
 
 @JsExport
-fun JwaAlgorithm.toCoseSignatureAlgorithm() = SignatureAlgorithmMapping.toCose(this)
+fun JwaAlgorithm.toCoseSignatureAlgorithm() = SignatureAlgorithmMapping.Static.toCose(this)
 
 // TODO Enc algos
 
@@ -117,7 +117,7 @@ sealed class KeyOperationsMapping(
     object MAC_CREATE : KeyOperationsMapping(CoseKeyOperations.MAC_CREATE, JoseKeyOperations.MAC_CREATE)
     object MAC_VERIFY : KeyOperationsMapping(CoseKeyOperations.MAC_VERIFY, JoseKeyOperations.MAC_VERIFY)
 
-    companion object {
+    object Static {
         val asList = listOf(
             WRAP_KEY,
             DERIVE_KEY,
@@ -140,7 +140,7 @@ sealed class KeyOperationsMapping(
 }
 
 @JsExport
-fun CoseKeyOperations.toJoseKeyOperations() = KeyOperationsMapping.toJose(this)
+fun CoseKeyOperations.toJoseKeyOperations() = KeyOperationsMapping.Static.toJose(this)
 
 @JsExport
-fun JoseKeyOperations.toCoseKeyOperations() = KeyOperationsMapping.toCose(this)
+fun JoseKeyOperations.toCoseKeyOperations() = KeyOperationsMapping.Static.toCose(this)

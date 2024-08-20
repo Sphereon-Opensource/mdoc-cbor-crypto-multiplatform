@@ -269,7 +269,7 @@ data class Jwk(
 
         }
 
-        fun fromCoseKey(coseKey: ICoseKeyCbor) = fromCoseKeyJson(CoseKeyCbor.fromDTO(coseKey).toJson())
+        fun fromCoseKey(coseKey: ICoseKeyCbor) = fromCoseKeyJson(CoseKeyCbor.Static.fromDTO(coseKey).toJson())
 
     }
 

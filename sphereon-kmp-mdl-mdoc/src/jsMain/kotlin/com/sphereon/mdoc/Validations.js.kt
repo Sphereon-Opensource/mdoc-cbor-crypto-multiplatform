@@ -11,7 +11,6 @@ import com.sphereon.mdoc.data.MdocVerificationTypes
 import com.sphereon.mdoc.data.Validations
 import com.sphereon.mdoc.data.device.DocumentCbor
 import com.sphereon.mdoc.data.mso.MobileSecurityObjectCbor
-import com.sphereon.mdoc.data.mso.MobileSecurityObjectJson
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.promise
@@ -54,7 +53,7 @@ object ValidationsJS {
     ) = withParamsAsync(
         issuerAuth = null,
         document = document,
-        mdocVerificationTypes = MdocVerification.document,
+        mdocVerificationTypes = MdocVerification.Static.DOCUMENT,
         /*x509Service = x509Service,
         coseCryptoService = coseCryptoService,*/
         keyInfo = keyInfo,
@@ -76,7 +75,7 @@ object ValidationsJS {
     ) = withParamsAsync(
         issuerAuth = issuerAuth,
         document = null,
-        mdocVerificationTypes = MdocVerification.issuerAuth,
+        mdocVerificationTypes = MdocVerification.Static.ISSUER_AUTH,
         /*x509Service = x509Service,
         coseCryptoService = coseCryptoService,*/
         keyInfo = keyInfo,
@@ -89,7 +88,7 @@ object ValidationsJS {
     fun withParamsAsync(
         issuerAuth: COSE_Sign1<MobileSecurityObjectCbor>? = null,
         document: DocumentCbor? = null,
-        mdocVerificationTypes: MdocVerificationTypes = MdocVerification.all,
+        mdocVerificationTypes: MdocVerificationTypes = MdocVerification.Static.ALL,
         /*x509Service: X509Service = CryptoService.X509,
         coseCryptoService: CoseCryptoService = CryptoService.COSE,*/
         keyInfo: IKeyInfo<ICoseKeyCbor>? = null,

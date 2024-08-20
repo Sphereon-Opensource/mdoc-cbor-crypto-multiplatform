@@ -10,7 +10,9 @@ import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.StringLabel
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.cddl_tdate
+import com.sphereon.mdoc.mdocJsonSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
 import kotlin.js.JsExport
 
 @JsExport
@@ -20,9 +22,8 @@ data class ValidityInfoJson(
     val validFrom: cddl_tdate,
     val validUntil: cddl_tdate,
     val expectedUpdate: cddl_tdate? = null,
-
-
     ) : JsonView() {
+    override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
     override fun toCbor() = ValidityInfoCbor(CborTDate(signed),
         CborTDate(validFrom),
         CborTDate(validUntil),
@@ -59,13 +60,13 @@ data class ValidityInfoCbor(
     }
 
     override fun cborBuilder(): CborBuilder<ValidityInfoCbor> =
-        CborMap.builder(this).put(SIGNED, signed).put(VALID_FROM, validFrom).put(VALID_UNTIL, validUntil)
-            .put(EXPECTED_UPDATE, expectedUpdate, true).end()
+        CborMap.builder(this).put(Static.SIGNED, signed).put(Static.VALID_FROM, validFrom).put(Static.VALID_UNTIL, validUntil)
+            .put(Static.EXPECTED_UPDATE, expectedUpdate, true).end()
 
 
     override fun toJson() = ValidityInfoJson(signed.value, validFrom.value, validUntil.value, expectedUpdate?.value)
 
-    companion object {
+    object Static {
         val SIGNED = StringLabel("signed")
         val VALID_FROM = StringLabel("validFrom")
         val VALID_UNTIL = StringLabel("validUntil")

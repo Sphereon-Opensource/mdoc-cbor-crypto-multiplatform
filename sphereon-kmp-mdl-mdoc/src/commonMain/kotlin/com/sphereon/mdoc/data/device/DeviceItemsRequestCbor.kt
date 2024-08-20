@@ -22,8 +22,10 @@ import com.sphereon.mdoc.data.IntentToRetain
 import com.sphereon.mdoc.data.RequestInfo
 import com.sphereon.mdoc.data.mdl.Mdl.MDL_NAMESPACE
 import com.sphereon.mdoc.data.mdl.Mdl.MDL_NAMESPACE_CBOR
+import com.sphereon.mdoc.mdocJsonSerializer
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
 import kotlin.js.JsExport
 
 typealias deviceItemsRequestBuilder = DeviceItemsRequestCbor.Builder
@@ -37,6 +39,7 @@ data class DeviceItemsRequestJson(
     //fixme: The map value should be Any
     val requestInfo: MutableMap<String, String>? = null
 ) : JsonView() {
+    override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
 
     override fun toCbor(): DeviceItemsRequestCbor {
         return DeviceItemsRequestCbor(docType.toCborString(), CborMap(mutableMapOf(* nameSpaces.map {
@@ -96,7 +99,7 @@ data class DeviceItemsRequestCbor(
     val requestInfo: CborMap<CborString, AnyCborItem>? = null
 
 ) : CborView<DeviceItemsRequestCbor, DeviceItemsRequestJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
-    companion object {
+    object Static {
         val DOC_TYPE = StringLabel("docType")
         val NAME_SPACES = StringLabel("nameSpaces")
         val REQUEST_INFO = StringLabel("requestInfo")
@@ -110,9 +113,9 @@ data class DeviceItemsRequestCbor(
 
     override fun cborBuilder(): CborBuilder<DeviceItemsRequestCbor> {
         val builder = CborMap.builder(this)
-            .put(DOC_TYPE, docType)
-            .put(NAME_SPACES, nameSpaces)
-            .put(REQUEST_INFO, requestInfo, true)
+            .put(Static.DOC_TYPE, docType)
+            .put(Static.NAME_SPACES, nameSpaces)
+            .put(Static.REQUEST_INFO, requestInfo, true)
 
         return builder.end()
     }

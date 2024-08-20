@@ -6,19 +6,24 @@ import com.sphereon.cbor.CborArray
 import com.sphereon.cbor.CborBuilder
 import com.sphereon.cbor.CborByteString
 import com.sphereon.cbor.CborString
-import com.sphereon.cbor.CborViewOld
-import com.sphereon.cbor.JsonViewOld
+import com.sphereon.cbor.CborView
+import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.crypto.cose.COSE_Key
+import com.sphereon.crypto.cose.CoseKeyCbor
 import com.sphereon.mdoc.data.device.DeviceItemsRequestCbor
 import com.sphereon.mdoc.data.device.DeviceItemsRequestJson
+import com.sphereon.mdoc.mdocJsonSerializer
+import kotlinx.serialization.encodeToString
 import kotlin.js.JsExport
+import kotlin.js.JsName
 
 @JsExport
 data class ReaderAuthenticationJson(
     val sessionTranscript: SessionTranscriptJson,
     val itemsRequest: DeviceItemsRequestJson
-) : JsonViewOld<ReaderAuthenticationCbor>() {
+) : JsonView() {
+    override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
     override fun toCbor(): ReaderAuthenticationCbor {
         TODO("Not yet implemented")
     }
@@ -29,9 +34,9 @@ data class ReaderAuthenticationJson(
 data class ReaderAuthenticationCbor(
     val sessionTranscript: SessionTranscriptCbor,
     val itemsRequest: DeviceItemsRequestCbor
-) : CborViewOld<ReaderAuthenticationCbor, ReaderAuthenticationJson, CborArray<AnyCborItem>>(CDDL.list) {
+) : CborView<ReaderAuthenticationCbor, ReaderAuthenticationJson, CborArray<AnyCborItem>>(CDDL.list) {
     override fun cborBuilder(): CborBuilder<ReaderAuthenticationCbor> {
-        return CborArray.builder(this).add(READER_AUTHENTICATION).add(sessionTranscript.toCbor())
+        return CborArray.builder(this).add(Static.READER_AUTHENTICATION).add(sessionTranscript.toCbor())
             .add(itemsRequest.toCbor()).end()
     }
 
@@ -39,9 +44,10 @@ data class ReaderAuthenticationCbor(
         TODO("Not yet implemented")
     }
 
-    companion object {
+    object Static {
         val READER_AUTHENTICATION = CborString("ReaderAuthentication")
 
+        @JsName("fromCborItem")
         fun fromCborItem(a: CborArray<AnyCborItem>): ReaderAuthenticationCbor {
             if (a.required<CborString>(0) != READER_AUTHENTICATION) {
                 throw IllegalArgumentException("'ReaderAuthentication' element cannot be null")
@@ -49,6 +55,7 @@ data class ReaderAuthenticationCbor(
             return ReaderAuthenticationCbor(a.required(1), a.required(2))
         }
 
+        @JsName("cborDecode")
         fun cborDecode(data: ByteArray) = fromCborItem(cborSerializer.decode(data))
     }
 
@@ -58,7 +65,8 @@ data class SessionTranscriptJson(
     val deviceEngagement: DeviceEngagementJson,
     val eReaderKey: COSE_Key,
     val handover: HandoverJson<*>
-) : JsonViewOld<SessionTranscriptCbor>() {
+) : JsonView() {
+    override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
     override fun toCbor(): SessionTranscriptCbor {
         TODO("Not yet implemented")
     }
@@ -69,7 +77,7 @@ data class SessionTranscriptCbor(
     val deviceEngagement: DeviceEngagementCbor,
     val eReaderKey: COSE_Key,
     val handover: HandoverCbor<*, *>
-) : CborViewOld<SessionTranscriptCbor, SessionTranscriptJson, CborArray<AnyCborItem>>(CDDL.list) {
+) : CborView<SessionTranscriptCbor, SessionTranscriptJson, CborArray<AnyCborItem>>(CDDL.list) {
     override fun cborBuilder(): CborBuilder<SessionTranscriptCbor> {
         return CborArray.builder(this)
             .add(CborByteString.fromCborItem(deviceEngagement.toCbor()))
@@ -82,27 +90,30 @@ data class SessionTranscriptCbor(
         TODO("Not yet implemented")
     }
 
-    companion object {
+    object Static {
         const val DEVICE_ENGAGEMENT = 0
         const val ENGAGEMENT_READER_KEY = 1
         const val HANDOVER = 2
 
+        @JsName("fromCborItem")
         fun fromCborItem(a: CborArray<AnyCborItem>) = SessionTranscriptCbor(
             DeviceEngagementCbor.fromCborItem(
                 cborSerializer.decode(a.required(DEVICE_ENGAGEMENT))
-            ), COSE_Key.cborDecode(a.required(ENGAGEMENT_READER_KEY)), a.required(HANDOVER)
+            ), CoseKeyCbor.Static.cborDecode(a.required(ENGAGEMENT_READER_KEY)), a.required(HANDOVER)
         )
 
+        @JsName("cborDecode")
         fun cborDecode(data: ByteArray): SessionTranscriptCbor = fromCborItem(cborSerializer.decode(data))
     }
 
 }
 
 
-sealed class HandoverJson<CborType: Any> : JsonViewOld<CborType>()
+sealed class HandoverJson<CborType: Any> : JsonView()
 
-sealed class HandoverCbor<CborType: Any, JsonType> : CborViewOld<CborType, JsonViewOld<CborType>, CborArray<AnyCborItem>>(CDDL.list)
+sealed class HandoverCbor<CborType: Any, JsonType> : CborView<CborType, JsonView, CborArray<AnyCborItem>>(CDDL.list)
 class QrHandoverJson : HandoverJson<QrHandoverCbor>() {
+    override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
     override fun toCbor(): QrHandoverCbor {
         return QrHandoverCbor()
     }
@@ -113,13 +124,14 @@ class QrHandoverCbor : HandoverCbor<QrHandoverCbor, QrHandoverJson>() {
         return CborArray.builder(this).end()
     }
 
-    override fun toJson(): JsonViewOld<QrHandoverCbor> {
+    override fun toJson(): JsonView {
         return QrHandoverJson()
     }
 }
 
 data class NfcHandoverSimple(val handoverSelectMessage: CborByteString?) :
     HandoverJson<NfcHandoverCbor>() {
+    override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
     override fun toCbor(): NfcHandoverCbor {
         TODO("Not yet implemented")
     }
@@ -137,7 +149,7 @@ data class NfcHandoverCbor(val handoverSelectMessage: CborByteString, val handov
         TODO("Not yet implemented")
     }
 
-    companion object {
+    object Static {
         const val HANDOVER_SELECT_MESSAGE = 0
         const val HANDOVER_REQUEST_MESSAGE = 1
         fun fromCborItem(a: CborArray<AnyCborItem>) =

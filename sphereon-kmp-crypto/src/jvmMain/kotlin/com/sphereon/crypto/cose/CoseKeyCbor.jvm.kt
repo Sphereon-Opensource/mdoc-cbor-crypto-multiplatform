@@ -9,7 +9,7 @@ import com.sphereon.cbor.NumberLabel
 import com.sphereon.crypto.IKey
 import kotlinx.serialization.json.JsonObject
 
-actual interface ICoseKeyJson : IKey {
+actual sealed interface ICoseKeyJson : IKey {
     actual abstract override val kty: CoseKeyType
     actual abstract override val kid: String?
     actual abstract override val alg: CoseAlgorithm?

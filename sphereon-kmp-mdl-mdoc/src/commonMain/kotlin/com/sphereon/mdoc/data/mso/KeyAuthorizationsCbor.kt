@@ -8,8 +8,11 @@ import com.sphereon.cbor.CborView
 import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.StringLabel
 import com.sphereon.cbor.cborSerializer
+import com.sphereon.mdoc.mdocJsonSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
 import kotlin.js.JsExport
+import kotlin.js.JsName
 
 @JsExport
 @Serializable
@@ -35,6 +38,7 @@ data class KeyAuthorizationsJson(
         result = 31 * result + (dataElements?.hashCode() ?: 0)
         return result
     }
+    override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
 
     override fun toCbor(): KeyAuthorizationsCbor {
         TODO("Not yet implemented")
@@ -47,19 +51,21 @@ data class KeyAuthorizationsCbor(
     val dataElements: AuthorizedDataElements? = null
 ) : CborView<KeyAuthorizationsCbor, KeyAuthorizationsJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
     override fun cborBuilder(): CborBuilder<KeyAuthorizationsCbor> =
-        CborMap.builder(this).put(NAME_SPACES, nameSpaces, true).put(DATA_ELEMENTS, dataElements, true).end()
+        CborMap.builder(this).put(Static.NAME_SPACES, nameSpaces, true).put(Static.DATA_ELEMENTS, dataElements, true).end()
 
     override fun toJson(): KeyAuthorizationsJson {
         TODO("Not yet implemented")
     }
 
-    companion object {
+    object Static {
         val NAME_SPACES = StringLabel("nameSpaces")
         val DATA_ELEMENTS = StringLabel("dataElements")
 
+        @JsName("fromCborItem")
         fun fromCborItem(m: CborMap<StringLabel, AnyCborItem>) =
             KeyAuthorizationsCbor(NAME_SPACES.optional(m), DATA_ELEMENTS.optional(m))
 
+        @JsName("cborDecode")
         fun cborDecode(data: ByteArray): KeyAuthorizationsCbor = fromCborItem(cborSerializer.decode(data))
     }
 

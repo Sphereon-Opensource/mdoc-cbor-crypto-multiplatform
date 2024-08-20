@@ -1,7 +1,5 @@
 package com.sphereon.crypto
 
-import kotlinx.serialization.json.JsonObject
-
 @JsExport
 actual external interface IKey {
     @JsName("kty")

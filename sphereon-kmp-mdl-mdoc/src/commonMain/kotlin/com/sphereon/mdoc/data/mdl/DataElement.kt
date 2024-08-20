@@ -4,6 +4,7 @@ import com.sphereon.cbor.toCborBool
 import com.sphereon.cbor.toCborString
 import com.sphereon.mdoc.data.DataElementCbor
 import kotlin.js.JsExport
+import kotlin.js.JsName
 
 @JsExport
 data class DataElementDef<Type : Any>(
@@ -13,7 +14,7 @@ data class DataElementDef<Type : Any>(
     val cddl: CDDL,
     val cddls: Array<CDDL>
 ) {
-
+    @JsName("toElement")
     fun toElement(intentToRetain: cddl_bool = false): DataElementCbor {
         return DataElementCbor(identifier.toCborString(), intentToRetain.toCborBool())
     }

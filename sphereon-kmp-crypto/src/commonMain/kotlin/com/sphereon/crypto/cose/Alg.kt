@@ -1,9 +1,7 @@
 package com.sphereon.crypto.cose
 
-import com.sphereon.cbor.CDDL
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -22,19 +20,26 @@ import kotlin.js.JsName
  *       cryptographic operation.
  */
 @JsExport
-interface CoseAlgorithm {
+@Serializable(with = CoseAlgorithmSerializer::class)
+sealed interface CoseAlgorithm {
     @JsName("name")
     val name: String
+
     @JsName("value")
     val value: Int
+
     @JsName("keyType")
     val keyType: CoseKeyType?
+
     @JsName("hash")
     val hash: HashAlgorithm?
+
     @JsName("tagLength")
     val tagLength: Int?
+
     @JsName("curve")
     val curve: CoseCurve?
+
     @JsName("description")
     val description: String
 }
@@ -55,6 +60,8 @@ sealed class CoseSignatureAlgorithm(
     override val curve: CoseCurve?,
     override val description: String
 ) : CoseAlgorithm {
+
+    @Serializable(with = CoseAlgorithmSerializer::class)
     object ES256 : CoseSignatureAlgorithm(
         "ES256",
         -7,
@@ -65,6 +72,7 @@ sealed class CoseSignatureAlgorithm(
         "ECDSA w/ SHA-256"
     )
 
+    @Serializable(with = CoseAlgorithmSerializer::class)
     object ES256K : CoseSignatureAlgorithm(
         "ES256K",
         -47,
@@ -75,6 +83,7 @@ sealed class CoseSignatureAlgorithm(
         "ECDSA secp256k1 curve w/ SHA-256"
     )
 
+    @Serializable(with = CoseAlgorithmSerializer::class)
     object ES384 : CoseSignatureAlgorithm(
         "ES384",
         -35,
@@ -85,6 +94,7 @@ sealed class CoseSignatureAlgorithm(
         "ECDSA w/ SHA-384"
     )
 
+    @Serializable(with = CoseAlgorithmSerializer::class)
     object ES512 : CoseSignatureAlgorithm(
         "ES512",
         -36,
@@ -95,8 +105,10 @@ sealed class CoseSignatureAlgorithm(
         "ECDSA w/ SHA-512"
     )
 
+    @Serializable(with = CoseAlgorithmSerializer::class)
     object EdDSA : CoseSignatureAlgorithm("EdDSA", -8, CoseKeyType.OKP, null, null, CoseCurve.P_521, "EdDSA")
 
+    @Serializable(with = CoseAlgorithmSerializer::class)
     object HS256_64 :
         CoseSignatureAlgorithm(
             "HS256/64",
@@ -108,15 +120,19 @@ sealed class CoseSignatureAlgorithm(
             "HMAC w/ SHA-256 truncated to 64 bits"
         )
 
+    @Serializable(with = CoseAlgorithmSerializer::class)
     object HS256 :
         CoseSignatureAlgorithm("HS256", 5, CoseKeyType.Symmetric, HashAlgorithm.SHA256, 256, null, "HMAC w/ SHA-256")
 
+    @Serializable(with = CoseAlgorithmSerializer::class)
     object HS384 :
         CoseSignatureAlgorithm("HS384", 6, CoseKeyType.Symmetric, HashAlgorithm.SHA384, 384, null, "HMAC w/ SHA-384")
 
+    @Serializable(with = CoseAlgorithmSerializer::class)
     object HS512 :
         CoseSignatureAlgorithm("HS512", 7, CoseKeyType.Symmetric, HashAlgorithm.SHA512, 512, null, "HMAC w/ SHA-512")
 
+    @Serializable(with = CoseAlgorithmSerializer::class)
     object PS256 :
         CoseSignatureAlgorithm(
             "PS256",
@@ -128,6 +144,7 @@ sealed class CoseSignatureAlgorithm(
             "RSASSA-PSS w/ SHA-256"
         )
 
+    @Serializable(with = CoseAlgorithmSerializer::class)
     object PS384 :
         CoseSignatureAlgorithm(
             "PS384",
@@ -139,6 +156,7 @@ sealed class CoseSignatureAlgorithm(
             "RSASSA-PSS w/ SHA-384"
         )
 
+    @Serializable(with = CoseAlgorithmSerializer::class)
     object PS512 :
         CoseSignatureAlgorithm(
             "PS512",
@@ -151,13 +169,17 @@ sealed class CoseSignatureAlgorithm(
         )
 
     object Static {
-        val asList = listOf(ES256, ES384, ES512, EdDSA, HS256_64, HS256, HS384, HS512)
+        val asList: List<CoseSignatureAlgorithm> = listOf(ES256, ES384, ES512, EdDSA, HS256_64, HS256, HS384, HS512)
+
+        @JsName("fromValue")
         fun fromValue(value: Int?): CoseSignatureAlgorithm? {
             if (value == null) {
                 return null
             }
-            return asList.firstOrNull { it.value == value.toInt() }
+            return Static.asList.firstOrNull { it.value == value.toInt() }
         }
+
+        @JsName("fromName")
         fun fromName(name: String): CoseSignatureAlgorithm {
             return asList.first { it.name == name }
         }
@@ -190,14 +212,14 @@ sealed class CBOREncryptionAlgorithm(override val algValue: String) : JwaAlgorit
     object PBES2_HS512_A256KW : JwaEncryptionAlgorithm("PBES2-HS512+A256KW")
 }*/
 
-internal object CoseAlgorithmSerializer : KSerializer<CoseSignatureAlgorithm> {
+object CoseAlgorithmSerializer : KSerializer<CoseAlgorithm> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("CoseAlgorithm", PrimitiveKind.STRING)
 
-    override fun serialize(encoder: Encoder, value: CoseSignatureAlgorithm) {
+    override fun serialize(encoder: Encoder, value: CoseAlgorithm) {
         encoder.encodeString(value.name)
     }
 
-    override fun deserialize(decoder: Decoder): CoseSignatureAlgorithm {
+    override fun deserialize(decoder: Decoder): CoseAlgorithm {
         return CoseSignatureAlgorithm.Static.fromName(decoder.decodeString())
     }
 }

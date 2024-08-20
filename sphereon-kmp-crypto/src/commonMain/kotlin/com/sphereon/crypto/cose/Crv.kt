@@ -6,6 +6,7 @@ package com.sphereon.crypto.cose
 import com.sphereon.cbor.CborUInt
 import kotlin.js.ExperimentalJsExport
 import kotlin.js.JsExport
+import kotlin.js.JsName
 
 
 /**
@@ -27,11 +28,13 @@ enum class CoseCurve(val curveName: String, val value: Int, keyType: CoseKeyType
     secp256k1("secp256k1", -1, CoseKeyType.EC2),
     ;
 
+    @JsName("toCbor")
     fun toCbor(): CborUInt {
         return CborUInt(this.value)
     }
 
-    companion object {
+    object Static {
+        @JsName("fromValue")
         fun fromValue(value: Int): CoseCurve {
             return CoseCurve.entries.find { entry -> entry.value == value }
                 ?: throw IllegalArgumentException("Unknown value $value")

@@ -1,12 +1,7 @@
 package com.sphereon.mdoc
 
 import com.sphereon.cbor.JsonView
-import com.sphereon.crypto.CryptoJsonSupport
-import com.sphereon.crypto.IKey
 import com.sphereon.crypto.cose.CoseKeyJson
-import com.sphereon.crypto.jose.IJwk
-import com.sphereon.crypto.jose.IJwkJson
-import com.sphereon.crypto.jose.Jwk
 import com.sphereon.mdoc.data.device.IssuerSignedItemJson
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
@@ -14,6 +9,7 @@ import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
 import kotlin.js.JsExport
 
+@JsExport
 val mdocJsonSerializer = MdocJsonSupport.serializer
 
 @JsExport

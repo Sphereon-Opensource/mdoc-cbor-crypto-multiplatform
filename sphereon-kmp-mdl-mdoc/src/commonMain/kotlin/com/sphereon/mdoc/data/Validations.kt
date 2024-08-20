@@ -1,7 +1,5 @@
 package com.sphereon.mdoc.data
 
-import com.sphereon.crypto.cose.COSE_Sign1
-import com.sphereon.crypto.cose.ICoseKeyCbor
 import com.sphereon.crypto.CryptoService
 import com.sphereon.crypto.ICoseCryptoService
 import com.sphereon.crypto.IKeyInfo
@@ -9,12 +7,13 @@ import com.sphereon.crypto.IVerifyResults
 import com.sphereon.crypto.IX509Service
 import com.sphereon.crypto.VerifyResult
 import com.sphereon.crypto.VerifyResults
+import com.sphereon.crypto.cose.COSE_Sign1
+import com.sphereon.crypto.cose.ICoseKeyCbor
 import com.sphereon.kmp.DateTimeUtils
 import com.sphereon.kmp.getDateTime
 import com.sphereon.mdoc.MdocConst
 import com.sphereon.mdoc.data.device.DocumentCbor
 import com.sphereon.mdoc.data.mso.MobileSecurityObjectCbor
-import com.sphereon.mdoc.data.mso.MobileSecurityObjectJson
 import kotlin.js.JsExport
 
 /**
@@ -51,7 +50,7 @@ object Validations {
     ) = withParams(
         issuerAuth = null,
         document = document,
-        mdocVerificationTypes = MdocVerification.document,
+        mdocVerificationTypes = MdocVerification.Static.DOCUMENT,
         x509Service = x509Service,
         coseCryptoService = coseCryptoService,
         keyInfo = keyInfo,
@@ -73,7 +72,7 @@ object Validations {
     ) = withParams(
         issuerAuth = issuerAuth,
         document = null,
-        mdocVerificationTypes = MdocVerification.issuerAuth,
+        mdocVerificationTypes = MdocVerification.Static.ISSUER_AUTH,
         x509Service = x509Service,
         coseCryptoService = coseCryptoService,
         keyInfo = keyInfo,
@@ -86,7 +85,7 @@ object Validations {
     suspend fun withParams(
         issuerAuth: COSE_Sign1<MobileSecurityObjectCbor>? = null,
         document: DocumentCbor? = null,
-        mdocVerificationTypes: MdocVerificationTypes = MdocVerification.all,
+        mdocVerificationTypes: MdocVerificationTypes = MdocVerification.Static.ALL,
         x509Service: IX509Service = CryptoService.X509,
         coseCryptoService: ICoseCryptoService = CryptoService.COSE,
         keyInfo: IKeyInfo<ICoseKeyCbor>? = null,
@@ -123,7 +122,7 @@ object Validations {
                 )
             )
         }
-        val verificationTypes: MdocVerificationTypes = mdocVerificationTypes.ifEmpty { MdocVerification.all }
+        val verificationTypes: MdocVerificationTypes = mdocVerificationTypes.ifEmpty { MdocVerification.Static.ALL }
         val auth = document?.issuerSigned?.issuerAuth ?: issuerAuth ?: throw AssertionError()
 
         val verifications = verificationTypes.map {
@@ -156,10 +155,10 @@ enum class MdocVerification {
     DOC_TYPE,
     VALIDITY;
 
-    companion object {
-        val all: MdocVerificationTypes = entries.toSet()
-        val issuerAuth: MdocVerificationTypes = setOf(CERTIFICATE_CHAIN, ISSUER_AUTH_SIGNATURE, VALIDITY)
-        val document: MdocVerificationTypes = all
+    object Static {
+        val ALL: MdocVerificationTypes = entries.toSet()
+        val ISSUER_AUTH: MdocVerificationTypes = setOf(CERTIFICATE_CHAIN, ISSUER_AUTH_SIGNATURE, VALIDITY)
+        val DOCUMENT: MdocVerificationTypes = ALL
     }
 }
 

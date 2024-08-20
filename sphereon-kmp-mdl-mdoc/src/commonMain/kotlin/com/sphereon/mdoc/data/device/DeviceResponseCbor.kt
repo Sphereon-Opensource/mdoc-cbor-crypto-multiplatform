@@ -9,7 +9,7 @@ import com.sphereon.cbor.CborInt
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborString
 import com.sphereon.cbor.CborUInt
-import com.sphereon.cbor.CborViewOld
+import com.sphereon.cbor.CborView
 import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.StringLabel
 import com.sphereon.cbor.cborViewArrayToCborItem
@@ -17,8 +17,11 @@ import com.sphereon.kmp.LongKMP
 import com.sphereon.mdoc.data.DeviceResponseDocumentErrorCbor
 import com.sphereon.mdoc.data.DeviceResponseDocumentErrorJson
 import com.sphereon.mdoc.data.DocType
+import com.sphereon.mdoc.mdocJsonSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
 import kotlin.js.JsExport
+import kotlin.js.JsName
 
 @JsExport
 @Serializable
@@ -42,6 +45,7 @@ data class DeviceResponseJson(
     val status: LongKMP = LongKMP(0)
 
 ) : JsonView() {
+    override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
     override fun toCbor(): DeviceResponseCbor {
         TODO("Not yet implemented")
     }
@@ -68,23 +72,23 @@ data class DeviceResponseCbor(
 
     val status: CborUInt = CborUInt(0)
 
-) : CborViewOld<DeviceResponseCbor, DeviceResponseJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
+) : CborView<DeviceResponseCbor, DeviceResponseJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
     override fun cborBuilder(): CborBuilder<DeviceResponseCbor> {
         return CborMap.builder(this)
-            .put(VERSION, version, false)
+            .put(Static.VERSION, version, false)
             .put(
-                DOCUMENTS,
+                Static.DOCUMENTS,
                 documents?.cborViewArrayToCborItem(),
                 true
             )
             .put(
-                DOCUMENT_ERRORS,
+                Static.DOCUMENT_ERRORS,
                 if (documentErrors?.isNotEmpty() == true) CborArray(documentErrors.map {
                     CborMap(it.toMutableMap())
                 }.toMutableList()) else null,
                 true
             )
-            .put(STATUS, status, false)
+            .put(Static.STATUS, status, false)
             .end()
     }
 
@@ -92,16 +96,17 @@ data class DeviceResponseCbor(
         TODO("Not yet implemented")
     }
 
-    companion object {
+    object Static {
         val VERSION = StringLabel("version")
         val DOCUMENTS = StringLabel("documents")
         val DOCUMENT_ERRORS = StringLabel("documentErrors")
         val STATUS = StringLabel("status")
 
+        @JsName("fromCborItem")
         fun fromCborItem(m: CborMap<StringLabel, AnyCborItem>): DeviceResponseCbor {
             return DeviceResponseCbor(
                 VERSION.required(m),
-                DocumentCbor.fromDeviceResponse(DOCUMENTS.optional(m)),
+                DocumentCbor.Static.fromDeviceResponse(DOCUMENTS.optional(m)),
                 DOCUMENT_ERRORS.optional<CborArray<CborMap<DocType, CborInt>>>(m)?.value?.map {
                     it.value.toMap()
                 }?.toTypedArray(),
@@ -109,6 +114,7 @@ data class DeviceResponseCbor(
             )
         }
 
+        @JsName("cborDecode")
         fun cborDecode(encoded: ByteArray): DeviceResponseCbor = fromCborItem(Cbor.decode(encoded))
     }
 

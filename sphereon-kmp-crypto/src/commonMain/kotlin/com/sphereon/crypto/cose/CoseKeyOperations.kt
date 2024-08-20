@@ -2,6 +2,7 @@ package com.sphereon.crypto.cose
 
 import com.sphereon.cbor.CborUInt
 import kotlin.js.JsExport
+import kotlin.js.JsName
 
 @JsExport
 enum class CoseKeyOperations(val paramName: String, val value: Int, val description: String) {
@@ -25,7 +26,8 @@ enum class CoseKeyOperations(val paramName: String, val value: Int, val descript
         return CborUInt(this.value)
     }
 
-    companion object {
+    object Static {
+        @JsName("fromValue")
         fun fromValue(value: Int): CoseKeyOperations {
             return entries.find { entry -> entry.value == value }
                 ?: throw IllegalArgumentException("Unknown value $value")

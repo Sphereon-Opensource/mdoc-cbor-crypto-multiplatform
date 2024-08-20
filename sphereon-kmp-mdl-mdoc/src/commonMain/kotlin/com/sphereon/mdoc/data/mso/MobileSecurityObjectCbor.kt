@@ -12,8 +12,11 @@ import com.sphereon.cbor.cborSerializer
 import com.sphereon.kmp.LongKMP
 import com.sphereon.mdoc.data.DocType
 import com.sphereon.mdoc.data.NameSpace
+import com.sphereon.mdoc.mdocJsonSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
 import kotlin.js.JsExport
+import kotlin.js.JsName
 
 @JsExport
 @Serializable
@@ -25,6 +28,7 @@ data class MobileSecurityObjectJson(
     val docType: String,
     val validityInfo: ValidityInfoJson,
 ) : JsonView() {
+    override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
     override fun toCbor(): MobileSecurityObjectCbor {
         TODO("Not yet implemented")
     }
@@ -40,10 +44,10 @@ data class MobileSecurityObjectCbor(
     val validityInfo: ValidityInfoCbor,
 ) : CborView<MobileSecurityObjectCbor, MobileSecurityObjectJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
     override fun cborBuilder(): CborBuilder<MobileSecurityObjectCbor> {
-        return CborMap.builder(this).put(VERSION, version).put(DIGEST_ALGORITHM, digestAlgorithm)
-            .put(VALUE_DIGESTS, valueDigests).put(DEVICE_KEY_INFO, deviceKeyInfo.toCbor()).put(DOC_TYPE, docType)
+        return CborMap.builder(this).put(Static.VERSION, version).put(Static.DIGEST_ALGORITHM, digestAlgorithm)
+            .put(Static.VALUE_DIGESTS, valueDigests).put(Static.DEVICE_KEY_INFO, deviceKeyInfo.toCbor()).put(Static.DOC_TYPE, docType)
             .put(
-                VALIDITY_INFO, validityInfo.toCbor()
+                Static.VALIDITY_INFO, validityInfo.toCbor()
             ).end()
 
         TODO("Not yet implemented")
@@ -53,7 +57,7 @@ data class MobileSecurityObjectCbor(
         TODO("Not yet implemented")
     }
 
-    companion object {
+    object Static {
         val VERSION = StringLabel("version")
         val DIGEST_ALGORITHM = StringLabel("digestAlgorithm")
         val VALUE_DIGESTS = StringLabel("valueDigests")
@@ -61,17 +65,19 @@ data class MobileSecurityObjectCbor(
         val DOC_TYPE = StringLabel("docType")
         val VALIDITY_INFO = StringLabel("validityInfo")
 
+        @JsName("fromCborItem")
         fun fromCborItem(m: CborMap<StringLabel, AnyCborItem>): MobileSecurityObjectCbor {
             return MobileSecurityObjectCbor(
                 VERSION.required(m),
                 DIGEST_ALGORITHM.required(m),
                 VALUE_DIGESTS.required(m),
-                DeviceKeyInfoCbor.fromCborItem(DEVICE_KEY_INFO.required(m)),
+                DeviceKeyInfoCbor.Static.fromCborItem(DEVICE_KEY_INFO.required(m)),
                 DOC_TYPE.required(m),
-                ValidityInfoCbor.fromCborItem(VALIDITY_INFO.required(m))
+                ValidityInfoCbor.Static.fromCborItem(VALIDITY_INFO.required(m))
             )
         }
 
+        @JsName("cborDecode")
         fun cborDecode(data: ByteArray) = fromCborItem(cborSerializer.decode(data))
     }
 

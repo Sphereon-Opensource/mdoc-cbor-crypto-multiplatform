@@ -6,6 +6,7 @@ package com.sphereon.crypto.cose
 import kotlinx.serialization.Serializable
 import kotlin.js.ExperimentalJsExport
 import kotlin.js.JsExport
+import kotlin.js.JsName
 
 @Serializable
 @JsExport
@@ -15,7 +16,8 @@ enum class HashAlgorithm(val hashName: String) {
     SHA512("SHA-512");
 
 
-    companion object {
+    object Static {
+        @JsName("fromValue")
         fun fromValue(name: String): HashAlgorithm {
             return HashAlgorithm.entries.find { entry -> entry.hashName === name }
                 ?: throw IllegalArgumentException("Unknown value $name")

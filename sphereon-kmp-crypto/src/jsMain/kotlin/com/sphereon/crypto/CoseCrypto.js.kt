@@ -12,11 +12,13 @@ import kotlin.js.Promise
  */
 @JsExport
 external interface ICoseCryptoCallbackJS {
+    @JsName("sign1")
     fun <CborType> sign1(
         input: CoseSign1InputCbor,
         keyInfo: IKeyInfo<ICoseKeyCbor>?
     ): Promise<CoseSign1Cbor<CborType>>
 
+    @JsName("verify1")
     fun <CborType> verify1(
         input: CoseSign1Cbor<CborType>,
         keyInfo: IKeyInfo<ICoseKeyCbor>?

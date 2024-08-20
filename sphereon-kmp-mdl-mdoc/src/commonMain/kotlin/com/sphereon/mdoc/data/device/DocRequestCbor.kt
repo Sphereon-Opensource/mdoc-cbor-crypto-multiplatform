@@ -10,20 +10,20 @@ import com.sphereon.cbor.CborEncodedItem
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborTagged
 import com.sphereon.cbor.CborView
-import com.sphereon.cbor.CborViewOld
 import com.sphereon.cbor.JsonView
-import com.sphereon.cbor.JsonViewOld
+import com.sphereon.cbor.StringLabel
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.cddl_bstr
 import com.sphereon.cbor.cddl_tstr
 import com.sphereon.crypto.cose.COSE_Sign1
 import com.sphereon.crypto.cose.CoseSign1Cbor
 import com.sphereon.crypto.cose.CoseSign1Json
-import com.sphereon.cbor.StringLabel
 import com.sphereon.mdoc.data.RequestInfo
+import com.sphereon.mdoc.mdocJsonSerializer
 import com.sphereon.mdoc.tx.device.ReaderAuthenticationCbor
-import com.sphereon.mdoc.tx.device.ReaderAuthenticationJson
+import kotlinx.serialization.encodeToString
 import kotlin.js.JsExport
+import kotlin.js.JsName
 
 typealias docRequestBuilder = DocRequestCbor.Builder
 
@@ -43,6 +43,7 @@ data class DocRequestJson(
      */
     val readerAuth: CoseSign1Json? = null
 ) : JsonView() {
+    override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
     override fun toCbor(): DocRequestCbor =
         DocRequestCbor(itemsRequest = itemsRequest.toCbor(), readerAuth = readerAuth?.toCbor() as COSE_Sign1<ReaderAuthenticationCbor>?)
 }
@@ -65,29 +66,31 @@ data class DocRequestCbor(
     val readerAuth: COSE_Sign1<ReaderAuthenticationCbor>? = null
 ) : CborView<DocRequestCbor, DocRequestJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
 
-    companion object {
+    object Static {
         val ITEMS_REQUEST = StringLabel("itemsRequest")
         val READER_AUTH = StringLabel("readerAuth")
 
+        @JsName("fromCborItem")
         fun fromCborItem(m: CborMap<StringLabel, AnyCborItem>): DocRequestCbor {
             val cborTagged: CborEncodedItem<cddl_bstr> = ITEMS_REQUEST.required(m)
             val cborMap: CborMap<StringLabel, AnyCborItem> = cborTagged.cborDecode()
             return DocRequestCbor(
-                DeviceItemsRequestCbor.fromCborItem(cborMap),
-                READER_AUTH.optional<CborArray<AnyCborItem>?>(m)?.let { CoseSign1Cbor.fromCborItem(it) }
+                DeviceItemsRequestCbor.Static.fromCborItem(cborMap),
+                READER_AUTH.optional<CborArray<AnyCborItem>?>(m)?.let { CoseSign1Cbor.Static.fromCborItem(it) }
             )
         }
 
+        @JsName("cborDecode")
         fun cborDecode(encoded: ByteArray): DocRequestCbor = fromCborItem(Cbor.decode(encoded))
     }
 
     override fun cborBuilder(): CborBuilder<DocRequestCbor> {
         return CborMap.builder(this).putTagged(
-            ITEMS_REQUEST,
+            Static.ITEMS_REQUEST,
             CborTagged.ENCODED_CBOR,
             CborByteString(cborSerializer.encode(itemsRequest.toCbor()))
         )
-            .put(READER_AUTH, readerAuth?.toCbor(), true)
+            .put(Static.READER_AUTH, readerAuth?.toCbor(), true)
             .end()
     }
 
@@ -109,11 +112,13 @@ data class DocRequestCbor(
             }
         }
 
+        @JsName("docType")
         fun docType(docType: cddl_tstr, requestInfo: RequestInfo? = null): DeviceItemsRequestCbor.Builder {
             return builder().withDocType(docType).withRequestInfo(requestInfo)
 
         }
 
+        @JsName("withReaderAuth")
         fun withReaderAuth(readerAuth: COSE_Sign1<ReaderAuthenticationCbor>) =
             apply { this.readerAuth = readerAuth }
 

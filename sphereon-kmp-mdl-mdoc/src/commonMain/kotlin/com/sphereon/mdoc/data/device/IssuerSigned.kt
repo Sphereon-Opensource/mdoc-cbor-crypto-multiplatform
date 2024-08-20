@@ -28,10 +28,13 @@ import com.sphereon.mdoc.data.DataElementIdentifier
 import com.sphereon.mdoc.data.DataElementValue
 import com.sphereon.mdoc.data.NameSpace
 import com.sphereon.mdoc.data.mso.MobileSecurityObjectCbor
+import com.sphereon.mdoc.mdocJsonSerializer
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonElement
 import kotlin.js.JsExport
+import kotlin.js.JsName
 
 @JsExport
 @Serializable
@@ -39,6 +42,7 @@ data class IssuerSignedJson(
     val nameSpaces: IssuerSignedNamesSpacesJson?,
     val issuerAuth: CoseSign1Json
 ) : JsonView() {
+    override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
     override fun toCbor(): IssuerSignedCbor {
         return IssuerSignedCbor(
             issuerAuth = issuerAuth.toCbor() as  COSE_Sign1<MobileSecurityObjectCbor>,
@@ -102,8 +106,8 @@ data class IssuerSignedCbor(
 
     override fun cborBuilder(): CborBuilder<IssuerSignedCbor> {
         val builder = CborMap.builder(this)
-            .put(NAME_SPACES, nameSpaces, true)
-            .put(ISSUER_AUTH, issuerAuth.toCbor(), false)
+            .put(Static.NAME_SPACES, nameSpaces, true)
+            .put(Static.ISSUER_AUTH, issuerAuth.toCbor(), false)
         return builder.end()
     }
 
@@ -146,10 +150,11 @@ data class IssuerSignedCbor(
         return "IssuerSignedCbor(nameSpaces=$nameSpaces, issuerAuth=$issuerAuth)"
     }
 
-    companion object {
+    object Static {
         val NAME_SPACES = StringLabel("nameSpaces")
         val ISSUER_AUTH = StringLabel("issuerAuth")
 
+        @JsName("fromCborItem")
         fun fromCborItem(m: CborMap<StringLabel, AnyCborItem>): IssuerSignedCbor {
             val nameSpacesMap =
                 NAME_SPACES.optional<CborMap<NameSpace, CborArray<CborEncodedItem<CborMap<StringLabel, AnyCborItem>>>>>(
@@ -164,10 +169,11 @@ data class IssuerSignedCbor(
             }.toTypedArray()))
             return IssuerSignedCbor(
                 nameSpaces = nameSpaces,
-                issuerAuth = ISSUER_AUTH.required<CborArray<AnyCborItem>>(m).let { CoseSign1Cbor.fromCborItem(it) }
+                issuerAuth = ISSUER_AUTH.required<CborArray<AnyCborItem>>(m).let { CoseSign1Cbor.Static.fromCborItem(it) }
             )
         }
 
+        @JsName("cborDecode")
         fun cborDecode(encoded: ByteArray): IssuerSignedCbor = fromCborItem(Cbor.decode(encoded))
     }
 }
@@ -183,10 +189,12 @@ data class IssuerSignedItemJson(
     val digestID: LongKMP,
     val random: String, //todo: also add hex validation
 //    val elementIdentifier: String,
-    val key: String,
-    val value: JsonElement,
+    val key: String, // This is the element identifier. Named key here
+    val value: JsonElement, // This is the elementValue, named value here
     val cddl: CDDLType // We need this as otherwise we would lose type info. Strings can be (full)dates, tstr and text etc.
 ) : JsonView() {
+    override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
+
     override fun toCbor(): IssuerSignedItemCbor<Any> = IssuerSignedItemCbor(
         digestID = CborUInt(this.digestID),
         random = random.toCborByteString(),
@@ -290,6 +298,7 @@ data class IssuerSignedItemCbor<Type : Any>(
         val ELEMENT_IDENTIFIER = StringLabel("elementIdentifier")
         val ELEMENT_VALUE = StringLabel("elementValue")
 
+        @JsName("fromCborItem")
         fun fromCborItem(m: CborMap<StringLabel, AnyCborItem>) =
             IssuerSignedItemCbor(
                 digestID = DIGEST_ID.required(m),
@@ -298,6 +307,7 @@ data class IssuerSignedItemCbor<Type : Any>(
                 elementValue = ELEMENT_VALUE.required(m) as DataElementValue<Any>
             )
 
+        @JsName("cborDecode")
         fun cborDecode(data: ByteArray): IssuerSignedItemCbor<*> = fromCborItem(cborSerializer.decode(data))
     }
 
