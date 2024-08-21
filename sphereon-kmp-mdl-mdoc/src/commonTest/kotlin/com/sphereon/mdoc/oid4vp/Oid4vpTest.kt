@@ -65,7 +65,7 @@ class Oid4vpTest {
             "}\n" +
             "]\n" +
             "}").replace("\n", "").replace(" ", "")
-    
+
     val iso18013_7_pd = ("{\n" +
             "        \"id\": \"mDL-sample-req\",\n" +
             "        \"input_descriptors\": [\n" +

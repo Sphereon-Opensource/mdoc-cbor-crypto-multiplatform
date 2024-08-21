@@ -13,5 +13,5 @@ data class DeviceSignedJson (
 )
 @JsExport
 data class DeviceSignedCbor (
-    val nameSpaces: DeviceSignedItemsCbor, val testREMOVE: ULong? = null
+    val nameSpaces: DeviceSignedItemsCbor, val deviceAuth: DeviceAuthCbor
 )

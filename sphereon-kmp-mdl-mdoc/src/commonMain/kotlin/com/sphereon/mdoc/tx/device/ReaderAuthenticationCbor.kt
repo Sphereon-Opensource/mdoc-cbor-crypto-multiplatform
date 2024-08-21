@@ -63,8 +63,8 @@ data class ReaderAuthenticationCbor(
 
 data class SessionTranscriptJson(
     val deviceEngagement: DeviceEngagementJson,
-    val eReaderKey: COSE_Key,
-    val handover: HandoverJson<*>
+    val eReaderKey: COSE_Key?,
+    val handover: HandoverJson<*>?
 ) : JsonView() {
     override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
     override fun toCbor(): SessionTranscriptCbor {
@@ -75,14 +75,14 @@ data class SessionTranscriptJson(
 
 data class SessionTranscriptCbor(
     val deviceEngagement: DeviceEngagementCbor,
-    val eReaderKey: COSE_Key,
-    val handover: HandoverCbor<*, *>
+    val eReaderKey: COSE_Key?,
+    val handover: HandoverCbor<*, *>?
 ) : CborView<SessionTranscriptCbor, SessionTranscriptJson, CborArray<AnyCborItem>>(CDDL.list) {
     override fun cborBuilder(): CborBuilder<SessionTranscriptCbor> {
         return CborArray.Static.builder(this)
             .add(CborByteString.Static.fromCborItem(deviceEngagement.toCbor()))
-            .add(CborByteString.Static.fromCborItem(eReaderKey.toCbor()))
-            .add(handover.toCbor())
+            .add(eReaderKey?.let { CborByteString.Static.fromCborItem(it.toCbor()) })
+            .add(handover?.toCbor())
             .end()
     }
 
@@ -109,9 +109,9 @@ data class SessionTranscriptCbor(
 }
 
 
-sealed class HandoverJson<CborType: Any> : JsonView()
+sealed class HandoverJson<CborType : Any> : JsonView()
 
-sealed class HandoverCbor<CborType: Any, JsonType> : CborView<CborType, JsonView, CborArray<AnyCborItem>>(CDDL.list)
+sealed class HandoverCbor<CborType : Any, JsonType> : CborView<CborType, JsonView, CborArray<AnyCborItem>>(CDDL.list)
 class QrHandoverJson : HandoverJson<QrHandoverCbor>() {
     override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
     override fun toCbor(): QrHandoverCbor {
@@ -129,7 +129,7 @@ class QrHandoverCbor : HandoverCbor<QrHandoverCbor, QrHandoverJson>() {
     }
 }
 
-data class NfcHandoverSimple(val handoverSelectMessage: CborByteString?) :
+data class NfcHandoverJson(val handoverSelectMessage: CborByteString?) :
     HandoverJson<NfcHandoverCbor>() {
     override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
     override fun toCbor(): NfcHandoverCbor {
@@ -138,14 +138,14 @@ data class NfcHandoverSimple(val handoverSelectMessage: CborByteString?) :
 }
 
 data class NfcHandoverCbor(val handoverSelectMessage: CborByteString, val handoverRequestMessage: CborByteString?) :
-    HandoverCbor<NfcHandoverCbor, NfcHandoverSimple>() {
+    HandoverCbor<NfcHandoverCbor, NfcHandoverJson>() {
     override fun cborBuilder(): CborBuilder<NfcHandoverCbor> =
         CborArray.Static.builder(this)
             .addRequired(handoverSelectMessage)
             .add(handoverRequestMessage)
             .end()
 
-    override fun toJson(): NfcHandoverSimple {
+    override fun toJson(): NfcHandoverJson {
         TODO("Not yet implemented")
     }
 
@@ -154,6 +154,37 @@ data class NfcHandoverCbor(val handoverSelectMessage: CborByteString, val handov
         const val HANDOVER_REQUEST_MESSAGE = 1
         fun fromCborItem(a: CborArray<AnyCborItem>) =
             NfcHandoverCbor(a.required(HANDOVER_REQUEST_MESSAGE), a.optional(HANDOVER_SELECT_MESSAGE))
+
+        fun cborDecode(data: ByteArray) = fromCborItem(cborSerializer.decode(data))
+    }
+}
+
+
+data class OID4VPHandoverJson(val clientIdHash: String, val responseUriHash: String) :
+    HandoverJson<OID4VPHandoverCbor>() {
+    override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
+    override fun toCbor(): OID4VPHandoverCbor {
+        TODO("Not yet implemented")
+    }
+}
+
+data class OID4VPHandoverCbor(val clientIdHash: CborByteString, val responseUriHash: CborByteString) :
+    HandoverCbor<OID4VPHandoverCbor, OID4VPHandoverJson>() {
+    override fun cborBuilder(): CborBuilder<OID4VPHandoverCbor> =
+        CborArray.Static.builder(this)
+            .addRequired(clientIdHash)
+            .addRequired(responseUriHash)
+            .end()
+
+    override fun toJson(): NfcHandoverJson {
+        TODO()
+    }
+
+    object Static {
+        const val CLIENT_ID_HASH = 0
+        const val RESPONSE_URI_HASH = 1
+        fun fromCborItem(a: CborArray<AnyCborItem>) =
+            NfcHandoverCbor(a.required(CLIENT_ID_HASH), a.required(RESPONSE_URI_HASH))
 
         fun cborDecode(data: ByteArray) = fromCborItem(cborSerializer.decode(data))
     }
