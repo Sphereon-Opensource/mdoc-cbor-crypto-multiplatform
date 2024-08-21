@@ -8,9 +8,11 @@ import com.sphereon.cbor.CborView
 import com.sphereon.cbor.StringLabel
 import com.sphereon.cbor.cddl_tstr
 import com.sphereon.json.JsonView
+import kotlinx.serialization.Serializable
 import kotlin.js.JsExport
 
 @JsExport
+@Serializable
 data class DeviceAuthJson(
     val deviceSignature: cddl_tstr, //DeviceSignature FIXME
     val deviceMac: cddl_tstr //DeviceMac FIXME

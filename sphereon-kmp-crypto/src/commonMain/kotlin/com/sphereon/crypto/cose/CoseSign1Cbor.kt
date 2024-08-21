@@ -9,10 +9,10 @@ import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborNull
 import com.sphereon.cbor.CborString
 import com.sphereon.cbor.CborView
-import com.sphereon.json.JsonView
 import com.sphereon.cbor.NumberLabel
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.toCborByteString
+import com.sphereon.json.JsonView
 import com.sphereon.json.cryptoJsonSerializer
 import com.sphereon.kmp.Encoding
 import com.sphereon.kmp.decodeFromHex
@@ -35,7 +35,9 @@ data class CoseSign1InputJson(
 ) : JsonView() {
     override fun toJsonString() = cryptoJsonSerializer.encodeToString(this)
 
-
+    fun <PayloadType> decodePayload(): PayloadType? {
+        return (toCbor() as CoseSign1Cbor<PayloadType>).cborDecodePayload()
+    }
     override fun toCbor(): CoseSign1InputCbor = CoseSign1InputCbor(
         protectedHeader = protectedHeader.toCbor(),
         unprotectedHeader = unprotectedHeader?.toCbor(),
@@ -50,17 +52,21 @@ data class CoseSign1Json(
 
     val unprotectedHeader: CoseHeaderJson?,
 
-    val payload: String?, // hex
+    val payload: String?, // base64url
 
-    val signature: String // hex
+    val signature: String // base64url
 ) : JsonView() {
     override fun toJsonString() = cryptoJsonSerializer.encodeToString(this)
     override fun toCbor(): CoseSign1Cbor<Any> = CoseSign1Cbor<Any>(
         protectedHeader = protectedHeader.toCbor(),
         unprotectedHeader = unprotectedHeader?.toCbor(),
-        payload = payload?.toCborByteString(),
-        signature = signature.toCborByteString()
+        payload = payload?.toCborByteString(Encoding.BASE64URL),
+        signature = signature.toCborByteString(Encoding.BASE64URL)
     )
+
+    fun <PayloadType> decodePayload(): PayloadType? {
+        return (toCbor() as CoseSign1Cbor<PayloadType>).cborDecodePayload()
+    }
 
     object Static {
         @JsName("fromDTO")
@@ -100,6 +106,7 @@ data class CoseSign1InputCbor(
         fun cborDecode(encoded: ByteArray) =
             fromCborItem(cborSerializer.decode(encoded))
     }
+
 
     override fun cborBuilder(): CborBuilder<CoseSign1InputCbor> {
         return CborArray.Static.builder(this).add(CborByteString(protectedHeader.cborEncode()))
@@ -210,6 +217,7 @@ sealed class SigStructure(val value: String) {
 
     object Static {
         val asList = listOf(Signature, Signature1, CounterSignature)
+
         @JsName("fromValue")
         fun fromValue(value: String) = asList.firstOrNull { it.value == value } ?: throw IllegalArgumentException("Unknown signature $value")
     }
@@ -236,11 +244,13 @@ data class CoseSignatureStructureCbor(
     val payload: CborByteString
 ) : CborView<CoseSignatureStructureCbor, CoseSignatureStructureJson, CborArray<AnyCborItem>>(CDDL.list) {
     override fun cborBuilder(): CborBuilder<CoseSignatureStructureCbor> =
-        CborArray.Static.builder(this).addRequired(structure).addRequired(bodyProtected).add(signProtected).addRequired(externalAad).addRequired(payload)
+        CborArray.Static.builder(this).addRequired(structure).addRequired(bodyProtected).add(signProtected).addRequired(externalAad)
+            .addRequired(payload)
             .end()
 
     @JsName("toBeSigned")
     fun toBeSigned(key: ICoseKeyCbor?, alg: CoseAlgorithm?) = ToBeSignedCbor(value = CborByteString(toCbor().cborEncode()), key = key, alg = alg)
+
     @JsName("toBeSignedJson")
     fun toBeSignedJson(key: ICoseKeyJson?, alg: CoseAlgorithm?) =
         ToBeSignedJson(hexValue = toCbor().cborEncode().encodeTo(Encoding.HEX), key = key, alg = alg)
@@ -293,6 +303,7 @@ data class ToBeSignedCbor(val value: CborByteString, val key: ICoseKeyCbor?, val
     override fun cborBuilder(): CborBuilder<ToBeSignedCbor> = CborBuilder(value, this)
 
 
-    override fun toJson() = ToBeSignedJson(hexValue = value.encodeTo(Encoding.HEX), key = key?.let { CoseKeyCbor.Static.fromDTO(it).toJson() }, alg = alg)
+    override fun toJson() =
+        ToBeSignedJson(hexValue = value.encodeTo(Encoding.HEX), key = key?.let { CoseKeyCbor.Static.fromDTO(it).toJson() }, alg = alg)
 
 }

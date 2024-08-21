@@ -10,4 +10,3 @@ fun hash(dataInput: ByteArray, hashAlgorithm: HashAlgorithm = HashAlgorithm.SHA2
         .get(hashAlgorithm.toCryptoGraphicAlgorithm())
         .hasher().hashBlocking(dataInput)
 
-

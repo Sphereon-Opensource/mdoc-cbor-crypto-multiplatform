@@ -14,7 +14,6 @@ import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborUInt
 import com.sphereon.cbor.CborView
 import com.sphereon.cbor.ICborItemValueJson
-import com.sphereon.json.JsonView
 import com.sphereon.cbor.StringLabel
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.toCborByteString
@@ -22,6 +21,7 @@ import com.sphereon.cbor.toCborString
 import com.sphereon.crypto.cose.COSE_Sign1
 import com.sphereon.crypto.cose.CoseSign1Cbor
 import com.sphereon.crypto.cose.CoseSign1Json
+import com.sphereon.json.JsonView
 import com.sphereon.json.mdocJsonSerializer
 import com.sphereon.kmp.LongKMP
 import com.sphereon.kmp.encodeToBase64Url
@@ -45,7 +45,7 @@ data class IssuerSignedJson(
     override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
     override fun toCbor(): IssuerSignedCbor {
         return IssuerSignedCbor(
-            issuerAuth = issuerAuth.toCbor() as  COSE_Sign1<MobileSecurityObjectCbor>,
+            issuerAuth = issuerAuth.toCbor() as COSE_Sign1<MobileSecurityObjectCbor>,
             nameSpaces = if (nameSpaces == null) null else CborMap(
                 mutableMapOf(* nameSpaces.map {
                     Pair(
@@ -57,6 +57,7 @@ data class IssuerSignedJson(
             )
         )
     }
+
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -78,6 +79,14 @@ data class IssuerSignedJson(
         return "IssuerSignedJson(nameSpaces=$nameSpaces, issuerAuth=$issuerAuth)"
     }
 
+    fun toDocument(): DocumentJson  {
+        val mso = issuerAuth.decodePayload<MobileSecurityObjectCbor>()
+        return DocumentJson(docType = mso?.docType?.value ?: throw IllegalStateException("doctype not set"), issuerSigned = this)
+    }
+
+    fun limitDisclosures(docRequest: DocRequestJson): IssuerSignedJson {
+        return toCbor().limitDisclosures(docRequest.toCbor()).toJson()
+    }
 
 }
 
@@ -86,20 +95,35 @@ data class IssuerSignedCbor(
     val nameSpaces: IssuerSignedNamesSpacesCbor? = null,
     val issuerAuth: COSE_Sign1<MobileSecurityObjectCbor>
 ) : CborView<IssuerSignedCbor, IssuerSignedJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
+
+    fun limitDisclosures(docRequest: DocRequestCbor): IssuerSignedCbor = IssuerSignedCbor(
+        nameSpaces = nameSpaces?.let {
+            CborMap(
+                mutableMapOf(
+                    * nameSpaces.value.map { entry ->
+                        val requestedIdentifiers = docRequest.getIdentifiers(entry.key.value)
+                        val value = CborArray(
+                            entry.value.value.filter { item -> requestedIdentifiers.containsKey(item.decodedValue.elementIdentifier.value) }
+                                .toMutableList()
+                        )
+                        Pair(entry.key, value)
+                    }.toTypedArray()
+                )
+            )
+        },
+        issuerAuth = issuerAuth
+    )
+
+    fun toDocument(): DocumentCbor =
+        DocumentCbor(docType = issuerAuth.cborDecodePayload()?.docType ?: throw IllegalStateException("doctype not set"), issuerSigned = this)
+
+
     class Builder(val nameSpaces: MutableMap<NameSpace, List<IssuerSignedItemCbor<Any>>> = mutableMapOf()) {
 
         fun addNameSpace(nameSpace: NameSpace, vararg issuerSignedItems: IssuerSignedItemCbor<Any>) = apply {
             val values = nameSpaces.getOrElse(nameSpace) { mutableListOf() }
             nameSpaces[nameSpace] = values.plus(issuerSignedItems)
         }
-
-        /*
-
-                fun build(): IssuerSigned {
-                    val nameSpaces =  nameSpaces.map { it.key to IssuerSignedItems(it.value.map { item -> item.toDataItem() } )}.toMap()
-                    return IssuerSigned(nameSpaces, issuerAuth = COSE_Sign1())
-                }
-        */
 
 
     }
@@ -121,8 +145,8 @@ data class IssuerSignedCbor(
                     it.key.value,
                     it.value.value.map { elts ->
 
-                            println("* ${count++} ${elts.decodedValue.elementIdentifier.value} : ${elts.decodedValue.elementValue} ")
-                            elts.decodedValue.toJson()
+                        println("* ${count++} ${elts.decodedValue.elementIdentifier.value} : ${elts.decodedValue.elementValue} ")
+                        elts.decodedValue.toJson()
 
                     }
                         .toTypedArray()

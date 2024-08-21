@@ -20,7 +20,7 @@ import kotlin.js.JsName
 
 @JsExport
 @Serializable
-data class DocumentJson (
+data class DocumentJson(
     /**
      * In the Document structure, the document type of the returned document is indicated by the
      * docType element. The document type shall match the document type as indicated in the issuer data
@@ -44,8 +44,7 @@ data class DocumentJson (
      * authentication. The DeviceNameSpaces structure can be an empty structure. The DeviceAuth structure
      * contains either the DeviceSignature or the DeviceMac element, both are defined in 9.1.3.
      */
-    // fixme
-    val deviceSigned: DeviceSignedJson,
+    val deviceSigned: DeviceSignedJson? = null,
 
     /**
      * If the device retrieval mdoc response structure does not include some data element or document
@@ -53,9 +52,8 @@ data class DocumentJson (
      * documentErrors or errors structures.
      * If present, ErrorCode shall contain an error code according to 8.3.2.1.2.3.
      */
-    // fixme
-    val errors: DocumentErrorsJson?
-): JsonView() {
+    val errors: DocumentErrorsJson? = null
+) : JsonView() {
     override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
     override fun toCbor(): DocumentCbor {
         TODO("Not yet implemented")
@@ -64,7 +62,7 @@ data class DocumentJson (
 
 
 @JsExport
-data class DocumentCbor (
+data class DocumentCbor(
     /**
      * In the Document structure, the document type of the returned document is indicated by the
      * docType element. The document type shall match the document type as indicated in the issuer data
@@ -88,7 +86,7 @@ data class DocumentCbor (
      * authentication. The DeviceNameSpaces structure can be an empty structure. The DeviceAuth structure
      * contains either the DeviceSignature or the DeviceMac element, both are defined in 9.1.3.
      */
-    val deviceSigned: DeviceSignedCbor,
+    val deviceSigned: DeviceSignedCbor? = null,
 
     /**
      * If the device retrieval mdoc response structure does not include some data element or document
@@ -96,14 +94,18 @@ data class DocumentCbor (
      * documentErrors or errors structures.
      * If present, ErrorCode shall contain an error code according to 8.3.2.1.2.3.
      */
-    val errors: DocumentErrorsCbor?
+    val errors: DocumentErrorsCbor? = null
 ) : CborView<DocumentCbor, DocumentJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
     override fun cborBuilder(): CborBuilder<DocumentCbor> {
         TODO("Not yet implemented")
     }
 
     override fun toJson(): DocumentJson {
-        TODO("Not yet implemented")
+        return DocumentJson(docType = docType.value, issuerSigned = issuerSigned.toJson(), deviceSigned = deviceSigned?.toJson() /*errors = FIXME */)
+    }
+
+    private fun limitDisclosures(docRequest: DocRequestCbor): IssuerSignedCbor {
+        return docRequest.limitDisclosures(issuerSigned)
     }
 
     object Static {
@@ -123,7 +125,12 @@ data class DocumentCbor (
 
         @JsName("fromCborItem")
         fun fromCborItem(m: CborMap<StringLabel, AnyCborItem>) =
-            DocumentCbor(DOC_TYPE.required(m), IssuerSignedCbor.Static.fromCborItem(ISSUER_SIGNED.required(m)), DEVICE_SIGNED.required(m), ERRORS.optional(m))
+            DocumentCbor(
+                DOC_TYPE.required(m),
+                IssuerSignedCbor.Static.fromCborItem(ISSUER_SIGNED.required(m)),
+                DEVICE_SIGNED.optional(m),
+                ERRORS.optional(m)
+            )
 
         @JsName("cborDecode")
         fun cborDecode(data: ByteArray): DocumentCbor = fromCborItem(cborSerializer.decode(data))

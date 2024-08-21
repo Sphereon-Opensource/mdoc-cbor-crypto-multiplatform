@@ -2,7 +2,13 @@
 
 package com.sphereon.mdoc.oid4vp
 
+import assertedPathEntry
 import com.sphereon.crypto.cose.CoseAlgorithm
+import com.sphereon.mdoc.data.device.DeviceItemsRequestCbor
+import com.sphereon.mdoc.data.device.DeviceItemsRequestJson
+import com.sphereon.mdoc.data.device.DeviceRequestCbor
+import com.sphereon.mdoc.data.device.DocRequestCbor
+import com.sphereon.mdoc.data.device.DocRequestJson
 import com.sphereon.mdoc.data.device.IssuerSignedItemCbor
 import com.sphereon.mdoc.data.device.IssuerSignedItemJson
 import com.sphereon.mdoc.data.mdl.DataElementDef
@@ -32,8 +38,17 @@ data class Oid4VPPresentationDefinition(
     override val id: String,
     @SerialName("input_descriptors")
     override val inputDescriptors: Array<Oid4VPInputDescriptor>
-) :
-    IOid4VPPresentationDefinition {
+) : IOid4VPPresentationDefinition {
+
+    fun toDocRequest(): DocRequestCbor {
+        val builder = DeviceItemsRequestCbor.Builder()
+        inputDescriptors.forEach { it.toDeviceItemsRequest(builder) }
+        return builder.buildDocRequest()
+    }
+
+    fun toDocRequestJson(): DocRequestJson = toDocRequest().toJson()
+
+
     object Static {
         fun fromDTO(presentationDefinition: IOid4VPPresentationDefinition) =
             with(presentationDefinition) {
@@ -75,6 +90,18 @@ data class Oid4VPInputDescriptor(
     @SerialName("constraints")
     override val constraints: Oid4VPConstraints
 ) : IOid4VPInputDescriptor {
+
+    fun toDeviceItemsRequest(builder: DeviceItemsRequestCbor.Builder) {
+        constraints.fields.forEach {
+            it.path.forEach { path ->
+                run {
+                    val (nameSpace, identifier) = assertedPathEntry(path)
+                    builder.add(nameSpace, identifier, it.intentToRetain)
+                }
+            }
+        }
+    }
+
 
     object Static {
         fun fromDTO(inputDescriptor: IOid4VPInputDescriptor): Oid4VPInputDescriptor =
@@ -240,9 +267,8 @@ data class Oid4VPConstraintField(
     }
 
     private fun assertValidPathEntry(pathEntry: String) {
-        if (!Regex("^\\\$\\['(\\w+\\.?)+'\\]\\['\\w+'\\]\$").matches(pathEntry)) {
-            throw IllegalArgumentException("Path entry in the OID4VP constraint field is not valid: $pathEntry")
-        }
+        // We do nothing with the result, as it will throw an exception anyway if invalid
+        assertedPathEntry(pathEntry)
     }
 
 }
@@ -315,7 +341,7 @@ data class Oid4VPPresentationSubmission(
     override val descriptorMap: Array<Oid4vpSubmissionDescriptor>
 ) : IOid4VPPresentationSubmission {
     object Static {
-        fun fromPresentationDefinition(pd: IOid4VPPresentationDefinition, id: String): Oid4VPPresentationSubmission =
+        fun fromPresentationDefinition(pd: IOid4VPPresentationDefinition, id: String = Uuid.v4String()): Oid4VPPresentationSubmission =
             Oid4VPPresentationSubmission(
                 definitionId = pd.id,
                 id = id,

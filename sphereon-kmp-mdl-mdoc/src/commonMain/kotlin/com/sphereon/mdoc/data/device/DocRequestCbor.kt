@@ -10,7 +10,6 @@ import com.sphereon.cbor.CborEncodedItem
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborTagged
 import com.sphereon.cbor.CborView
-import com.sphereon.json.JsonView
 import com.sphereon.cbor.StringLabel
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.cddl_bstr
@@ -18,6 +17,7 @@ import com.sphereon.cbor.cddl_tstr
 import com.sphereon.crypto.cose.COSE_Sign1
 import com.sphereon.crypto.cose.CoseSign1Cbor
 import com.sphereon.crypto.cose.CoseSign1Json
+import com.sphereon.json.JsonView
 import com.sphereon.json.mdocJsonSerializer
 import com.sphereon.mdoc.data.RequestInfo
 import com.sphereon.mdoc.tx.device.ReaderAuthenticationCbor
@@ -46,6 +46,11 @@ data class DocRequestJson(
     override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
     override fun toCbor(): DocRequestCbor =
         DocRequestCbor(itemsRequest = itemsRequest.toCbor(), readerAuth = readerAuth?.toCbor() as COSE_Sign1<ReaderAuthenticationCbor>?)
+
+    fun getNameSpaces(): Array<String> = itemsRequest.nameSpaces.map { it.key }.toTypedArray()
+    fun getDocType(): String = itemsRequest.docType
+    fun getIdentifiers(nameSpace: String) = itemsRequest.getIdentifiers(nameSpace)
+    fun limitDisclosures(issuerSigned: IssuerSignedJson): IssuerSignedJson = issuerSigned.limitDisclosures(this)
 }
 
 /**
@@ -62,9 +67,15 @@ data class DocRequestCbor(
     /**
      * ReaderAuth is used for mdoc reader authentication as defined in 9.1.4.
      */
-    // FIXME: ReaderAuth generic/type
     val readerAuth: COSE_Sign1<ReaderAuthenticationCbor>? = null
 ) : CborView<DocRequestCbor, DocRequestJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
+
+    fun getNameSpaces(): Array<String> = itemsRequest.nameSpaces.value.map { it.key.value }.toTypedArray()
+    fun getDocType(): String = itemsRequest.docType.value
+
+    fun getIdentifiers(nameSpace: String) = itemsRequest.getIdentifiers(nameSpace)
+
+    fun limitDisclosures(issuerSigned: IssuerSignedCbor): IssuerSignedCbor = issuerSigned.limitDisclosures(this)
 
     object Static {
         val ITEMS_REQUEST = StringLabel("itemsRequest")

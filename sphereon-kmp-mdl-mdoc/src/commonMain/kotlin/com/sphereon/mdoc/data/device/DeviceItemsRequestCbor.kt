@@ -53,6 +53,10 @@ data class DeviceItemsRequestJson(
         })
     }
 
+    fun getIdentifiers(nameSpace: String): Map<String, Boolean> {
+        return nameSpaces.get(nameSpace)?.toMap() ?: emptyMap()
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is DeviceItemsRequestJson) return false
@@ -128,6 +132,10 @@ data class DeviceItemsRequestCbor(
             )
 
         }.toTypedArray()))
+    }
+
+    fun getIdentifiers(nameSpace: String): Map<String, Boolean> {
+        return nameSpaces.get<Map<String, Boolean>?>(nameSpace.toCborString())?.map { Pair(it.key, it.value) }?.toMap() ?: emptyMap()
     }
 
 

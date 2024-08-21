@@ -27,3 +27,19 @@ fun oid4vpHandoverFromClientIdAndResponseUri(clientId: String, responseUri: Stri
         nonce = nonce.toCborString()
     )
 }
+
+
+fun parseConstraintFieldPath(path: String) {
+    val (nameSpace,elementIdentifier) = assertedPathEntry(path)
+
+}
+
+fun assertedPathEntry(pathEntry: String): Pair<String, String> {
+    // WARNING: Do not remove the backslashes that seem redundant near the ] bracket. If you do JS will fail!
+    val match = Regex("^\\\$\\['([\\w.]+)'\\]\\['(\\w+)'\\]$").matchEntire(pathEntry)
+    val results = match?.groupValues
+    if (results.isNullOrEmpty() || results.size != 3) {
+        throw IllegalArgumentException("Path entry in the OID4VP constraint field is not valid: $pathEntry")
+    }
+    return Pair(results[1], results[2])
+}

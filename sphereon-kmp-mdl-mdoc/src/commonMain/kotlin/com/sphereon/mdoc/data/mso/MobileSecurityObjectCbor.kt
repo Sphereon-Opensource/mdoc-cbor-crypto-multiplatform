@@ -54,7 +54,19 @@ data class MobileSecurityObjectCbor(
     }
 
     override fun toJson(): MobileSecurityObjectJson {
-        TODO("Not yet implemented")
+        return MobileSecurityObjectJson(
+            version = version.value,
+            digestAlgorithm = digestAlgorithm.value,
+            valueDigests = valueDigests.value.map { entry ->
+                Pair(
+                    entry.key.value,
+                    entry.value.value.map { Pair(it.key.value, it.value.value) }.toMap()
+                )
+            }.toMap(),
+            deviceKeyInfo = deviceKeyInfo.toJson(),
+            docType = docType.value,
+            validityInfo = validityInfo.toJson()
+        )
     }
 
     object Static {

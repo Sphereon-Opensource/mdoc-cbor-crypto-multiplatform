@@ -41,11 +41,11 @@ data class DeviceKeyInfoCbor(
     override fun cborBuilder(): CborBuilder<DeviceKeyInfoCbor> =
         CborMap.Static.builder(this).put(Static.DEVICE_KEY, deviceKey.toCbor())
             .put(Static.KEY_AUTHORIZATIONS, keyAuthorizations?.toCbor(), true).put(
-                Static. KEY_INFO, keyInfo, true
+                Static.KEY_INFO, keyInfo, true
             ).end()
 
     override fun toJson(): DeviceKeyInfoJson {
-        TODO("Not yet implemented")
+        return DeviceKeyInfoJson(deviceKey = deviceKey.toJson(), keyAuthorizations = keyAuthorizations?.toJson(), keyInfo = null /*FIXME*/)
     }
 
     object Static {
