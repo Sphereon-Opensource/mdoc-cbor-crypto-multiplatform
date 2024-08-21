@@ -9,7 +9,7 @@ import com.sphereon.cbor.CborByteString
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborString
 import com.sphereon.cbor.CborView
-import com.sphereon.cbor.JsonView
+import com.sphereon.json.JsonView
 import com.sphereon.cbor.NumberLabel
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.encodeToBase64Array

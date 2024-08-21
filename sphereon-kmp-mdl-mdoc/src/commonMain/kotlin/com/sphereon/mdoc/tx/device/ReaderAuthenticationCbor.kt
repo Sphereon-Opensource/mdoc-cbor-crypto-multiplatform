@@ -7,7 +7,7 @@ import com.sphereon.cbor.CborBuilder
 import com.sphereon.cbor.CborByteString
 import com.sphereon.cbor.CborString
 import com.sphereon.cbor.CborView
-import com.sphereon.cbor.JsonView
+import com.sphereon.json.JsonView
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.crypto.cose.COSE_Key
 import com.sphereon.crypto.cose.CoseKeyCbor

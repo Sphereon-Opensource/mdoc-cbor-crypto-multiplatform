@@ -1,4 +1,4 @@
-package com.sphereon.cbor
+package com.sphereon.json
 
 @JsExport
 actual fun <T> toJsonDTO(subject: JsonView): T = JSON.parse(subject.toJsonString())

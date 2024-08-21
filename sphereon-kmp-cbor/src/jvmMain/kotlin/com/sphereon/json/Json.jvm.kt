@@ -1,4 +1,4 @@
-package com.sphereon.cbor
+package com.sphereon.json
 
 import kotlinx.serialization.json.Json
 

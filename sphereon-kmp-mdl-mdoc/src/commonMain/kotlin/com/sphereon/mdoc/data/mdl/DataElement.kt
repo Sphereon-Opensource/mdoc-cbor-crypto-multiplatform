@@ -1,13 +1,13 @@
 import com.sphereon.cbor.CDDL
-import com.sphereon.cbor.cddl_bool
 import com.sphereon.cbor.toCborBool
 import com.sphereon.cbor.toCborString
 import com.sphereon.mdoc.data.DataElementCbor
+import com.sphereon.mdoc.oid4vp.Oid4VPConstraintField
 import kotlin.js.JsExport
 import kotlin.js.JsName
 
 @JsExport
-data class DataElementDef<Type : Any>(
+data class DataElementDef(
     val nameSpace: String,
     val identifier: String,
     val presence: Presence,
@@ -15,13 +15,15 @@ data class DataElementDef<Type : Any>(
     val cddls: Array<CDDL>
 ) {
     @JsName("toElement")
-    fun toElement(intentToRetain: cddl_bool = false): DataElementCbor {
+    fun toElement(intentToRetain: Boolean = false): DataElementCbor {
         return DataElementCbor(identifier.toCborString(), intentToRetain.toCborBool())
     }
 
+    fun toOid4VPConstraintField(intentToRetain: Boolean = false)  = Oid4VPConstraintField.Static.fromDataElementDef(this, intentToRetain)
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is DataElementDef<*>) return false
+        if (other !is DataElementDef) return false
 
         if (nameSpace != other.nameSpace) return false
         if (identifier != other.identifier) return false
@@ -41,12 +43,15 @@ data class DataElementDef<Type : Any>(
         return result
     }
 
+
+
     override fun toString(): String {
         return "DataElementDef(nameSpace='$nameSpace', identifier='$identifier', presence=$presence, cddl=$cddl, cddls=${cddls.contentToString()})"
     }
 
 
 }
+
 
 @JsExport
 enum class Presence(val value: String, val mandatory: Boolean) {

@@ -5,12 +5,9 @@ import com.sphereon.cbor.CborByteString
 import com.sphereon.cbor.CborItem
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborUInt
-import com.sphereon.cbor.JsonView
 import com.sphereon.cbor.NumberLabel
 import com.sphereon.crypto.IKey
-import com.sphereon.crypto.cryptoJsonSerializer
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.encodeToDynamic
 
 @JsExport
 actual external sealed interface ICoseKeyJson : IKey {

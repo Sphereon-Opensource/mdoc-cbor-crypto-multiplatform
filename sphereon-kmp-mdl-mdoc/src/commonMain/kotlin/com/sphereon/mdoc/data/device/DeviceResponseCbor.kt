@@ -10,7 +10,7 @@ import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborString
 import com.sphereon.cbor.CborUInt
 import com.sphereon.cbor.CborView
-import com.sphereon.cbor.JsonView
+import com.sphereon.json.JsonView
 import com.sphereon.cbor.StringLabel
 import com.sphereon.cbor.cborViewArrayToCborItem
 import com.sphereon.kmp.LongKMP

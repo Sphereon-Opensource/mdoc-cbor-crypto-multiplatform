@@ -24,7 +24,7 @@ object Mdl {
 }
 
 @JsExport
-enum class MdlDefs(val definition: DataElementDef<out Any>) {
+enum class MdlDefs(val definition: DataElementDef) {
     family_name(
         DataElementDef(
             Mdl.MDL_NAMESPACE,
