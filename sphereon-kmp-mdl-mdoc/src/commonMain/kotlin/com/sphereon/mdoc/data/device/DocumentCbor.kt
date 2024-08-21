@@ -54,10 +54,13 @@ data class DocumentJson(
      */
     val errors: DocumentErrorsJson? = null
 ) : JsonView() {
+    val MSO = issuerSigned.MSO
     override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
     override fun toCbor(): DocumentCbor {
         TODO("Not yet implemented")
     }
+
+    fun fromIssuerSigned(issuerSigned: IssuerSignedJson) = issuerSigned.toDocument()
 }
 
 
@@ -96,6 +99,8 @@ data class DocumentCbor(
      */
     val errors: DocumentErrorsCbor? = null
 ) : CborView<DocumentCbor, DocumentJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
+
+    val MSO = issuerSigned.MSO
     override fun cborBuilder(): CborBuilder<DocumentCbor> {
         TODO("Not yet implemented")
     }
@@ -113,6 +118,8 @@ data class DocumentCbor(
         val ISSUER_SIGNED = StringLabel("issuerSigned")
         val DEVICE_SIGNED = StringLabel("deviceSigned")
         val ERRORS = StringLabel("errors")
+
+        fun fromIssuerSigned(issuerSigned: IssuerSignedCbor) = issuerSigned.toDocument()
 
         @JsName("fromDeviceResponse")
         fun fromDeviceResponse(items: CborArray<AnyCborItem>?): Array<DocumentCbor>? {

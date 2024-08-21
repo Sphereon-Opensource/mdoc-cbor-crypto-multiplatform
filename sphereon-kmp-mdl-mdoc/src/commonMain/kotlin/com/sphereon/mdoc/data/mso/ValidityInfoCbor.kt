@@ -4,6 +4,7 @@ import com.sphereon.cbor.AnyCborItem
 import com.sphereon.cbor.CDDL
 import com.sphereon.cbor.CborBuilder
 import com.sphereon.cbor.CborMap
+import com.sphereon.cbor.CborString
 import com.sphereon.cbor.CborTDate
 import com.sphereon.cbor.CborView
 import com.sphereon.json.JsonView
@@ -22,7 +23,7 @@ data class ValidityInfoJson(
     val validFrom: cddl_tdate,
     val validUntil: cddl_tdate,
     val expectedUpdate: cddl_tdate? = null,
-    ) : JsonView() {
+) : JsonView() {
     override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
     override fun toCbor() = ValidityInfoCbor(CborTDate(signed),
         CborTDate(validFrom),
@@ -73,10 +74,10 @@ data class ValidityInfoCbor(
         val EXPECTED_UPDATE = StringLabel("expectedUpdate")
 
         fun fromCborItem(m: CborMap<StringLabel, AnyCborItem>) = ValidityInfoCbor(
-            SIGNED.required(m),
-            VALID_FROM.required(m),
-            VALID_UNTIL.required(m),
-            EXPECTED_UPDATE.optional(m)
+            CborTDate(SIGNED.required<CborString>(m).value),
+            CborTDate(VALID_FROM.required<CborString>(m).value),
+            CborTDate(VALID_UNTIL.required<CborString>(m).value),
+            EXPECTED_UPDATE.optional<CborString?>(m)?.let { CborTDate(it.value) }
         )
 
         fun cborDecode(encoded: ByteArray): ValidityInfoCbor = fromCborItem(cborSerializer.decode(encoded))

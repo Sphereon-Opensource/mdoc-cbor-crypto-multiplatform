@@ -127,7 +127,7 @@ object IssuerAuthValidation {
         timeZoneId: String? = null,
         clockSkewAllowedInSec: Int = 120,
     ): IVerifyResult {
-        val mso = issuerAuth.cborDecodePayload()
+        val mso = MobileSecurityObjectCbor.Static.decodeCoseSign1(issuerAuth)
         if (mso === null) {
             return VerifyResult(
                 error = true,

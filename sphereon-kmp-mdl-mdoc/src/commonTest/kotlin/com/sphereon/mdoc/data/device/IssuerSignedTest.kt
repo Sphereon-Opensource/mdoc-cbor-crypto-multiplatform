@@ -126,6 +126,40 @@ class IssuerSignedTest {
 
     }
 
+    @Test
+    fun shouldConvertToMdoc() {
+
+        val issuerSigned = IssuerSignedCbor.Static.cborDecode(sprindFunkeTestVector.decodeFromHex())
+
+        assertNotNull(issuerSigned)
+        val doc = issuerSigned.toDocument()
+
+        assertNotNull(doc)
+        assertEquals("eu.europa.ec.eudi.pid.1", doc.docType.value)
+        assertNotNull(doc.issuerSigned.issuerAuth)
+        assertNotNull(doc.issuerSigned.nameSpaces)
+        assertEquals(2, doc.issuerSigned.issuerAuth.unprotectedHeader?.x5chain?.value?.size)
+        assertEquals(22, doc.issuerSigned.nameSpaces?.getStringLabel<CborArray<*>>("eu.europa.ec.eudi.pid.1", true)?.value?.size)
+    }
+
+
+    @Test
+    fun shouldConvertToMdocJson() {
+
+        val issuerSigned = IssuerSignedCbor.Static.cborDecode(sprindFunkeTestVector.decodeFromHex())
+
+        assertNotNull(issuerSigned)
+        val doc = issuerSigned.toDocumentJson()
+
+        assertNotNull(doc)
+        assertEquals("eu.europa.ec.eudi.pid.1", doc.docType)
+        assertNotNull(doc.issuerSigned.issuerAuth)
+        assertNotNull(doc.issuerSigned.nameSpaces)
+        assertEquals(2, doc.issuerSigned.issuerAuth.unprotectedHeader?.x5chain?.size)
+        assertEquals(22, doc.issuerSigned.nameSpaces!!["eu.europa.ec.eudi.pid.1"]?.size)
+    }
+
+
 
     @OptIn(ExperimentalStdlibApi::class)
     @Test

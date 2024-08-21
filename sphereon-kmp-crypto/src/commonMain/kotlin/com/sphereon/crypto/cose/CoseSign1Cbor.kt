@@ -5,6 +5,8 @@ import com.sphereon.cbor.CDDL
 import com.sphereon.cbor.CborArray
 import com.sphereon.cbor.CborBuilder
 import com.sphereon.cbor.CborByteString
+import com.sphereon.cbor.CborEncodedItem
+import com.sphereon.cbor.CborItem
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborNull
 import com.sphereon.cbor.CborString
@@ -21,6 +23,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlin.js.JsExport
 import kotlin.js.JsName
+import kotlin.time.Duration.Companion.convert
 
 
 @JsExport
@@ -35,9 +38,9 @@ data class CoseSign1InputJson(
 ) : JsonView() {
     override fun toJsonString() = cryptoJsonSerializer.encodeToString(this)
 
-    fun <PayloadType> decodePayload(): PayloadType? {
-        return (toCbor() as CoseSign1Cbor<PayloadType>).cborDecodePayload()
-    }
+//    fun <PayloadType> decodePayload() = (toCbor() as CoseSign1Cbor<PayloadType>).cborDecodePayload()
+
+
     override fun toCbor(): CoseSign1InputCbor = CoseSign1InputCbor(
         protectedHeader = protectedHeader.toCbor(),
         unprotectedHeader = unprotectedHeader?.toCbor(),
@@ -64,9 +67,8 @@ data class CoseSign1Json(
         signature = signature.toCborByteString(Encoding.BASE64URL)
     )
 
-    fun <PayloadType> decodePayload(): PayloadType? {
-        return (toCbor() as CoseSign1Cbor<PayloadType>).cborDecodePayload()
-    }
+//    fun <PayloadType> decodePayload() = (toCbor() as CoseSign1Cbor<PayloadType>)
+
 
     object Static {
         @JsName("fromDTO")
@@ -136,10 +138,11 @@ data class CoseSign1Cbor<CborType>(
     val signature: CborByteString
 
 ) : CborView<CoseSign1Cbor<CborType>, CoseSign1Json, CborArray<AnyCborItem>>(CDDL.list) {
-    fun cborDecodePayload(): CborType? {
-        return payload?.value?.let { cborSerializer.decode(it) }
+   /* fun cborDecodePayload(convertFunction: (arg: AnyCborItem) -> CborType): CborType? {
+        val result = payload?.value?.let { cborSerializer.decode<CborEncodedItem<CborItem<*>>>(it) }?.decodedValue
+        return result?.let { convertFunction.invoke(it) }
     }
-
+*/
     fun toSignature1Structure() = CoseSignatureStructureCbor(
         structure = SigStructure.Signature1.toCbor(),
         externalAad = CborByteString(byteArrayOf()),

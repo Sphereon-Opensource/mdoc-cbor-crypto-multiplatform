@@ -2,11 +2,10 @@
 
 package com.sphereon.mdoc.oid4vp
 
+import Uuid
 import assertedPathEntry
 import com.sphereon.crypto.cose.CoseAlgorithm
 import com.sphereon.mdoc.data.device.DeviceItemsRequestCbor
-import com.sphereon.mdoc.data.device.DeviceItemsRequestJson
-import com.sphereon.mdoc.data.device.DeviceRequestCbor
 import com.sphereon.mdoc.data.device.DocRequestCbor
 import com.sphereon.mdoc.data.device.DocRequestJson
 import com.sphereon.mdoc.data.device.IssuerSignedItemCbor

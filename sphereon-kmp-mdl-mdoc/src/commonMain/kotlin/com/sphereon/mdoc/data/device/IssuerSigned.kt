@@ -23,12 +23,15 @@ import com.sphereon.crypto.cose.CoseSign1Cbor
 import com.sphereon.crypto.cose.CoseSign1Json
 import com.sphereon.json.JsonView
 import com.sphereon.json.mdocJsonSerializer
+import com.sphereon.kmp.Encoding
 import com.sphereon.kmp.LongKMP
+import com.sphereon.kmp.decodeFrom
 import com.sphereon.kmp.encodeToBase64Url
 import com.sphereon.mdoc.data.DataElementIdentifier
 import com.sphereon.mdoc.data.DataElementValue
 import com.sphereon.mdoc.data.NameSpace
 import com.sphereon.mdoc.data.mso.MobileSecurityObjectCbor
+import com.sphereon.mdoc.data.mso.MobileSecurityObjectJson
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -42,6 +45,13 @@ data class IssuerSignedJson(
     val nameSpaces: IssuerSignedNamesSpacesJson?,
     val issuerAuth: CoseSign1Json
 ) : JsonView() {
+    private val _mso = lazy {
+        issuerAuth.payload?.let { MobileSecurityObjectCbor.Static.cborDecode(it.decodeFrom(Encoding.BASE64URL))?.toJson() }
+    }
+
+    // Double as we want it to be lazy, but that doesn't export to JS
+    val MSO = _mso.value
+
     override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
     override fun toCbor(): IssuerSignedCbor {
         return IssuerSignedCbor(
@@ -79,9 +89,9 @@ data class IssuerSignedJson(
         return "IssuerSignedJson(nameSpaces=$nameSpaces, issuerAuth=$issuerAuth)"
     }
 
-    fun toDocument(): DocumentJson  {
-        val mso = issuerAuth.decodePayload<MobileSecurityObjectCbor>()
-        return DocumentJson(docType = mso?.docType?.value ?: throw IllegalStateException("doctype not set"), issuerSigned = this)
+    fun toDocument(): DocumentJson {
+        val mso = MobileSecurityObjectJson.Static.decodeCoseSign1(issuerAuth)
+        return DocumentJson(docType = mso?.docType ?: throw IllegalStateException("doctype not set"), issuerSigned = this)
     }
 
     fun limitDisclosures(docRequest: DocRequestJson): IssuerSignedJson {
@@ -95,6 +105,11 @@ data class IssuerSignedCbor(
     val nameSpaces: IssuerSignedNamesSpacesCbor? = null,
     val issuerAuth: COSE_Sign1<MobileSecurityObjectCbor>
 ) : CborView<IssuerSignedCbor, IssuerSignedJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
+    private val _mso = lazy { MobileSecurityObjectCbor.Static.decodeCoseSign1(issuerAuth) }
+
+    // Double as we want it to be lazy, but that doesn't export to JS
+    val MSO = _mso.value
+
 
     fun limitDisclosures(docRequest: DocRequestCbor): IssuerSignedCbor = IssuerSignedCbor(
         nameSpaces = nameSpaces?.let {
@@ -114,8 +129,12 @@ data class IssuerSignedCbor(
         issuerAuth = issuerAuth
     )
 
-    fun toDocument(): DocumentCbor =
-        DocumentCbor(docType = issuerAuth.cborDecodePayload()?.docType ?: throw IllegalStateException("doctype not set"), issuerSigned = this)
+    fun toDocument(): DocumentCbor {
+        val decoded = MobileSecurityObjectCbor.Static.decodeCoseSign1(issuerAuth)
+        return DocumentCbor(docType = decoded?.docType ?: throw IllegalStateException("doctype not set"), issuerSigned = this)
+    }
+
+    fun toDocumentJson(): DocumentJson = toDocument().toJson()
 
 
     class Builder(val nameSpaces: MutableMap<NameSpace, List<IssuerSignedItemCbor<Any>>> = mutableMapOf()) {
