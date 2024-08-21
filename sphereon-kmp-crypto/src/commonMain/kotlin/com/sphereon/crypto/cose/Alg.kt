@@ -1,5 +1,6 @@
 package com.sphereon.crypto.cose
 
+import com.sphereon.crypto.HashAlgorithm
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind

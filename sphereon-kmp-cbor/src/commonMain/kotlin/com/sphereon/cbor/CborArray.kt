@@ -55,7 +55,7 @@ class CborArray<V : CborItem<*>>(value: cddl_list<V> = mutableListOf(), val inde
          * @return an [ArrayBuilder], call [ArrayBuilder.end] when done adding items to get a
          * [CborBuilder].
          */
-        fun <T> builder(subject: T): ArrayBuilder<CborBuilder<T>> {
+        fun <T: Any?> builder(subject: T? = null): ArrayBuilder<CborBuilder<T>> {
             val dataItem = CborArray(mutableListOf())
             return ArrayBuilder(CborBuilder(dataItem, subject), dataItem)
         }

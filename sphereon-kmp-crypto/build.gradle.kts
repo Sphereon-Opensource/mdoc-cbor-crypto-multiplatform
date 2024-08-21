@@ -102,7 +102,7 @@ kotlin {
 
 
     sourceSets {
-        all{
+        all {
             languageSettings.optIn("kotlin.js.ExperimentalJsExport")
             languageSettings.optIn("kotlinx.serialization.ExperimentalSerializationApi")
             languageSettings.optIn("kotlin.ExperimentalUnsignedTypes")
@@ -112,6 +112,7 @@ kotlin {
                 implementation(libs.kotlin.stdlib)
                 implementation(projects.sphereonKmpCommon)
                 implementation(projects.sphereonKmpCbor)
+                implementation(libs.whyoleg.cryptography.core)
                 implementation(libs.kotlinx.datetime)
                 implementation(libs.kotlinx.serialization.core)
                 implementation(libs.kotlinx.serialization.json)

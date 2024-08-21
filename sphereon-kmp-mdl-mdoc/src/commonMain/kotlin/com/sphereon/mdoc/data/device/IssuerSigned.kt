@@ -254,6 +254,7 @@ data class IssuerSignedItemCbor<Type : Any>(
         }
     }
 
+
     fun toJsonDTO() = toJson().toJsonDTO<IssuerSignedItemJson>()
     override fun toJson(): IssuerSignedItemJson {
 
