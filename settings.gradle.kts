@@ -55,7 +55,7 @@ plugins {
 
 include(
     "sphereon-kmp-common",
-    "sphereon-kmp-crypto",
     "sphereon-kmp-cbor",
+    "sphereon-kmp-crypto",
     "sphereon-kmp-mdl-mdoc",
 )

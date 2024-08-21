@@ -11,9 +11,9 @@ import com.sphereon.json.JsonView
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.crypto.cose.COSE_Key
 import com.sphereon.crypto.cose.CoseKeyCbor
+import com.sphereon.json.mdocJsonSerializer
 import com.sphereon.mdoc.data.device.DeviceItemsRequestCbor
 import com.sphereon.mdoc.data.device.DeviceItemsRequestJson
-import com.sphereon.mdoc.mdocJsonSerializer
 import kotlinx.serialization.encodeToString
 import kotlin.js.JsExport
 import kotlin.js.JsName
@@ -61,6 +61,7 @@ data class ReaderAuthenticationCbor(
 
 }
 
+@JsExport
 data class SessionTranscriptJson(
     val deviceEngagement: DeviceEngagementJson,
     val eReaderKey: COSE_Key?,
@@ -72,7 +73,7 @@ data class SessionTranscriptJson(
     }
 }
 
-
+@JsExport
 data class SessionTranscriptCbor(
     val deviceEngagement: DeviceEngagementCbor,
     val eReaderKey: COSE_Key?,
@@ -109,9 +110,13 @@ data class SessionTranscriptCbor(
 }
 
 
+@JsExport
 sealed class HandoverJson<CborType : Any> : JsonView()
 
+@JsExport
 sealed class HandoverCbor<CborType : Any, JsonType> : CborView<CborType, JsonView, CborArray<AnyCborItem>>(CDDL.list)
+
+@JsExport
 class QrHandoverJson : HandoverJson<QrHandoverCbor>() {
     override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
     override fun toCbor(): QrHandoverCbor {
@@ -119,6 +124,7 @@ class QrHandoverJson : HandoverJson<QrHandoverCbor>() {
     }
 }
 
+@JsExport
 class QrHandoverCbor : HandoverCbor<QrHandoverCbor, QrHandoverJson>() {
     override fun cborBuilder(): CborBuilder<QrHandoverCbor> {
         return CborArray.Static.builder(this).end()
@@ -129,6 +135,7 @@ class QrHandoverCbor : HandoverCbor<QrHandoverCbor, QrHandoverJson>() {
     }
 }
 
+@JsExport
 data class NfcHandoverJson(val handoverSelectMessage: CborByteString?) :
     HandoverJson<NfcHandoverCbor>() {
     override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
@@ -137,6 +144,7 @@ data class NfcHandoverJson(val handoverSelectMessage: CborByteString?) :
     }
 }
 
+@JsExport
 data class NfcHandoverCbor(val handoverSelectMessage: CborByteString, val handoverRequestMessage: CborByteString?) :
     HandoverCbor<NfcHandoverCbor, NfcHandoverJson>() {
     override fun cborBuilder(): CborBuilder<NfcHandoverCbor> =
@@ -160,6 +168,7 @@ data class NfcHandoverCbor(val handoverSelectMessage: CborByteString, val handov
 }
 
 
+@JsExport
 data class OID4VPHandoverJson(val clientIdHash: String, val responseUriHash: String) :
     HandoverJson<OID4VPHandoverCbor>() {
     override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
@@ -168,6 +177,7 @@ data class OID4VPHandoverJson(val clientIdHash: String, val responseUriHash: Str
     }
 }
 
+@JsExport
 data class OID4VPHandoverCbor(val clientIdHash: CborByteString, val responseUriHash: CborByteString) :
     HandoverCbor<OID4VPHandoverCbor, OID4VPHandoverJson>() {
     override fun cborBuilder(): CborBuilder<OID4VPHandoverCbor> =

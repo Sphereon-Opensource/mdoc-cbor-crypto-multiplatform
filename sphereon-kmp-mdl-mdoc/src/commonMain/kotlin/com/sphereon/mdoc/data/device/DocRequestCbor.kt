@@ -18,8 +18,8 @@ import com.sphereon.cbor.cddl_tstr
 import com.sphereon.crypto.cose.COSE_Sign1
 import com.sphereon.crypto.cose.CoseSign1Cbor
 import com.sphereon.crypto.cose.CoseSign1Json
+import com.sphereon.json.mdocJsonSerializer
 import com.sphereon.mdoc.data.RequestInfo
-import com.sphereon.mdoc.mdocJsonSerializer
 import com.sphereon.mdoc.tx.device.ReaderAuthenticationCbor
 import kotlinx.serialization.encodeToString
 import kotlin.js.JsExport

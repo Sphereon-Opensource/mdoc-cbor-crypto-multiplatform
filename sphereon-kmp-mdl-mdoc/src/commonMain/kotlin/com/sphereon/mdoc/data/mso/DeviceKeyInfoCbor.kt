@@ -11,8 +11,8 @@ import com.sphereon.cbor.cborSerializer
 import com.sphereon.crypto.cose.COSE_Key
 import com.sphereon.crypto.cose.CoseKeyCbor
 import com.sphereon.crypto.cose.CoseKeyJson
+import com.sphereon.json.mdocJsonSerializer
 import com.sphereon.kmp.LongKMP
-import com.sphereon.mdoc.mdocJsonSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlin.js.JsExport

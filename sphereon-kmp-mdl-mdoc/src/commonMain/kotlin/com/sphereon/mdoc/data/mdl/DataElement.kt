@@ -1,3 +1,5 @@
+package com.sphereon.mdoc.data.mdl
+
 import com.sphereon.cbor.CDDL
 import com.sphereon.cbor.toCborBool
 import com.sphereon.cbor.toCborString

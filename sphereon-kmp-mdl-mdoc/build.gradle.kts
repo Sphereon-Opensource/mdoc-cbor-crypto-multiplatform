@@ -110,9 +110,9 @@ kotlin {
         }
         val commonMain by getting {
             dependencies {
-                implementation(projects.sphereonKmpCrypto)
                 implementation(projects.sphereonKmpCommon)
                 implementation(projects.sphereonKmpCbor)
+                implementation(projects.sphereonKmpCrypto)
                 implementation(libs.kotlinx.datetime)
                 implementation(libs.kotlinx.serialization.core)
                 implementation(libs.kotlinx.serialization.json)

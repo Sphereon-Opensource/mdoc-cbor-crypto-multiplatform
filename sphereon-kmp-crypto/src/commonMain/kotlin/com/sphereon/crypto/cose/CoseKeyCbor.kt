@@ -15,7 +15,7 @@ import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.encodeToArray
 import com.sphereon.cbor.toCborByteString
 import com.sphereon.crypto.IKey
-import com.sphereon.crypto.cryptoJsonSerializer
+import com.sphereon.json.cryptoJsonSerializer
 import com.sphereon.kmp.Encoding
 import com.sphereon.kmp.decodeFrom
 import com.sphereon.kmp.encodeTo

@@ -9,10 +9,10 @@ import com.sphereon.cbor.CborView
 import com.sphereon.json.JsonView
 import com.sphereon.cbor.StringLabel
 import com.sphereon.cbor.cborSerializer
+import com.sphereon.json.mdocJsonSerializer
 import com.sphereon.kmp.LongKMP
 import com.sphereon.mdoc.data.DocType
 import com.sphereon.mdoc.data.NameSpace
-import com.sphereon.mdoc.mdocJsonSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlin.js.JsExport

@@ -5,6 +5,7 @@ package com.sphereon.mdoc.oid4vp
 import com.sphereon.crypto.cose.CoseAlgorithm
 import com.sphereon.mdoc.data.device.IssuerSignedItemCbor
 import com.sphereon.mdoc.data.device.IssuerSignedItemJson
+import com.sphereon.mdoc.data.mdl.DataElementDef
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -25,6 +26,7 @@ expect sealed interface IOid4VPPresentationDefinition {
 }
 
 @Serializable
+@JsExport
 data class Oid4VPPresentationDefinition(
     @SerialName("id")
     override val id: String,
@@ -38,6 +40,22 @@ data class Oid4VPPresentationDefinition(
                 Oid4VPPresentationDefinition(id, inputDescriptors = inputDescriptors.map { Oid4VPInputDescriptor.Static.fromDTO(it) }.toTypedArray())
             }
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is Oid4VPPresentationDefinition) return false
+
+        if (id != other.id) return false
+        if (!inputDescriptors.contentEquals(other.inputDescriptors)) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = id.hashCode()
+        result = 31 * result + inputDescriptors.contentHashCode()
+        return result
+    }
 }
 
 
@@ -48,6 +66,7 @@ expect sealed interface IOid4VPInputDescriptor {
 }
 
 @Serializable
+@JsExport
 data class Oid4VPInputDescriptor(
     @SerialName("id")
     override val id: String,
@@ -75,6 +94,7 @@ expect sealed interface IOid4VPFormat {
 }
 
 @Serializable
+@JsExport
 data class Oid4VPFormat(
     @SerialName("mso_mdoc")
     override val msoMdoc: Oid4VPSupportedAlgorithm
@@ -91,12 +111,26 @@ expect sealed interface IOid4VPSupportedAlgorithm {
 }
 
 @Serializable
+@JsExport
 data class Oid4VPSupportedAlgorithm(
     @SerialName("alg")
     override val alg: Array<CoseAlgorithm>
 ) : IOid4VPSupportedAlgorithm {
     object Static {
         fun fromDTO(dto: IOid4VPSupportedAlgorithm) = with(dto) { Oid4VPSupportedAlgorithm(alg = alg) }
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is Oid4VPSupportedAlgorithm) return false
+
+        if (!alg.contentEquals(other.alg)) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return alg.contentHashCode()
     }
 }
 
@@ -108,6 +142,7 @@ expect sealed interface IOid4VPConstraints {
 }
 
 @Serializable
+@JsExport
 data class Oid4VPConstraints(
     @SerialName("limit_disclosure")
     override val limitDisclosure: Oid4VPLimitDisclosure = Oid4VPLimitDisclosure.REQUIRED,
@@ -121,6 +156,22 @@ data class Oid4VPConstraints(
                 fields = fields.map { Oid4VPConstraintField.Static.fromDTO(it) }.toTypedArray()
             )
         }
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is Oid4VPConstraints) return false
+
+        if (limitDisclosure != other.limitDisclosure) return false
+        if (!fields.contentEquals(other.fields)) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = limitDisclosure.hashCode()
+        result = 31 * result + fields.contentHashCode()
+        return result
     }
 }
 
@@ -189,37 +240,12 @@ data class Oid4VPConstraintField(
     }
 
     private fun assertValidPathEntry(pathEntry: String) {
-        if (!Regex("^\\\$\\['(\\w+\\.?)+']\\['\\w+']\$").matches(pathEntry)) {
+        if (!Regex("^\\\$\\['(\\w+\\.?)+'\\]\\['\\w+'\\]\$").matches(pathEntry)) {
             throw IllegalArgumentException("Path entry in the OID4VP constraint field is not valid: $pathEntry")
         }
     }
 
 }
-
-/*
-
-@Serializable(with = Oid4VPFormatSerializer::class)
-enum class Oid4VPFormatd(val value: String) {
-    MSO_MDOC("mso_mdoc");
-
-    object Static {
-        fun fromValue(value: String) = Oid4VPFormat.entries.find { value == it.value }
-    }
-}
-
-internal object Oid4VPFormatSerializer : KSerializer<Oid4VPFormat> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("Oid4VPFormat", PrimitiveKind.STRING)
-
-    override fun serialize(encoder: Encoder, value: Oid4VPFormat) {
-        encoder.encodeString(value.value)
-    }
-
-    override fun deserialize(decoder: Decoder): Oid4VPFormat {
-        val value = decoder.decodeString()
-        return Oid4VPFormat.Static.fromValue(value) ?: throw IllegalArgumentException("Invalid value for format ${value}")
-    }
-}
-*/
 
 @JsExport
 @Serializable(with = Oid4VPLimitDisclosureSerializer::class)
@@ -255,7 +281,7 @@ enum class Oid4VPFormats(val value: String) {
     }
 }
 
-internal object Oid4VPFormatsSerializer : KSerializer<Oid4VPFormats> {
+object Oid4VPFormatsSerializer : KSerializer<Oid4VPFormats> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("Oid4VPFormats", PrimitiveKind.STRING)
 
     override fun serialize(encoder: Encoder, value: Oid4VPFormats) {
@@ -279,6 +305,7 @@ expect sealed interface IOid4VPPresentationSubmission {
 }
 
 @Serializable
+@JsExport
 data class Oid4VPPresentationSubmission(
     @SerialName("definition_id")
     override val definitionId: String,
@@ -305,6 +332,7 @@ expect sealed interface IOid4vpSubmissionDescriptor {
 }
 
 @Serializable
+@JsExport
 data class Oid4vpSubmissionDescriptor(
     @SerialName("id")
     override val id: String,

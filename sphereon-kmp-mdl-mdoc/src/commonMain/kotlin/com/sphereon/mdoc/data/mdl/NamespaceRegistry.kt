@@ -1,7 +1,5 @@
 package com.sphereon.mdoc.data.mdl
 
-import DataElementDef
-import Presence
 import com.sphereon.cbor.CDDL
 import com.sphereon.cbor.CborString
 import com.sphereon.cbor.cddl_bool

@@ -1,9 +1,8 @@
 package com.sphereon.mdoc.oid4vp
 
 
-//import com.sphereon.cbor.cborSerializer
 
-import com.sphereon.mdoc.mdocJsonSerializer
+import com.sphereon.json.oid4vpJsonSerializer
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -15,7 +14,7 @@ class Oid4vpTest {
     @Test
     fun shouldEncodeDecodePresentationDefinition() {
 
-        val pd = mdocJsonSerializer.decodeFromString<Oid4VPPresentationDefinition>(iso18013_7_pd)
+        val pd = oid4vpJsonSerializer.decodeFromString<Oid4VPPresentationDefinition>(iso18013_7_pd)
 
         println(pd)
         assertEquals("mDL-sample-req", pd.id)
@@ -25,7 +24,7 @@ class Oid4vpTest {
         assertEquals(11, pd.inputDescriptors[0].constraints.fields.size)
 
 
-        val serialized = mdocJsonSerializer.encodeToString(Oid4VPPresentationDefinition.serializer(), pd)
+        val serialized = oid4vpJsonSerializer.encodeToString(Oid4VPPresentationDefinition.serializer(), pd)
         println(serialized)
 
         // We cannot compare strings as the order of a JSON object is undefined (except for arrays). Removing the newlines because of pretty printing
@@ -36,7 +35,7 @@ class Oid4vpTest {
     @Test
     fun shouldCreatePresentationSubmissionFromDefinition() {
 
-        val pd = mdocJsonSerializer.decodeFromString<Oid4VPPresentationDefinition>(iso18013_7_pd)
+        val pd = oid4vpJsonSerializer.decodeFromString<Oid4VPPresentationDefinition>(iso18013_7_pd)
         val submission = Oid4VPPresentationSubmission.Static.fromPresentationDefinition(pd, "mDL-sample-res")
         assertEquals("mDL-sample-res", submission.id)
         assertEquals(pd.id, submission.definitionId)
@@ -48,9 +47,9 @@ class Oid4vpTest {
     @Test
     fun shouldSerializePresentationSubmissionFromDefinition() {
 
-        val pd = mdocJsonSerializer.decodeFromString<Oid4VPPresentationDefinition>(iso18013_7_pd)
+        val pd = oid4vpJsonSerializer.decodeFromString<Oid4VPPresentationDefinition>(iso18013_7_pd)
         val submission = Oid4VPPresentationSubmission.Static.fromPresentationDefinition(pd, "mDL-sample-res")
-        val serializedSubmission = mdocJsonSerializer.encodeToString(Oid4VPPresentationSubmission.serializer(), submission)
+        val serializedSubmission = oid4vpJsonSerializer.encodeToString(Oid4VPPresentationSubmission.serializer(), submission)
         assertEquals(iso18013_7_submission, serializedSubmission.replace("\n", "").replace(" ", ""))
     }
 

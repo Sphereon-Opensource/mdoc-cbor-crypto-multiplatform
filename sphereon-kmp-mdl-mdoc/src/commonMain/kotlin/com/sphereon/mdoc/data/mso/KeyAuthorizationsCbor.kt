@@ -8,7 +8,7 @@ import com.sphereon.cbor.CborView
 import com.sphereon.json.JsonView
 import com.sphereon.cbor.StringLabel
 import com.sphereon.cbor.cborSerializer
-import com.sphereon.mdoc.mdocJsonSerializer
+import com.sphereon.json.mdocJsonSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlin.js.JsExport

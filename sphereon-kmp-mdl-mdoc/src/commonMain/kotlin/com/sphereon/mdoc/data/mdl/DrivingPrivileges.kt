@@ -20,11 +20,11 @@ import com.sphereon.cbor.localDateTimeToDateStringISO
 import com.sphereon.cbor.localDateToCborFullDate
 import com.sphereon.cbor.localDateToDateStringISO
 import com.sphereon.cbor.toCborString
+import com.sphereon.json.mdocJsonSerializer
 import com.sphereon.kmp.DateTimeUtils
 import com.sphereon.kmp.LocalDateTimeKMP
 import com.sphereon.kmp.getDateTime
 import com.sphereon.kmp.toKotlin
-import com.sphereon.mdoc.mdocJsonSerializer
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.SerialName

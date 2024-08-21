@@ -7,20 +7,17 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @JsExport
-@Serializable
 actual sealed external interface IOid4VPFormat {
     @SerialName("mso_mdoc")
     actual val msoMdoc: IOid4VPSupportedAlgorithm
 }
 
 @JsExport
-@Serializable
 actual sealed external interface IOid4VPSupportedAlgorithm {
     actual val alg: Array<CoseAlgorithm>
 }
 
 @JsExport
-@Serializable
 actual sealed external interface IOid4VPPresentationDefinition {
     actual val id: String
     @SerialName("input_descriptors")
@@ -28,7 +25,6 @@ actual sealed external interface IOid4VPPresentationDefinition {
 }
 
 @JsExport
-@Serializable
 actual sealed external interface IOid4VPInputDescriptor {
     actual val id: String
     actual val format: IOid4VPFormat
@@ -37,7 +33,6 @@ actual sealed external interface IOid4VPInputDescriptor {
 
 
 @JsExport
-@Serializable
 actual sealed external interface IOid4VPConstraints {
     @SerialName("limit_disclosure")
     actual val limitDisclosure: Oid4VPLimitDisclosure
@@ -45,27 +40,24 @@ actual sealed external interface IOid4VPConstraints {
 }
 
 @JsExport
-@Serializable
 actual sealed external interface IOid4VPConstraintField {
+    @SerialName("path")
     actual val path: Array<String>
     @SerialName("intent_to_retain")
     actual val intentToRetain: Boolean
 }
 
 @JsExport
-@Serializable
 actual sealed external interface IOid4VPPresentationSubmission {
     @SerialName("definition_id")
     actual val definitionId: String
     actual val id: String
-
     @SerialName("descriptor_map")
     actual val descriptorMap: Array<out IOid4vpSubmissionDescriptor>
 
 }
 
 @JsExport
-@Serializable
 actual sealed external interface IOid4vpSubmissionDescriptor {
     actual val id: String
     actual val format: Oid4VPFormats

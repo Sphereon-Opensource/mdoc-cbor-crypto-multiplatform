@@ -21,10 +21,10 @@ import com.sphereon.cbor.cddl_uint
 import com.sphereon.cbor.toCborUInt
 import com.sphereon.crypto.cose.CoseKeyCbor
 import com.sphereon.crypto.cose.CoseKeyJson
+import com.sphereon.json.mdocJsonSerializer
 import com.sphereon.kmp.LongKMP
 import com.sphereon.kmp.numberToKmpLong
 import com.sphereon.kmp.toKmpLong
-import com.sphereon.mdoc.mdocJsonSerializer
 import com.sphereon.mdoc.tx.device.WifiOptionsCbor.Static.CHANNEL_INFO_CHANNEL_NUMBER
 import com.sphereon.mdoc.tx.device.WifiOptionsCbor.Static.CHANNEL_INFO_OPERATING_CLASS
 import com.sphereon.mdoc.tx.device.WifiOptionsCbor.Static.PASS_PHRASE

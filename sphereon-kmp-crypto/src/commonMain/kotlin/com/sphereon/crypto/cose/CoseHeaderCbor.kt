@@ -19,7 +19,7 @@ import com.sphereon.cbor.toCborString
 import com.sphereon.cbor.toCborStringArray
 import com.sphereon.cbor.toNumberLabel
 import com.sphereon.cbor.toStringArray
-import com.sphereon.crypto.cryptoJsonSerializer
+import com.sphereon.json.cryptoJsonSerializer
 import com.sphereon.kmp.Encoding
 import com.sphereon.kmp.LongKMP
 import com.sphereon.kmp.numberToKmpLong

@@ -22,13 +22,13 @@ import com.sphereon.cbor.toCborString
 import com.sphereon.crypto.cose.COSE_Sign1
 import com.sphereon.crypto.cose.CoseSign1Cbor
 import com.sphereon.crypto.cose.CoseSign1Json
+import com.sphereon.json.mdocJsonSerializer
 import com.sphereon.kmp.LongKMP
 import com.sphereon.kmp.encodeToBase64Url
 import com.sphereon.mdoc.data.DataElementIdentifier
 import com.sphereon.mdoc.data.DataElementValue
 import com.sphereon.mdoc.data.NameSpace
 import com.sphereon.mdoc.data.mso.MobileSecurityObjectCbor
-import com.sphereon.mdoc.mdocJsonSerializer
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -111,6 +111,7 @@ data class IssuerSignedCbor(
         return builder.end()
     }
 
+    fun toJsonDTO() = toJson().toJsonDTO<IssuerSignedJson>()
     override fun toJson(): IssuerSignedJson {
         var count = 0
         return IssuerSignedJson(
@@ -253,6 +254,7 @@ data class IssuerSignedItemCbor<Type : Any>(
         }
     }
 
+    fun toJsonDTO() = toJson().toJsonDTO<IssuerSignedItemJson>()
     override fun toJson(): IssuerSignedItemJson {
 
         val json: ICborItemValueJson = mapCborValueToJson(this.elementValue)

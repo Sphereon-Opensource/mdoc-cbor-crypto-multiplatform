@@ -68,7 +68,7 @@ kotlin {
           }
       }*/
     js(IR) {
-        moduleName = "@sphereon/mdoc"
+        moduleName = "@sphereon/kmp-cbor"
         nodejs {
 //            useEsModules() // Enables ES2015 modules
 
@@ -124,6 +124,7 @@ kotlin {
         }
         val commonMain by getting {
             dependencies {
+                implementation(libs.kotlin.stdlib)
                 implementation(projects.sphereonKmpCommon)
                 implementation(libs.kotlinx.datetime)
                 implementation(libs.kotlinx.serialization.core)

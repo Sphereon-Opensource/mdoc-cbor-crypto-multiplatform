@@ -1,8 +1,8 @@
 package com.sphereon.mdoc.data.device
 
 import com.sphereon.cbor.CDDL
+import com.sphereon.json.mdocJsonSerializer
 import com.sphereon.kmp.toKmpLong
-import com.sphereon.mdoc.mdocJsonSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonPrimitive
@@ -18,7 +18,7 @@ class SerializationTest {
         val json = "{\"cddl\":\"uint\"}"
         val example = CDDL.uint
         val test = TestClass(example)
-        assertEquals(json, mdocJsonSerializer.encodeToString(test))
+        assertEquals(json, mdocJsonSerializer.encodeToString(test).replace("\n", "").replace(" ", ""))
         val decode: TestClass = mdocJsonSerializer.decodeFromString(json)
         assertEquals(test, decode)
     }
@@ -28,7 +28,7 @@ class SerializationTest {
         val json = "{\"digestID\":200,\"random\":\"random\",\"key\":\"identifier\",\"value\":400,\"cddl\":\"uint\"}"
         val issuerSigned =
             IssuerSignedItemJson(digestID = 200L.toKmpLong(), random = "random", value = JsonPrimitive(400L), cddl = CDDL.uint, key = "identifier")
-        assertEquals(json, mdocJsonSerializer.encodeToString(issuerSigned))
+        assertEquals(json, mdocJsonSerializer.encodeToString(issuerSigned).replace("\n", "").replace(" ", ""))
         assertEquals(issuerSigned, mdocJsonSerializer.decodeFromString(json))
         println(mdocJsonSerializer.encodeToString(issuerSigned))
     }

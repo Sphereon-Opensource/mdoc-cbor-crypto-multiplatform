@@ -11,7 +11,7 @@ import com.sphereon.json.JsonView
 import com.sphereon.cbor.StringLabel
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.cddl_tstr
-import com.sphereon.mdoc.mdocJsonSerializer
+import com.sphereon.json.mdocJsonSerializer
 import kotlinx.serialization.encodeToString
 import kotlin.js.JsExport
 import kotlin.js.JsName

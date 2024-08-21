@@ -15,8 +15,6 @@ import com.sphereon.kmp.Encoding
 import com.sphereon.kmp.decodeFrom
 import com.sphereon.kmp.decodeFromHex
 import com.sphereon.kmp.encodeTo
-import com.sphereon.mdoc.mdocJsonSerializer
-import kotlinx.serialization.encodeToString
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull

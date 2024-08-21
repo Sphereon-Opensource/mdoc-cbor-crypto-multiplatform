@@ -15,6 +15,7 @@ import com.sphereon.cbor.StringLabel
 import com.sphereon.cbor.cddl_tstr
 import com.sphereon.cbor.toCborBool
 import com.sphereon.cbor.toCborString
+import com.sphereon.json.mdocJsonSerializer
 import com.sphereon.mdoc.data.DataElementCbor
 import com.sphereon.mdoc.data.DataElementIdentifier
 import com.sphereon.mdoc.data.DocType
@@ -22,7 +23,6 @@ import com.sphereon.mdoc.data.IntentToRetain
 import com.sphereon.mdoc.data.RequestInfo
 import com.sphereon.mdoc.data.mdl.Mdl.MDL_NAMESPACE
 import com.sphereon.mdoc.data.mdl.Mdl.MDL_NAMESPACE_CBOR
-import com.sphereon.mdoc.mdocJsonSerializer
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
