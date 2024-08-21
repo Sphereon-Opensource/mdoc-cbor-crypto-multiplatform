@@ -243,3 +243,78 @@ internal object Oid4VPLimitDisclosureSerializer : KSerializer<Oid4VPLimitDisclos
         return Oid4VPLimitDisclosure.Static.fromValue(value) ?: throw IllegalArgumentException("Invalid value for limit disclosure ${value}")
     }
 }
+
+
+@JsExport
+@Serializable(with = Oid4VPFormatsSerializer::class)
+enum class Oid4VPFormats(val value: String) {
+    MSO_MDOC("mso_mdoc");
+
+    object Static {
+        fun fromValue(value: String) = Oid4VPFormats.entries.find { value == it.value }
+    }
+}
+
+internal object Oid4VPFormatsSerializer : KSerializer<Oid4VPFormats> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("Oid4VPFormats", PrimitiveKind.STRING)
+
+    override fun serialize(encoder: Encoder, value: Oid4VPFormats) {
+        encoder.encodeString(value.value)
+    }
+
+    override fun deserialize(decoder: Decoder): Oid4VPFormats {
+        val value = decoder.decodeString()
+        return Oid4VPFormats.Static.fromValue(value) ?: throw IllegalArgumentException("Invalid value for format ${value}")
+    }
+}
+
+expect sealed interface IOid4VPPresentationSubmission {
+    @SerialName("definition_id")
+    val definitionId: String
+    val id: String
+
+    @SerialName("descriptor_map")
+    val descriptorMap: Array<out IOid4vpSubmissionDescriptor>
+
+}
+
+@Serializable
+data class Oid4VPPresentationSubmission(
+    @SerialName("definition_id")
+    override val definitionId: String,
+    @SerialName("id")
+    override val id: String,
+    @SerialName("descriptor_map")
+    override val descriptorMap: Array<Oid4vpSubmissionDescriptor>
+) : IOid4VPPresentationSubmission {
+    object Static {
+        fun fromPresentationDefinition(pd: IOid4VPPresentationDefinition, id: String): Oid4VPPresentationSubmission =
+            Oid4VPPresentationSubmission(
+                definitionId = pd.id,
+                id = id,
+                descriptorMap = pd.inputDescriptors.map { Oid4vpSubmissionDescriptor.Static.fromInputDescriptor(it) }.toTypedArray()
+            )
+
+    }
+}
+
+expect sealed interface IOid4vpSubmissionDescriptor {
+    val id: String
+    val format: Oid4VPFormats
+    val path: String
+}
+
+@Serializable
+data class Oid4vpSubmissionDescriptor(
+    @SerialName("id")
+    override val id: String,
+    @SerialName("format")
+    override val format: Oid4VPFormats = Oid4VPFormats.MSO_MDOC,
+    @SerialName("path")
+    override val path: String = "$"
+) : IOid4vpSubmissionDescriptor {
+    object Static {
+        fun fromInputDescriptor(descriptor: IOid4VPInputDescriptor): Oid4vpSubmissionDescriptor =
+            with(descriptor) { Oid4vpSubmissionDescriptor(id = id) }
+    }
+}

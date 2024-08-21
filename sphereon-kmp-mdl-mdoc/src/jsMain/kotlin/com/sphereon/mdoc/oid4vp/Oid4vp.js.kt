@@ -51,3 +51,23 @@ actual sealed external interface IOid4VPConstraintField {
     @SerialName("intent_to_retain")
     actual val intentToRetain: Boolean
 }
+
+@JsExport
+@Serializable
+actual sealed external interface IOid4VPPresentationSubmission {
+    @SerialName("definition_id")
+    actual val definitionId: String
+    actual val id: String
+
+    @SerialName("descriptor_map")
+    actual val descriptorMap: Array<out IOid4vpSubmissionDescriptor>
+
+}
+
+@JsExport
+@Serializable
+actual sealed external interface IOid4vpSubmissionDescriptor {
+    actual val id: String
+    actual val format: Oid4VPFormats
+    actual val path: String
+}

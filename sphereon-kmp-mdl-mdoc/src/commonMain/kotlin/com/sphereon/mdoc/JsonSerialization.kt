@@ -5,7 +5,9 @@ import com.sphereon.crypto.CryptoJsonSupport
 import com.sphereon.crypto.cose.CoseKeyJson
 import com.sphereon.mdoc.data.device.IssuerSignedItemJson
 import com.sphereon.mdoc.oid4vp.IOid4VPPresentationDefinition
+import com.sphereon.mdoc.oid4vp.IOid4VPPresentationSubmission
 import com.sphereon.mdoc.oid4vp.Oid4VPPresentationDefinition
+import com.sphereon.mdoc.oid4vp.Oid4VPPresentationSubmission
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
@@ -27,12 +29,18 @@ object MdocJsonSupport {
                 Oid4VPPresentationDefinition::class
             )
         }
+        /*polymorphic(IOid4VPPresentationSubmission::class) {
+            subclass(
+                Oid4VPPresentationSubmission::class
+            )
+        }*/
         polymorphicDefaultDeserializer(IOid4VPPresentationDefinition::class, { Oid4VPPresentationDefinition.serializer() })
+        polymorphicDefaultDeserializer(IOid4VPPresentationSubmission::class, { Oid4VPPresentationSubmission.serializer() })
         polymorphic(JsonView::class) {
             subclass(CoseKeyJson::class)
             subclass(IssuerSignedItemJson::class)
         }
 
     }
-    val serializer = Json { serializersModule = this.serializersModule; encodeDefaults = true }
+    val serializer = Json { serializersModule = this.serializersModule; encodeDefaults = true; isLenient = true; prettyPrint = true; ignoreUnknownKeys = true }
 }

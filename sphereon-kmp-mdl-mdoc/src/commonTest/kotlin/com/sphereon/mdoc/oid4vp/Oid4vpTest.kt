@@ -8,14 +8,14 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class DeviceEngagementTest {
+class Oid4vpTest {
 
 
     @OptIn(ExperimentalSerializationApi::class, ExperimentalStdlibApi::class)
     @Test
     fun shouldEncodeDecodePresentationDefinition() {
 
-        val pd = mdocJsonSerializer.decodeFromString<Oid4VPPresentationDefinition>(iso1813015_07_pd)
+        val pd = mdocJsonSerializer.decodeFromString<Oid4VPPresentationDefinition>(iso18013_7_pd)
 
         println(pd)
         assertEquals("mDL-sample-req", pd.id)
@@ -28,12 +28,45 @@ class DeviceEngagementTest {
         val serialized = mdocJsonSerializer.encodeToString(Oid4VPPresentationDefinition.serializer(), pd)
         println(serialized)
 
-        // We cannot compare strings as the order of a JSON object is undefined (except for arrays)
-        assertEquals(iso1813015_07_pd.length, serialized.length)
+        // We cannot compare strings as the order of a JSON object is undefined (except for arrays). Removing the newlines because of pretty printing
+        assertEquals(iso18013_7_pd.length, serialized.replace("\n", "").replace(" ", "").length)
     }
 
+    @OptIn(ExperimentalSerializationApi::class, ExperimentalStdlibApi::class)
+    @Test
+    fun shouldCreatePresentationSubmissionFromDefinition() {
 
-    val iso1813015_07_pd = ("{\n" +
+        val pd = mdocJsonSerializer.decodeFromString<Oid4VPPresentationDefinition>(iso18013_7_pd)
+        val submission = Oid4VPPresentationSubmission.Static.fromPresentationDefinition(pd, "mDL-sample-res")
+        assertEquals("mDL-sample-res", submission.id)
+        assertEquals(pd.id, submission.definitionId)
+        assertEquals(1, submission.descriptorMap.size)
+        assertEquals("org.iso.18013.5.1.mDL", pd.inputDescriptors[0].id)
+    }
+
+    @OptIn(ExperimentalSerializationApi::class, ExperimentalStdlibApi::class)
+    @Test
+    fun shouldSerializePresentationSubmissionFromDefinition() {
+
+        val pd = mdocJsonSerializer.decodeFromString<Oid4VPPresentationDefinition>(iso18013_7_pd)
+        val submission = Oid4VPPresentationSubmission.Static.fromPresentationDefinition(pd, "mDL-sample-res")
+        val serializedSubmission = mdocJsonSerializer.encodeToString(Oid4VPPresentationSubmission.serializer(), submission)
+        assertEquals(iso18013_7_submission, serializedSubmission.replace("\n", "").replace(" ", ""))
+    }
+
+    val iso18013_7_submission = ("{\n" +
+            "\"definition_id\": \"mDL-sample-req\",\n" +
+            "\"id\": \"mDL-sample-res\",\n" +
+            "\"descriptor_map\": [\n" +
+            "{\n" +
+            "\"id\": \"org.iso.18013.5.1.mDL\",\n" +
+            "\"format\": \"mso_mdoc\",\n" +
+            "\"path\": \"\$\"\n" +
+            "}\n" +
+            "]\n" +
+            "}").replace("\n", "").replace(" ", "")
+    
+    val iso18013_7_pd = ("{\n" +
             "        \"id\": \"mDL-sample-req\",\n" +
             "        \"input_descriptors\": [\n" +
             "        {\n" +
