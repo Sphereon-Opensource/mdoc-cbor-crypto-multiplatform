@@ -11,10 +11,13 @@ import com.sphereon.crypto.cose.CoseKeyType
 import com.sphereon.crypto.cose.CoseSign1Cbor
 import com.sphereon.crypto.cose.CoseSignatureAlgorithm
 import com.sphereon.crypto.cose.CoseSignatureStructureCbor
+import com.sphereon.json.toJsonDTO
 import com.sphereon.kmp.Encoding
 import com.sphereon.kmp.decodeFrom
 import com.sphereon.kmp.decodeFromHex
 import com.sphereon.kmp.encodeTo
+import com.sphereon.mdoc.data.mso.MobileSecurityObjectJson
+import kotlinx.serialization.json.JsonObject
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -157,6 +160,9 @@ class IssuerSignedTest {
         assertNotNull(doc.issuerSigned.nameSpaces)
         assertEquals(2, doc.issuerSigned.issuerAuth.unprotectedHeader?.x5chain?.size)
         assertEquals(22, doc.issuerSigned.nameSpaces!!["eu.europa.ec.eudi.pid.1"]?.size)
+
+        println(doc.toJsonDTO<DocumentJson>())
+        println(doc.MSO?.toJsonDTO<JsonObject>())
     }
 
 

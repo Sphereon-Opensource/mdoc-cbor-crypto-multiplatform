@@ -14,6 +14,7 @@ import com.sphereon.json.mdocJsonSerializer
 import com.sphereon.mdoc.data.DocumentErrorsCbor
 import com.sphereon.mdoc.data.DocumentErrorsJson
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kotlinx.serialization.encodeToString
 import kotlin.js.JsExport
 import kotlin.js.JsName
@@ -54,6 +55,7 @@ data class DocumentJson(
      */
     val errors: DocumentErrorsJson? = null
 ) : JsonView() {
+    @Transient
     val MSO = issuerSigned.MSO
     override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
     override fun toCbor(): DocumentCbor {

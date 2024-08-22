@@ -34,6 +34,7 @@ import com.sphereon.mdoc.data.mso.MobileSecurityObjectCbor
 import com.sphereon.mdoc.data.mso.MobileSecurityObjectJson
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonElement
 import kotlin.js.JsExport
@@ -45,11 +46,14 @@ data class IssuerSignedJson(
     val nameSpaces: IssuerSignedNamesSpacesJson?,
     val issuerAuth: CoseSign1Json
 ) : JsonView() {
+    @Transient
     private val _mso = lazy {
         issuerAuth.payload?.let { MobileSecurityObjectCbor.Static.cborDecode(it.decodeFrom(Encoding.BASE64URL))?.toJson() }
     }
 
+
     // Double as we want it to be lazy, but that doesn't export to JS
+    @Transient
     val MSO = _mso.value
 
     override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
