@@ -5,11 +5,10 @@ import com.sphereon.crypto.cose.CoseCurve
 import com.sphereon.crypto.cose.CoseKeyOperations
 import com.sphereon.crypto.cose.CoseKeyType
 import com.sphereon.crypto.cose.CoseSignatureAlgorithm
+import com.sphereon.crypto.jose.JoseKeyOperations
 import com.sphereon.crypto.jose.JwaAlgorithm
 import com.sphereon.crypto.jose.JwaCurve
 import com.sphereon.crypto.jose.JwaKeyType
-import com.sphereon.crypto.jose.JwaSignatureAlgorithm
-import com.sphereon.crypto.jose.JoseKeyOperations
 import kotlin.js.JsExport
 
 @JsExport
@@ -42,17 +41,17 @@ sealed class SignatureAlgorithmMapping(
     private val coseAlgorithm: CoseAlgorithm,
     private val joseAlgorithm: JwaAlgorithm
 ) {
-    object EdDSA : SignatureAlgorithmMapping(CoseSignatureAlgorithm.EdDSA, JwaSignatureAlgorithm.EdDSA)
-    object ES256 : SignatureAlgorithmMapping(CoseSignatureAlgorithm.ES256, JwaSignatureAlgorithm.ES256)
-    object ES384 : SignatureAlgorithmMapping(CoseSignatureAlgorithm.ES384, JwaSignatureAlgorithm.ES384)
-    object ES512 : SignatureAlgorithmMapping(CoseSignatureAlgorithm.ES512, JwaSignatureAlgorithm.ES512)
-    object ES256K : SignatureAlgorithmMapping(CoseSignatureAlgorithm.ES256K, JwaSignatureAlgorithm.ES256K)
-    object HS256 : SignatureAlgorithmMapping(CoseSignatureAlgorithm.HS256, JwaSignatureAlgorithm.HS256)
-    object HS384 : SignatureAlgorithmMapping(CoseSignatureAlgorithm.HS384, JwaSignatureAlgorithm.HS384)
-    object HS512 : SignatureAlgorithmMapping(CoseSignatureAlgorithm.HS512, JwaSignatureAlgorithm.HS512)
-    object PS256 : SignatureAlgorithmMapping(CoseSignatureAlgorithm.PS256, JwaSignatureAlgorithm.PS256)
-    object PS384 : SignatureAlgorithmMapping(CoseSignatureAlgorithm.PS384, JwaSignatureAlgorithm.PS384)
-    object PS512 : SignatureAlgorithmMapping(CoseSignatureAlgorithm.PS512, JwaSignatureAlgorithm.PS512)
+    object EdDSA : SignatureAlgorithmMapping(CoseSignatureAlgorithm.EdDSA, JwaAlgorithm.EdDSA)
+    object ES256 : SignatureAlgorithmMapping(CoseSignatureAlgorithm.ES256, JwaAlgorithm.ES256)
+    object ES384 : SignatureAlgorithmMapping(CoseSignatureAlgorithm.ES384, JwaAlgorithm.ES384)
+    object ES512 : SignatureAlgorithmMapping(CoseSignatureAlgorithm.ES512, JwaAlgorithm.ES512)
+    object ES256K : SignatureAlgorithmMapping(CoseSignatureAlgorithm.ES256K, JwaAlgorithm.ES256K)
+    object HS256 : SignatureAlgorithmMapping(CoseSignatureAlgorithm.HS256, JwaAlgorithm.HS256)
+    object HS384 : SignatureAlgorithmMapping(CoseSignatureAlgorithm.HS384, JwaAlgorithm.HS384)
+    object HS512 : SignatureAlgorithmMapping(CoseSignatureAlgorithm.HS512, JwaAlgorithm.HS512)
+    object PS256 : SignatureAlgorithmMapping(CoseSignatureAlgorithm.PS256, JwaAlgorithm.PS256)
+    object PS384 : SignatureAlgorithmMapping(CoseSignatureAlgorithm.PS384, JwaAlgorithm.PS384)
+    object PS512 : SignatureAlgorithmMapping(CoseSignatureAlgorithm.PS512, JwaAlgorithm.PS512)
 
     object Static {
         val asList = listOf(EdDSA, ES256K, ES256, ES384, ES512, HS256, HS384, HS512, PS256, PS384, PS512)

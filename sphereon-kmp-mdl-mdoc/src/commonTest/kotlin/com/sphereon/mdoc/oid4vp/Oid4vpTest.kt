@@ -2,6 +2,7 @@ package com.sphereon.mdoc.oid4vp
 
 
 import com.sphereon.json.oid4vpJsonSerializer
+import com.sphereon.json.toJsonDTO
 import com.sphereon.kmp.Encoding
 import com.sphereon.kmp.decodeFrom
 import com.sphereon.mdoc.data.device.IssuerSignedCbor
@@ -18,8 +19,6 @@ class Oid4vpTest {
     fun shouldTranslatePresentationDefinitionToDocRequest() {
 
         val pd = oid4vpJsonSerializer.decodeFromString<Oid4VPPresentationDefinition>(pid_pd)
-
-        println(pd)
         assertEquals("PID-sample-req", pd.id)
         assertEquals(1, pd.inputDescriptors.size)
         assertEquals("eu.europa.ec.eudi.pid.1", pd.inputDescriptors[0].id)
@@ -39,7 +38,7 @@ class Oid4vpTest {
         assertEquals(1, docRequestJson.getNameSpaces().size)
         assertEquals(7, docRequestJson.getIdentifiers(docRequestJson.getNameSpaces()[0]).size)
 
-        assertEquals(pid_docrequest_json_result, com.sphereon.json.mdocJsonSerializer.encodeToString(docRequestJson.toJsonDTO<JsonObject>()))
+        assertEquals(pid_docrequest_json_result, docRequestJson.toJsonString())
     }
 
 

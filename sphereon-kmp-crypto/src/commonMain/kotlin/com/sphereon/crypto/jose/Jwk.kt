@@ -13,9 +13,14 @@ import com.sphereon.crypto.toJoseCurve
 import com.sphereon.crypto.toJoseKeyOperations
 import com.sphereon.crypto.toJoseKeyType
 import com.sphereon.crypto.toJoseSignatureAlgorithm
+import com.sphereon.json.cryptoJsonSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlin.js.JsExport
 
 
@@ -24,7 +29,7 @@ import kotlin.js.JsExport
  *
  * ordered alphabetically [RFC7638 s3](https://www.rfc-editor.org/rfc/rfc7638.html#section-3)
  */
-expect interface IJwkJson: IKey {
+expect interface IJwkJson : IKey {
     override val alg: String?
     override val crv: String?
     override val d: String?
@@ -46,7 +51,6 @@ expect interface IJwkJson: IKey {
 }
 
 
-
 /**
  * JWK [RFC 7517](https://datatracker.ietf.org/doc/html/rfc7517#section-4).
  *
@@ -58,7 +62,7 @@ expect interface IJwk : IKey {
     override val d: String?
     val e: String?
     val k: String?
-    override val key_ops: Set<JoseKeyOperations>?
+    override val key_ops: Array<JoseKeyOperations>?
     override val kid: String?
     override val kty: JwaKeyType
     val n: String?
@@ -81,7 +85,7 @@ data class Jwk(
     override val d: String? = null,
     override val e: String? = null,
     override val k: String? = null,
-    override val key_ops: Set<JoseKeyOperations>? = null,
+    override val key_ops: Array<JoseKeyOperations>? = null,
     override val kid: String? = null,
     override val kty: JwaKeyType,
     override val n: String? = null,
@@ -105,7 +109,7 @@ data class Jwk(
         var d: String? = null
         var e: String? = null
         var k: String? = null
-        var key_ops: Set<JoseKeyOperations>? = null
+        var key_ops: Array<JoseKeyOperations>? = null
         var kid: String? = null
         var kty: JwaKeyType? = null
         var n: String? = null
@@ -122,7 +126,7 @@ data class Jwk(
         fun withD(d: String?) = apply { this.d = d }
         fun withE(e: String?) = apply { this.e = e }
         fun withK(k: String?) = apply { this.k = k }
-        fun withKeyOps(key_ops: Set<JoseKeyOperations>?) = apply { this.key_ops = key_ops }
+        fun withKeyOps(key_ops: Array<JoseKeyOperations>?) = apply { this.key_ops = key_ops }
         fun withKid(kid: String?) = apply { this.kid = kid }
         fun withKty(kty: JwaKeyType?) = apply { this.kty = kty }
         fun withN(n: String?) = apply { this.n = n }
@@ -178,38 +182,18 @@ data class Jwk(
     // Name is like other extensions functions to not class with JS
     fun jwkToCoseKeyCbor(): CoseKeyCbor = this.jwkToCoseKeyJson().toCbor()
 
-    fun toJsonObject(): IJwkJson = object : IJwkJson {
-        override val alg: String? = this@Jwk.alg?.value
-        override val crv: String? = this@Jwk.crv?.value
-        override val d: String? = this@Jwk.d
-        override val e: String? = this@Jwk.e
-        override val k: String? = this@Jwk.k
-        override val key_ops: Array<String>? = this@Jwk.key_ops?.map { it.value }?.toTypedArray()
-        override val kid: String? = this@Jwk.kid
-        override val kty: String = this@Jwk.kty.value
-
-        override val n: String? = this@Jwk.n
-        override val use: String? = this@Jwk.use
-        override val x: String? = this@Jwk.x
-        override val x5c: Array<String>? = this@Jwk.x5c
-        override val x5t: String? = this@Jwk.x5t
-        override val x5u: String? = this@Jwk.x5u
-        override val x5t_S256: String? = this@Jwk.x5t_S256
-        override val y: String? = this@Jwk.y
-        override val additional: JsonObject?
-            get() = TODO("Not yet implemented")
-    }
+    fun toJsonObject() = cryptoJsonSerializer.encodeToJsonElement(serializer(), this).jsonObject
 
 
     object Static {
         fun fromJson(jwk: IJwkJson): Jwk = with(jwk) {
             return Jwk(
-                alg = JwaSignatureAlgorithm.Static.fromValue(alg),
+                alg = JwaAlgorithm.Static.fromValue(alg),
                 crv = JwaCurve.Static.fromValue(crv),
                 d = d,
                 e = e,
                 k = k,
-                key_ops = key_ops?.map { JoseKeyOperations.Static.fromValue(it) }?.toSet(),
+                key_ops = key_ops?.map { JoseKeyOperations.Static.fromValue(it) }?.toTypedArray(),
                 kid = kid,
                 kty = JwaKeyType.Static.fromValue(kty),
                 n = n,
@@ -220,6 +204,29 @@ data class Jwk(
                 x5u = x5u,
                 x5t_S256 = x5t_S256,
                 y = y,
+            )
+        }
+
+        fun fromJsonObject(jwk: JsonObject): Jwk = with(jwk) {
+            return@fromJsonObject Jwk(
+                alg = get("alg")?.jsonPrimitive?.content?.let {
+                    JwaAlgorithm.Static.fromValue(it)
+                },
+                crv = get("crv")?.jsonPrimitive?.content?.let { JwaCurve.Static.fromValue(it) },
+                d = get("d")?.jsonPrimitive?.content,
+                e = get("e")?.jsonPrimitive?.content,
+                k = get("k")?.jsonPrimitive?.content,
+                key_ops = get("key_ops")?.jsonArray?.map { JoseKeyOperations.Static.fromValue(it.jsonPrimitive.content) }?.toTypedArray(),
+                kid = get("kid")?.jsonPrimitive?.content,
+                kty = get("kty")?.jsonPrimitive?.content?.let { JwaKeyType.Static.fromValue(it) } ?: throw IllegalArgumentException("kty is missing"),
+                n = get("n")?.jsonPrimitive?.content,
+                use = get("use")?.jsonPrimitive?.content,
+                x = get("x")?.jsonPrimitive?.content,
+                x5c = get("x5c")?.jsonArray?.map { it.jsonPrimitive.content }?.toTypedArray(),
+                x5t = get("x5t")?.jsonPrimitive?.content,
+                x5u = get("x5u")?.jsonPrimitive?.content,
+                x5t_S256 = get("x5t#S256")?.jsonPrimitive?.content,
+                y = get("y")?.jsonPrimitive?.content,
             )
         }
 
@@ -254,7 +261,7 @@ data class Jwk(
                     .withD(d)
 //                    .withE(e)
 //                    .withK(k)
-                    .withKeyOps(key_ops?.map { it.toJoseKeyOperations() }?.toSet())
+                    .withKeyOps(key_ops?.map { it.toJoseKeyOperations() }?.toTypedArray())
                     .withKid(kid)
 //                    .withN(n)
 //                    .withUse(use)

@@ -14,7 +14,7 @@ actual interface IJwk: IKey {
     actual override val d: String?
     actual val e: String?
     actual val k: String?
-    actual override val key_ops: Set<JoseKeyOperations>?
+    actual override val key_ops: Array<JoseKeyOperations>?
     actual override val kid: String?
     actual override val kty: JwaKeyType
     actual val n: String?

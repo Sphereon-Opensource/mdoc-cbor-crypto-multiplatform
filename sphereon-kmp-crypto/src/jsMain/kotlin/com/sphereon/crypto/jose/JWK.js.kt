@@ -17,7 +17,7 @@ actual external interface IJwk: IKey {
     actual val e: String?
     @JsName("k")
     actual val k: String?
-    actual override val key_ops: Set<JoseKeyOperations>?
+    actual override val key_ops: Array<JoseKeyOperations>?
     actual override val kid: String?
     actual override val kty: JwaKeyType
     @JsName("n")

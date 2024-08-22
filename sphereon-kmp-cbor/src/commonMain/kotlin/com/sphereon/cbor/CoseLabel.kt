@@ -47,7 +47,7 @@ sealed class CoseLabel<ItemType>(
 
     @Suppress("UNCHECKED_CAST")
     fun <T> optional(map: CborMap<out CoseLabel<*>, AnyCborItem>): T? {
-        CborConst.LOG.debug("Getting required label '${value}' from map...")
+        CborConst.LOG.debug("Getting optional label '${value}' from map...")
         if (!map.value.containsKey(this)) {
             CborConst.LOG.debug("... <${value.toString()} not available in map>")
             return null

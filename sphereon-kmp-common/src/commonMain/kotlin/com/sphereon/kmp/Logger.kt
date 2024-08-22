@@ -1,11 +1,13 @@
 package com.sphereon.kmp
 
 import co.touchlab.kermit.Logger
+import co.touchlab.kermit.Severity
 
 class Logger(val tag: String = "") {
     fun verbose(message: String, tag: String = this.tag) {
         Logger.v(tag = tag, messageString = message)
     }
+
     fun debug(message: String, tag: String = this.tag) {
         Logger.d(tag = tag, messageString = message)
     }
@@ -22,10 +24,12 @@ class Logger(val tag: String = "") {
         Logger.e(tag = tag, messageString = message, throwable = throwable)
     }
 
+    fun setMinSeverity(severity: Severity) = Logger.setMinSeverity(severity)
+
     object Static {
-        fun tag(tag: String = "") = Logger(tag)
+        fun tag(tag: String = "", severity: Severity = Severity.Info) = Logger(tag).also { it.setMinSeverity(severity) }
     }
 
 }
 
-val DefaultLogger  = Logger("")
+val DefaultLogger = Logger("")

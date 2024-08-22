@@ -1,5 +1,6 @@
 package com.sphereon.kmp
 
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlin.js.ExperimentalJsCollectionsApi
 import kotlin.js.JsExport
@@ -16,6 +17,12 @@ fun <T> kmpSetOf(elements: Array<T>): Set<T> = elements.toSet()
 @ExperimentalJsCollectionsApi
 fun <K, V> kmpMapOf(): MutableMap<K, V> = mutableMapOf()
 
+
+fun JsonObject.mergeJsonElement(key: String, value: JsonElement): JsonObject {
+    val result = this.toMutableMap()
+    result.putAll(mapOf(Pair(key, value)))
+    return JsonObject(result)
+}
 
 /**
  * Extension function for json object, which internally is a map, hence why it is found in this file
