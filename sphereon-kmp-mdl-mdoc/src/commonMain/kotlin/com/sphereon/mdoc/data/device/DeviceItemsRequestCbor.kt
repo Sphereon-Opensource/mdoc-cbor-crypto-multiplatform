@@ -134,8 +134,10 @@ data class DeviceItemsRequestCbor(
         }.toTypedArray()))
     }
 
+    fun getNameSpaces(): Array<String> = nameSpaces.value.keys.map { it.value }.toTypedArray()
+
     fun getIdentifiers(nameSpace: String): Map<String, Boolean> {
-        return nameSpaces.get<Map<String, Boolean>?>(nameSpace.toCborString())?.map { Pair(it.key, it.value) }?.toMap() ?: emptyMap()
+        return nameSpaces.value[nameSpace.toCborString()]?.value?.map { Pair(it.key.value, it.value.value) }?.toMap() ?: emptyMap()
     }
 
 

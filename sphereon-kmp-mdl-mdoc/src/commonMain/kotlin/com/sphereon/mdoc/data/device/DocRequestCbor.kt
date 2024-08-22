@@ -21,6 +21,7 @@ import com.sphereon.json.JsonView
 import com.sphereon.json.mdocJsonSerializer
 import com.sphereon.mdoc.data.RequestInfo
 import com.sphereon.mdoc.tx.device.ReaderAuthenticationCbor
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlin.js.JsExport
 import kotlin.js.JsName
@@ -32,6 +33,7 @@ typealias docRequestBuilder = DocRequestCbor.Builder
  *
  */
 @JsExport
+@Serializable
 data class DocRequestJson(
     /**
      * ItemRequestBytes contains the ItemsRequest structure as a tagged (24) CBOR bytestring data item.

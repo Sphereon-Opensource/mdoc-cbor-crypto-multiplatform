@@ -109,9 +109,11 @@ data class DocumentCbor(
         return DocumentJson(docType = docType.value, issuerSigned = issuerSigned.toJson(), deviceSigned = deviceSigned?.toJson() /*errors = FIXME */)
     }
 
-    private fun limitDisclosures(docRequest: DocRequestCbor): IssuerSignedCbor {
+    fun limitDisclosures(docRequest: DocRequestCbor): IssuerSignedCbor {
         return docRequest.limitDisclosures(issuerSigned)
     }
+
+    fun getNameSpaces() = issuerSigned.nameSpaces?.value?.map { it.key.value }?.toTypedArray() ?: arrayOf()
 
     object Static {
         val DOC_TYPE = StringLabel("docType")

@@ -40,9 +40,10 @@ data class Oid4VPPresentationDefinition(
 ) : IOid4VPPresentationDefinition {
 
     fun toDocRequest(): DocRequestCbor {
-        val builder = DeviceItemsRequestCbor.Builder()
-        inputDescriptors.forEach { it.toDeviceItemsRequest(builder) }
-        return builder.buildDocRequest()
+        val itemsBuilder = DeviceItemsRequestCbor.Builder()
+        val docRequestBuilder = DocRequestCbor.Builder(deviceItemsRequestBuilder = itemsBuilder)
+        inputDescriptors.forEach { it.toDeviceItemsRequest(itemsBuilder) }
+        return docRequestBuilder.build()
     }
 
     fun toDocRequestJson(): DocRequestJson = toDocRequest().toJson()
@@ -91,6 +92,7 @@ data class Oid4VPInputDescriptor(
 ) : IOid4VPInputDescriptor {
 
     fun toDeviceItemsRequest(builder: DeviceItemsRequestCbor.Builder) {
+        builder.withDocType(id) // For ISO 18015-7 the input descriptor id is the doc type
         constraints.fields.forEach {
             it.path.forEach { path ->
                 run {
