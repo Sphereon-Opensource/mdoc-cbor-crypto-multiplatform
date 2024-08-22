@@ -127,8 +127,13 @@ data class SessionTranscriptCbor(
         }
 
         fun fromOid4vpHandover(handover: OID4VPHandoverCbor): SessionTranscriptCbor = SessionTranscriptCbor(handover = handover)
-        fun fromOid4vpClientIdAndResponseUri(clientId: String, responseUri: String, nonce: String) =
-            fromOid4vpHandover(OID4VPHandoverCbor.Static.fromClientIdAndResponseUri(clientId, responseUri, nonce))
+        fun fromOid4vpClientIdAndResponseUri(
+            clientId: String,
+            responseUri: String,
+            mdocNonce: String = Uuid.v4String(),
+            authorizationRequestNonce: String
+        ) =
+            fromOid4vpHandover(OID4VPHandoverCbor.Static.fromClientIdAndResponseUri(clientId, responseUri, mdocNonce, authorizationRequestNonce))
 
 
         @JsName("cborDecode")
@@ -207,8 +212,18 @@ data class OID4VPHandoverJson(val clientIdHash: String, val responseUriHash: Str
     )
 
     object Static {
-        fun fromClientIdAndResponseUri(clientId: String, responseUri: String, generatedNonce: String) =
-            oid4vpHandoverFromClientIdAndResponseUri(clientId = clientId, responseUri = responseUri, nonce = generatedNonce).toJson()
+        fun fromClientIdAndResponseUri(
+            clientId: String,
+            responseUri: String,
+            mdocNonce: String = Uuid.v4String(),
+            authorizationRequestNonce: String
+        ) =
+            oid4vpHandoverFromClientIdAndResponseUri(
+                clientId = clientId,
+                responseUri = responseUri,
+                mdocNonce = mdocNonce,
+                authorizationRequestNonce = authorizationRequestNonce
+            ).toJson()
 
     }
 }
@@ -237,8 +252,18 @@ data class OID4VPHandoverCbor(val clientIdHash: CborByteString, val responseUriH
         fun fromCborItem(a: CborArray<AnyCborItem>) =
             OID4VPHandoverCbor(a.required(CLIENT_ID_HASH), a.required(RESPONSE_URI_HASH), a.required(NONCE))
 
-        fun fromClientIdAndResponseUri(clientId: String, responseUri: String, nonce: String) =
-            oid4vpHandoverFromClientIdAndResponseUri(clientId = clientId, responseUri = responseUri, nonce = nonce)
+        fun fromClientIdAndResponseUri(
+            clientId: String,
+            responseUri: String,
+            mdocNonce: String = Uuid.v4String(),
+            authorizationRequestNonce: String
+        ) =
+            oid4vpHandoverFromClientIdAndResponseUri(
+                clientId = clientId,
+                responseUri = responseUri,
+                mdocNonce = mdocNonce,
+                authorizationRequestNonce = authorizationRequestNonce
+            )
 
         fun cborDecode(data: ByteArray) = fromCborItem(cborSerializer.decode(data))
     }
