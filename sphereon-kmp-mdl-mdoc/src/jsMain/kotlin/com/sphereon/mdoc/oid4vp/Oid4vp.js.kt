@@ -4,7 +4,6 @@ package com.sphereon.mdoc.oid4vp
 
 import com.sphereon.crypto.cose.CoseAlgorithm
 import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
 
 @JsExport
 actual sealed external interface IOid4VPFormat {
@@ -21,7 +20,7 @@ actual sealed external interface IOid4VPSupportedAlgorithm {
 actual sealed external interface IOid4VPPresentationDefinition {
     actual val id: String
     @SerialName("input_descriptors")
-    actual val inputDescriptors: Array<out IOid4VPInputDescriptor>
+    actual val input_descriptors: Array<out IOid4VPInputDescriptor>
 }
 
 @JsExport
@@ -35,7 +34,7 @@ actual sealed external interface IOid4VPInputDescriptor {
 @JsExport
 actual sealed external interface IOid4VPConstraints {
     @SerialName("limit_disclosure")
-    actual val limitDisclosure: Oid4VPLimitDisclosure
+    actual val limit_disclosure: Oid4VPLimitDisclosure
     actual val fields: Array<out IOid4VPConstraintField>
 }
 
@@ -44,16 +43,16 @@ actual sealed external interface IOid4VPConstraintField {
     @SerialName("path")
     actual val path: Array<String>
     @SerialName("intent_to_retain")
-    actual val intentToRetain: Boolean
+    actual val intent_to_retain: Boolean
 }
 
 @JsExport
 actual sealed external interface IOid4VPPresentationSubmission {
     @SerialName("definition_id")
-    actual val definitionId: String
+    actual val definition_id: String
     actual val id: String
     @SerialName("descriptor_map")
-    actual val descriptorMap: Array<out IOid4vpSubmissionDescriptor>
+    actual val descriptor_map: Array<out IOid4vpSubmissionDescriptor>
 
 }
 

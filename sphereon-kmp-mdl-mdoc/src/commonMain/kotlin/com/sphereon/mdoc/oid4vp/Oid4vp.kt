@@ -2,9 +2,12 @@
 
 package com.sphereon.mdoc.oid4vp
 
-import Uuid
 import assertedPathEntry
 import com.sphereon.crypto.cose.CoseAlgorithm
+import com.sphereon.json.HasToJsonString
+import com.sphereon.json.mdocJsonSerializer
+import com.sphereon.json.toJsonDTO
+import com.sphereon.kmp.Uuid
 import com.sphereon.mdoc.data.device.DeviceItemsRequestCbor
 import com.sphereon.mdoc.data.device.DocRequestCbor
 import com.sphereon.mdoc.data.device.DocRequestJson
@@ -17,8 +20,11 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
 import kotlin.js.JsExport
 import kotlin.js.JsName
 
@@ -27,7 +33,7 @@ expect sealed interface IOid4VPPresentationDefinition {
     val id: String
 
     @SerialName("input_descriptors")
-    val inputDescriptors: Array<out IOid4VPInputDescriptor>
+    val input_descriptors: Array<out IOid4VPInputDescriptor>
 }
 
 @Serializable
@@ -36,15 +42,19 @@ data class Oid4VPPresentationDefinition(
     @SerialName("id")
     override val id: String,
     @SerialName("input_descriptors")
-    override val inputDescriptors: Array<Oid4VPInputDescriptor>
-) : IOid4VPPresentationDefinition {
+    override val input_descriptors: Array<Oid4VPInputDescriptor>
+) : IOid4VPPresentationDefinition, HasToJsonString {
 
     fun toDocRequest(): DocRequestCbor {
         val itemsBuilder = DeviceItemsRequestCbor.Builder()
         val docRequestBuilder = DocRequestCbor.Builder(deviceItemsRequestBuilder = itemsBuilder)
-        inputDescriptors.forEach { it.toDeviceItemsRequest(itemsBuilder) }
+        input_descriptors.forEach { it.toDeviceItemsRequest(itemsBuilder) }
         return docRequestBuilder.build()
     }
+
+    fun toJsonObject(): JsonObject = mdocJsonSerializer.parseToJsonElement(mdocJsonSerializer.encodeToString(this)).jsonObject
+    fun toDTO() = toJsonDTO<IOid4VPPresentationDefinition>(this)
+
 
     fun toDocRequestJson(): DocRequestJson = toDocRequest().toJson()
 
@@ -52,23 +62,28 @@ data class Oid4VPPresentationDefinition(
     object Static {
         fun fromDTO(presentationDefinition: IOid4VPPresentationDefinition) =
             with(presentationDefinition) {
-                Oid4VPPresentationDefinition(id, inputDescriptors = inputDescriptors.map { Oid4VPInputDescriptor.Static.fromDTO(it) }.toTypedArray())
+                Oid4VPPresentationDefinition(
+                    id,
+                    input_descriptors = input_descriptors.map { Oid4VPInputDescriptor.Static.fromDTO(it) }.toTypedArray()
+                )
             }
     }
+
+    override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is Oid4VPPresentationDefinition) return false
 
         if (id != other.id) return false
-        if (!inputDescriptors.contentEquals(other.inputDescriptors)) return false
+        if (!input_descriptors.contentEquals(other.input_descriptors)) return false
 
         return true
     }
 
     override fun hashCode(): Int {
         var result = id.hashCode()
-        result = 31 * result + inputDescriptors.contentHashCode()
+        result = 31 * result + input_descriptors.contentHashCode()
         return result
     }
 }
@@ -97,7 +112,7 @@ data class Oid4VPInputDescriptor(
             it.path.forEach { path ->
                 run {
                     val (nameSpace, identifier) = assertedPathEntry(path)
-                    builder.add(nameSpace, identifier, it.intentToRetain)
+                    builder.add(nameSpace, identifier, it.intent_to_retain)
                 }
             }
         }
@@ -165,7 +180,7 @@ data class Oid4VPSupportedAlgorithm(
 
 expect sealed interface IOid4VPConstraints {
     @SerialName("limit_disclosure")
-    val limitDisclosure: Oid4VPLimitDisclosure
+    val limit_disclosure: Oid4VPLimitDisclosure
     val fields: Array<out IOid4VPConstraintField>
 }
 
@@ -173,14 +188,14 @@ expect sealed interface IOid4VPConstraints {
 @JsExport
 data class Oid4VPConstraints(
     @SerialName("limit_disclosure")
-    override val limitDisclosure: Oid4VPLimitDisclosure = Oid4VPLimitDisclosure.REQUIRED,
+    override val limit_disclosure: Oid4VPLimitDisclosure = Oid4VPLimitDisclosure.REQUIRED,
     @SerialName("fields")
     override val fields: Array<Oid4VPConstraintField>
 ) : IOid4VPConstraints {
     object Static {
         fun fromDTO(constraints: IOid4VPConstraints) = with(constraints) {
             Oid4VPConstraints(
-                limitDisclosure = limitDisclosure,
+                limit_disclosure = limit_disclosure,
                 fields = fields.map { Oid4VPConstraintField.Static.fromDTO(it) }.toTypedArray()
             )
         }
@@ -190,14 +205,14 @@ data class Oid4VPConstraints(
         if (this === other) return true
         if (other !is Oid4VPConstraints) return false
 
-        if (limitDisclosure != other.limitDisclosure) return false
+        if (limit_disclosure != other.limit_disclosure) return false
         if (!fields.contentEquals(other.fields)) return false
 
         return true
     }
 
     override fun hashCode(): Int {
-        var result = limitDisclosure.hashCode()
+        var result = limit_disclosure.hashCode()
         result = 31 * result + fields.contentHashCode()
         return result
     }
@@ -208,7 +223,7 @@ expect sealed interface IOid4VPConstraintField {
     val path: Array<String>
 
     @SerialName("intent_to_retain")
-    val intentToRetain: Boolean
+    val intent_to_retain: Boolean
 }
 
 @JsExport
@@ -218,7 +233,7 @@ data class Oid4VPConstraintField(
     override val path: Array<String> = arrayOf(),
 
     @SerialName("intent_to_retain")
-    override val intentToRetain: Boolean
+    override val intent_to_retain: Boolean
 ) : IOid4VPConstraintField {
     init {
         this.assertValidPath()
@@ -227,12 +242,12 @@ data class Oid4VPConstraintField(
     object Static {
         @JsName("fromElementIdentifiers")
         fun fromElementIdentifiers(nameSpace: String, elementIdentifiers: Array<String>, intentToRetain: Boolean): Oid4VPConstraintField {
-            return Oid4VPConstraintField(intentToRetain = intentToRetain, path = elementIdentifiers.map { "$['$nameSpace']['$it']" }.toTypedArray())
+            return Oid4VPConstraintField(intent_to_retain = intentToRetain, path = elementIdentifiers.map { "$['$nameSpace']['$it']" }.toTypedArray())
         }
 
         @JsName("fromIssuerSignedItemJson")
         fun fromIssuerSignedItemJson(nameSpace: String, issuerSignedItemJson: IssuerSignedItemJson, intentToRetain: Boolean): Oid4VPConstraintField {
-            return Oid4VPConstraintField(intentToRetain = intentToRetain, path = arrayOf("$['$nameSpace']['${issuerSignedItemJson.key}']"))
+            return Oid4VPConstraintField(intent_to_retain = intentToRetain, path = arrayOf("$['$nameSpace']['${issuerSignedItemJson.key}']"))
         }
 
         @JsName("fromIssuerSignedItemCbor")
@@ -242,19 +257,19 @@ data class Oid4VPConstraintField(
             intentToRetain: Boolean
         ): Oid4VPConstraintField {
             return Oid4VPConstraintField(
-                intentToRetain = intentToRetain,
+                intent_to_retain = intentToRetain,
                 path = arrayOf("$['$nameSpace']['${issuerSignedItemCbor.elementIdentifier.value}']")
             )
         }
 
         @JsName("fromDTO")
-        fun fromDTO(dto: IOid4VPConstraintField) = with(dto) { Oid4VPConstraintField(intentToRetain = intentToRetain, path = path) }
+        fun fromDTO(dto: IOid4VPConstraintField) = with(dto) { Oid4VPConstraintField(intent_to_retain = intent_to_retain, path = path) }
 
 
         @JsName("fromDataElementDef")
         fun fromDataElementDef(dataElementDef: DataElementDef, intentToRetain: Boolean): Oid4VPConstraintField {
             return Oid4VPConstraintField(
-                intentToRetain = intentToRetain,
+                intent_to_retain = intentToRetain,
                 path = arrayOf("$['${dataElementDef.nameSpace}']['${dataElementDef.identifier}']")
             )
         }
@@ -323,11 +338,11 @@ object Oid4VPFormatsSerializer : KSerializer<Oid4VPFormats> {
 
 expect sealed interface IOid4VPPresentationSubmission {
     @SerialName("definition_id")
-    val definitionId: String
+    val definition_id: String
     val id: String
 
     @SerialName("descriptor_map")
-    val descriptorMap: Array<out IOid4vpSubmissionDescriptor>
+    val descriptor_map: Array<out IOid4vpSubmissionDescriptor>
 
 }
 
@@ -335,18 +350,18 @@ expect sealed interface IOid4VPPresentationSubmission {
 @JsExport
 data class Oid4VPPresentationSubmission(
     @SerialName("definition_id")
-    override val definitionId: String,
+    override val definition_id: String,
     @SerialName("id")
     override val id: String,
     @SerialName("descriptor_map")
-    override val descriptorMap: Array<Oid4vpSubmissionDescriptor>
+    override val descriptor_map: Array<Oid4vpSubmissionDescriptor>
 ) : IOid4VPPresentationSubmission {
     object Static {
         fun fromPresentationDefinition(pd: IOid4VPPresentationDefinition, id: String = Uuid.v4String()): Oid4VPPresentationSubmission =
             Oid4VPPresentationSubmission(
-                definitionId = pd.id,
+                definition_id = pd.id,
                 id = id,
-                descriptorMap = pd.inputDescriptors.map { Oid4vpSubmissionDescriptor.Static.fromInputDescriptor(it) }.toTypedArray()
+                descriptor_map = pd.input_descriptors.map { Oid4vpSubmissionDescriptor.Static.fromInputDescriptor(it) }.toTypedArray()
             )
 
     }

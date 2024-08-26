@@ -24,8 +24,8 @@ class Oid4vpTest {
 
         val pd = oid4vpJsonSerializer.decodeFromString<Oid4VPPresentationDefinition>(sprind_funke_pid_pd)
         assertEquals("PID-sample-req", pd.id)
-        assertEquals(1, pd.inputDescriptors.size)
-        assertEquals("eu.europa.ec.eudi.pid.1", pd.inputDescriptors[0].id)
+        assertEquals(1, pd.input_descriptors.size)
+        assertEquals("eu.europa.ec.eudi.pid.1", pd.input_descriptors[0].id)
 
         val docRequest = pd.toDocRequest()
         assertNotNull(docRequest)
@@ -68,10 +68,10 @@ class Oid4vpTest {
 
         println(pd)
         assertEquals("mDL-sample-req", pd.id)
-        assertEquals(1, pd.inputDescriptors.size)
-        assertEquals("org.iso.18013.5.1.mDL", pd.inputDescriptors[0].id)
-        assertEquals(Oid4VPLimitDisclosure.REQUIRED, pd.inputDescriptors[0].constraints.limitDisclosure)
-        assertEquals(11, pd.inputDescriptors[0].constraints.fields.size)
+        assertEquals(1, pd.input_descriptors.size)
+        assertEquals("org.iso.18013.5.1.mDL", pd.input_descriptors[0].id)
+        assertEquals(Oid4VPLimitDisclosure.REQUIRED, pd.input_descriptors[0].constraints.limit_disclosure)
+        assertEquals(11, pd.input_descriptors[0].constraints.fields.size)
 
 
         val serialized = oid4vpJsonSerializer.encodeToString(Oid4VPPresentationDefinition.serializer(), pd)
@@ -87,9 +87,9 @@ class Oid4vpTest {
         val pd = oid4vpJsonSerializer.decodeFromString<Oid4VPPresentationDefinition>(iso18013_7_pd)
         val submission = Oid4VPPresentationSubmission.Static.fromPresentationDefinition(pd, "mDL-sample-res")
         assertEquals("mDL-sample-res", submission.id)
-        assertEquals(pd.id, submission.definitionId)
-        assertEquals(1, submission.descriptorMap.size)
-        assertEquals("org.iso.18013.5.1.mDL", pd.inputDescriptors[0].id)
+        assertEquals(pd.id, submission.definition_id)
+        assertEquals(1, submission.descriptor_map.size)
+        assertEquals("org.iso.18013.5.1.mDL", pd.input_descriptors[0].id)
     }
 
     @Test

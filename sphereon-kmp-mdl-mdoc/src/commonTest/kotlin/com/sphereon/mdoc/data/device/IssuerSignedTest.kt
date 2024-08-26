@@ -11,7 +11,6 @@ import com.sphereon.crypto.cose.CoseKeyType
 import com.sphereon.crypto.cose.CoseSign1Cbor
 import com.sphereon.crypto.cose.CoseSignatureAlgorithm
 import com.sphereon.crypto.cose.CoseSignatureStructureCbor
-import com.sphereon.json.toJsonDTO
 import com.sphereon.kmp.Encoding
 import com.sphereon.kmp.decodeFrom
 import com.sphereon.kmp.decodeFromHex
@@ -20,7 +19,6 @@ import com.sphereon.mdoc.TestVectors.iso18013_5_IssuerAuthTestVector
 import com.sphereon.mdoc.TestVectors.iso18013_5_SignatureStructureTestVector
 import com.sphereon.mdoc.TestVectors.sphereonValidEncoded
 import com.sphereon.mdoc.TestVectors.sprindFunkeTestVector
-import com.sphereon.mdoc.data.mso.MobileSecurityObjectJson
 import kotlinx.serialization.json.JsonObject
 import kotlin.test.Test
 import kotlin.test.assertEquals

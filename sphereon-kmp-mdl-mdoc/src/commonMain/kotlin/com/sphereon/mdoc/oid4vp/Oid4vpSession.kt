@@ -4,6 +4,7 @@ import com.sphereon.cbor.toCborByteString
 import com.sphereon.cbor.toCborString
 import com.sphereon.crypto.HashAlgorithm
 import com.sphereon.crypto.hash
+import com.sphereon.kmp.Uuid
 import com.sphereon.mdoc.tx.device.OID4VPHandoverCbor
 
 /**

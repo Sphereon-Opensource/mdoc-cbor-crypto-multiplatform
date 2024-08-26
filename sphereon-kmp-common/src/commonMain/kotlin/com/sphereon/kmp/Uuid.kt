@@ -1,3 +1,4 @@
+package com.sphereon.kmp
 import kotlin.js.JsExport
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid

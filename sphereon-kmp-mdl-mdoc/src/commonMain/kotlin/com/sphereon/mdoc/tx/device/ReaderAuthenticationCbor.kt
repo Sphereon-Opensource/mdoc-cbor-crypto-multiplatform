@@ -16,6 +16,7 @@ import com.sphereon.crypto.cose.CoseKeyJson
 import com.sphereon.json.JsonView
 import com.sphereon.json.mdocJsonSerializer
 import com.sphereon.kmp.Encoding
+import com.sphereon.kmp.Uuid
 import com.sphereon.kmp.decodeFrom
 import com.sphereon.mdoc.data.device.DeviceItemsRequestCbor
 import com.sphereon.mdoc.data.device.DeviceItemsRequestJson
