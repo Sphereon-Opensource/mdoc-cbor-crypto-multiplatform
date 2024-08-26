@@ -111,7 +111,7 @@ object TestVectors {
             "readerAuth": null
         }
     """.trimIndent()
-    val pid_pd = """
+    val sprind_funke_pid_pd = """
         {
           "id": "PID-sample-req",
           "input_descriptors": [
