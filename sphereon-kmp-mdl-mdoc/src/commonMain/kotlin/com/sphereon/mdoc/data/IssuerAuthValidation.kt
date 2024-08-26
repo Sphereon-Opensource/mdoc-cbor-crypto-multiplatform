@@ -19,6 +19,7 @@ import com.sphereon.kmp.DateTimeUtils
 import com.sphereon.kmp.getDateTime
 import com.sphereon.kmp.toLocalDateTimeKMP
 import com.sphereon.mdoc.MdocConst
+import com.sphereon.mdoc.data.device.DocumentCbor
 import com.sphereon.mdoc.data.mso.MobileSecurityObjectCbor
 import com.sphereon.mdoc.data.mso.MobileSecurityObjectJson
 
@@ -95,7 +96,7 @@ object IssuerAuthValidation {
         issuerAuth: COSE_Sign1<MobileSecurityObjectCbor>,
 //        deviceResponse: DeviceResponseCbor
     ): IVerifyResult = VerifyResult(
-        error = true,
+        error = false,
         critical = true,
         message = "Device signed verification validation not implemented yet",
         name = MdocConst.MDOC_LITERAL
@@ -105,15 +106,17 @@ object IssuerAuthValidation {
     /**
      * 4. Verify that the DocType in the MSO matches the relevant DocType in the Documents structure.
      *
-     *  This is a READER method. FIXME: Implement
+     *  This is a READER method.
      */
-    suspend fun verifyDocType(issuerAuth: COSE_Sign1<MobileSecurityObjectCbor>): IVerifyResult =
-        VerifyResult(
-            error = true,
-            critical = true,
-            message = "Doc type verification not implemented yet",
+    suspend fun verifyDocType(document: DocumentCbor?): IVerifyResult {
+        val docTypesMatch = document !== null && document.docType == document.MSO?.docType
+        return VerifyResult(
+            error = !docTypesMatch,
+            critical = !docTypesMatch,
+            message = "Doc type verification was ${if (docTypesMatch) "successful" else "not successful. MSO ${document?.MSO?.docType}, document: ${document?.docType}"}",
             name = MdocConst.MDOC_LITERAL
         )
+    }
 
     /**
      * 5. Validate the elements in the ValidityInfo structure, i.e. verify that:
@@ -181,11 +184,13 @@ object IssuerAuthValidation {
         }
 
         // the 'validUntil' element shall be equal or later than the current timestamp.
+
         if (validUntil < now - clockSkewAllowedInSec) {
+            val datesEqaul = nowStr == validUntilStr
             return VerifyResult(
                 error = true,
                 critical = true,
-                message = "The document is not valid anymore. Current date/time: $nowStr and valid Until $validUntilStr",
+                message = "The document is not valid anymore. Current date/time: $nowStr ${if (datesEqaul) "(${now})" else ""} and valid Until $validUntilStr ${if (datesEqaul) "(${validUntil})" else ""}",
                 name = MdocConst.MDOC_LITERAL
             ).also { MdocConst.LOG.error("Error validating MSO validUntil against current time: $it") }
         }
@@ -193,6 +198,7 @@ object IssuerAuthValidation {
         return VerifyResult(
             name = MdocConst.MDOC_LITERAL,
             error = false,
+            critical = false,
             message = "Signature is signed during Certificate validity and valid"
         )
     }

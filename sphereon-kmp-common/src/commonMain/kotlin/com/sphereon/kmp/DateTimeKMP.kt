@@ -4,6 +4,7 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -38,7 +39,7 @@ class LocalDateTimeKMP(
     )
 
     override fun compareTo(other: LocalDateTimeKMP): Int {
-        return LocalDateTime.parse(this.toString()).compareTo(LocalDateTime.parse(other.toString()))
+        return Static.fromString(this.toString()).compareTo(Static.fromString(other.toString()))
     }
 
     override fun toString(): String {
@@ -51,15 +52,22 @@ class LocalDateTimeKMP(
 
     object Static {
         fun fromString(value: String): LocalDateTimeKMP {
-            val parsed = LocalDateTime.parse(value)
+            val datetime: LocalDateTime = if (value.lowercase().endsWith('z')) {
+                val instant = Instant.parse(value)
+                instant.toLocalDateTime(TimeZone.of(DateTimeUtils.Static.DEFAULT.timeZoneId))
+            } else {
+                LocalDateTime.parse(value)
+            }
+
+
             return LocalDateTimeKMP(
-                parsed.year,
-                parsed.monthNumber,
-                parsed.dayOfMonth,
-                parsed.hour,
-                parsed.minute,
-                parsed.second,
-                parsed.nanosecond
+                datetime.year,
+                datetime.monthNumber,
+                datetime.dayOfMonth,
+                datetime.hour,
+                datetime.minute,
+                datetime.second,
+                datetime.nanosecond
             )
         }
     }

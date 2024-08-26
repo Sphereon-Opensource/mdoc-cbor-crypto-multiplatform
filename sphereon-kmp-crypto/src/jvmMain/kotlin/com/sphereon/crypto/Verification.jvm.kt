@@ -21,6 +21,6 @@ actual interface IKeyInfo<out KeyType : IKey> {
 
 actual interface IVerifyResults<out KeyType : IKey> {
     actual val error: Boolean
-    actual val verifications: Array<IVerifyResult>
+    actual val verifications: Array<out IVerifyResult>
     actual val keyInfo: IKeyInfo<KeyType>?
 }

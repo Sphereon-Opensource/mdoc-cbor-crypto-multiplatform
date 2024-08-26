@@ -1,21 +1,33 @@
 package com.sphereon.crypto
 
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kotlin.js.ExperimentalJsCollectionsApi
 import kotlin.js.JsExport
+import kotlin.js.JsName
+
+expect interface IVerifyResult {
+    val name: String
+    val error: Boolean
+    val message: String?
+    val critical: Boolean
+}
 
 
 expect interface IVerifyResults<out KeyType : IKey> {
     val error: Boolean
-    val verifications: Array<IVerifyResult>
+    val verifications: Array<out IVerifyResult>
     val keyInfo: IKeyInfo<KeyType>?
 }
 
 @Suppress("NON_EXPORTABLE_TYPE") // We are really exporting them because of the expect/actual
+@Serializable
 @JsExport
 data class VerifyResults<out KeyType : IKey>(
+
     override val error: Boolean,
-    override val verifications: Array<IVerifyResult>,
-    override val keyInfo: IKeyInfo<KeyType>?
+    override val verifications: Array<VerifyResult>,
+    override val keyInfo: KeyInfo<KeyType>?
 ) : IVerifyResults<KeyType> {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -43,13 +55,7 @@ data class VerifyResults<out KeyType : IKey>(
 }
 
 
-expect interface IVerifyResult {
-    val name: String
-    val error: Boolean
-    val message: String?
-    val critical: Boolean
-}
-
+@Serializable
 @JsExport
 open class VerifyResult(
     override val name: String,
@@ -80,6 +86,10 @@ open class VerifyResult(
         result = 31 * result + (message?.hashCode() ?: 0)
         result = 31 * result + critical.hashCode()
         return result
+    }
+
+    object Static {
+        fun fromDTO(dto: IVerifyResult) = with(dto) {VerifyResult(name = name, error = error, message = message, critical = critical)}
     }
 }
 
@@ -131,10 +141,12 @@ expect interface IKeyInfo<out KeyType : IKey> {
 
 @JsExport
 @ExperimentalJsCollectionsApi
+@Serializable
 data class KeyInfo<out KeyType : IKey>(
     override val kid: String?, /*val jwk: JWK,*/
     override val key: KeyType?,
-    override val opts: Map<*, *>?
+    @Transient // fixme:
+    override val opts: Map<*, *>? = null
 ) : IKeyInfo<KeyType> {
 
     override fun hashCode(): Int {
@@ -157,6 +169,10 @@ data class KeyInfo<out KeyType : IKey>(
         if (opts != other.opts) return false
 
         return true
+    }
+
+    object Static {
+        fun <KeyType: IKey>fromDTO(dto: IKeyInfo<out KeyType>) = with(dto) { KeyInfo(kid = kid, key = key, opts = opts) }
     }
 
 }

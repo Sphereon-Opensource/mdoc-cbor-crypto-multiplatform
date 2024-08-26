@@ -14,6 +14,7 @@ import com.sphereon.json.mdocJsonSerializer
 import com.sphereon.mdoc.data.DocumentErrorsCbor
 import com.sphereon.mdoc.data.DocumentErrorsJson
 import com.sphereon.mdoc.data.device.IssuerSignedCbor.Static
+import com.sphereon.mdoc.oid4vp.IOid4VPPresentationDefinition
 import com.sphereon.mdoc.oid4vp.Oid4VPPresentationDefinition
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -122,9 +123,9 @@ data class DocumentCbor(
         return docRequest.limitDisclosures(issuerSigned)
     }
 
-    fun toSingleDocDeviceResponse(presentationDefinition: Oid4VPPresentationDefinition): DeviceResponseCbor {
+    fun toSingleDocDeviceResponse(presentationDefinition: IOid4VPPresentationDefinition): DeviceResponseCbor {
         // device signing
-        val docRequest = presentationDefinition.toDocRequest()
+        val docRequest = Oid4VPPresentationDefinition.Static.fromDTO(presentationDefinition).toDocRequest()
         val mdoc = DocumentCbor(docType = this.docType, issuerSigned =  limitDisclosures(docRequest))
         return DeviceResponseCbor(documents = arrayOf(mdoc))
     }

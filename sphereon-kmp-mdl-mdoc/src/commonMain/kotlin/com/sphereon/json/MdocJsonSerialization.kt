@@ -1,7 +1,11 @@
 package com.sphereon.json
 
+import com.sphereon.crypto.IKeyInfo
+import com.sphereon.crypto.KeyInfo
 import com.sphereon.crypto.cose.CoseKeyJson
 import com.sphereon.mdoc.data.device.IssuerSignedItemJson
+import com.sphereon.mdoc.oid4vp.IOid4VPPresentationSubmission
+import com.sphereon.mdoc.oid4vp.Oid4VPPresentationSubmission
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic

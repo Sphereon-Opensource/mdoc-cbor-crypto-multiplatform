@@ -7,17 +7,20 @@ import kotlinx.serialization.SerialName
 
 @JsExport
 actual sealed external interface IOid4VPFormat {
+    @JsName("mso_mdoc")
     @SerialName("mso_mdoc")
-    actual val msoMdoc: IOid4VPSupportedAlgorithm
+    actual val mso_mdoc: IOid4VPSupportedAlgorithm
 }
 
 @JsExport
 actual sealed external interface IOid4VPSupportedAlgorithm {
-    actual val alg: Array<CoseAlgorithm>
+    @JsName("alg")
+    actual val alg: Array<String>
 }
 
 @JsExport
 actual sealed external interface IOid4VPPresentationDefinition {
+    @JsName("id")
     actual val id: String
     @SerialName("input_descriptors")
     actual val input_descriptors: Array<out IOid4VPInputDescriptor>
@@ -25,8 +28,11 @@ actual sealed external interface IOid4VPPresentationDefinition {
 
 @JsExport
 actual sealed external interface IOid4VPInputDescriptor {
+    @JsName("id")
     actual val id: String
+    @JsName("format")
     actual val format: IOid4VPFormat
+    @JsName("constraints")
     actual val constraints: IOid4VPConstraints
 }
 
@@ -34,7 +40,9 @@ actual sealed external interface IOid4VPInputDescriptor {
 @JsExport
 actual sealed external interface IOid4VPConstraints {
     @SerialName("limit_disclosure")
-    actual val limit_disclosure: Oid4VPLimitDisclosure
+    @JsName("limit_disclosure")
+    actual val limit_disclosure: String
+    @JsName("fields")
     actual val fields: Array<out IOid4VPConstraintField>
 }
 
@@ -48,9 +56,11 @@ actual sealed external interface IOid4VPConstraintField {
 
 @JsExport
 actual sealed external interface IOid4VPPresentationSubmission {
+    @JsName("definition_id")
     @SerialName("definition_id")
     actual val definition_id: String
     actual val id: String
+    @JsName("descriptor_map")
     @SerialName("descriptor_map")
     actual val descriptor_map: Array<out IOid4vpSubmissionDescriptor>
 
@@ -58,7 +68,10 @@ actual sealed external interface IOid4VPPresentationSubmission {
 
 @JsExport
 actual sealed external interface IOid4vpSubmissionDescriptor {
+    @JsName("id")
     actual val id: String
+    @JsName("format")
     actual val format: Oid4VPFormats
+    @JsName("path")
     actual val path: String
 }

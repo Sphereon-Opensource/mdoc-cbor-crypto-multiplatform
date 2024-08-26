@@ -8,11 +8,12 @@ import kotlinx.serialization.Serializable
 
 actual sealed interface IOid4VPFormat {
     @SerialName("mso_mdoc")
-    actual val msoMdoc: IOid4VPSupportedAlgorithm
+    actual val mso_mdoc: IOid4VPSupportedAlgorithm
 }
 
 actual sealed interface IOid4VPSupportedAlgorithm {
-    actual val alg: Array<CoseAlgorithm>
+    @SerialName("alg")
+    actual val alg: Array<String>
 }
 
 actual sealed interface IOid4VPPresentationDefinition {
@@ -31,7 +32,7 @@ actual sealed interface IOid4VPInputDescriptor {
 
 actual sealed interface IOid4VPConstraints {
     @SerialName("limit_disclosure")
-    actual val limit_disclosure: Oid4VPLimitDisclosure
+    actual val limit_disclosure: String
     actual val fields: Array<out IOid4VPConstraintField>
 }
 

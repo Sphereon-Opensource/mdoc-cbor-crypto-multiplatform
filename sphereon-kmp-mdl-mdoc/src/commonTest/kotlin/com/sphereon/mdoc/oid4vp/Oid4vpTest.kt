@@ -70,7 +70,7 @@ class Oid4vpTest {
         assertEquals("mDL-sample-req", pd.id)
         assertEquals(1, pd.input_descriptors.size)
         assertEquals("org.iso.18013.5.1.mDL", pd.input_descriptors[0].id)
-        assertEquals(Oid4VPLimitDisclosure.REQUIRED, pd.input_descriptors[0].constraints.limit_disclosure)
+        assertEquals("required", pd.input_descriptors[0].constraints.limit_disclosure)
         assertEquals(11, pd.input_descriptors[0].constraints.fields.size)
 
 

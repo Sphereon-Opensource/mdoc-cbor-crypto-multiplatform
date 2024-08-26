@@ -4,6 +4,7 @@ package com.sphereon.mdoc.oid4vp
 
 import assertedPathEntry
 import com.sphereon.crypto.cose.CoseAlgorithm
+import com.sphereon.crypto.cose.CoseSignatureAlgorithm
 import com.sphereon.json.HasToJsonString
 import com.sphereon.json.mdocJsonSerializer
 import com.sphereon.json.toJsonDTO
@@ -17,6 +18,7 @@ import com.sphereon.mdoc.data.mdl.DataElementDef
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -133,34 +135,38 @@ data class Oid4VPInputDescriptor(
 
 expect sealed interface IOid4VPFormat {
     @SerialName("mso_mdoc")
-    val msoMdoc: IOid4VPSupportedAlgorithm
+    val mso_mdoc: IOid4VPSupportedAlgorithm
 }
 
 @Serializable
 @JsExport
 data class Oid4VPFormat(
-    @SerialName("mso_mdoc")
-    override val msoMdoc: Oid4VPSupportedAlgorithm
+    @SerialName("mso_mdoc") override val mso_mdoc: Oid4VPSupportedAlgorithm
 ) : IOid4VPFormat {
     object Static {
         fun fromDTO(dto: IOid4VPFormat) =
-            with(dto) { Oid4VPFormat(msoMdoc = Oid4VPSupportedAlgorithm.Static.fromDTO(msoMdoc)) }
+            with(dto) { Oid4VPFormat(mso_mdoc = Oid4VPSupportedAlgorithm.Static.fromDTO(mso_mdoc)) }
     }
 }
 
 
 expect sealed interface IOid4VPSupportedAlgorithm {
-    val alg: Array<CoseAlgorithm>
+    val alg: Array<String>
 }
 
 @Serializable
 @JsExport
 data class Oid4VPSupportedAlgorithm(
     @SerialName("alg")
-    override val alg: Array<CoseAlgorithm>
+    override val alg: Array<String>
 ) : IOid4VPSupportedAlgorithm {
+
+    @Transient
+    val algorithmObjects = alg.map { a -> CoseSignatureAlgorithm.Static.fromName(a) }.toTypedArray()
+
     object Static {
-        fun fromDTO(dto: IOid4VPSupportedAlgorithm) = with(dto) { Oid4VPSupportedAlgorithm(alg = alg) }
+        fun fromDTO(dto: IOid4VPSupportedAlgorithm) =
+            with(dto) { Oid4VPSupportedAlgorithm(alg = alg) }
     }
 
     override fun equals(other: Any?): Boolean {
@@ -180,22 +186,28 @@ data class Oid4VPSupportedAlgorithm(
 
 expect sealed interface IOid4VPConstraints {
     @SerialName("limit_disclosure")
-    val limit_disclosure: Oid4VPLimitDisclosure
+    val limit_disclosure: String
     val fields: Array<out IOid4VPConstraintField>
 }
 
 @Serializable
 @JsExport
 data class Oid4VPConstraints(
-    @SerialName("limit_disclosure")
-    override val limit_disclosure: Oid4VPLimitDisclosure = Oid4VPLimitDisclosure.REQUIRED,
     @SerialName("fields")
     override val fields: Array<Oid4VPConstraintField>
 ) : IOid4VPConstraints {
+    @SerialName("limit_disclosure")
+    override val limit_disclosure: String = "required"
+
+    init {
+        if (limit_disclosure != "required") {
+            throw IllegalArgumentException("Limit disclosure must have the value 'required' according to ISO 18013-7")
+        }
+    }
+
     object Static {
         fun fromDTO(constraints: IOid4VPConstraints) = with(constraints) {
             Oid4VPConstraints(
-                limit_disclosure = limit_disclosure,
                 fields = fields.map { Oid4VPConstraintField.Static.fromDTO(it) }.toTypedArray()
             )
         }
@@ -288,6 +300,7 @@ data class Oid4VPConstraintField(
     }
 
 }
+/*
 
 @JsExport
 @Serializable(with = Oid4VPLimitDisclosureSerializer::class)
@@ -311,6 +324,7 @@ internal object Oid4VPLimitDisclosureSerializer : KSerializer<Oid4VPLimitDisclos
         return Oid4VPLimitDisclosure.Static.fromValue(value) ?: throw IllegalArgumentException("Invalid value for limit disclosure ${value}")
     }
 }
+*/
 
 
 @JsExport

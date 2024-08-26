@@ -13,8 +13,8 @@ import com.sphereon.crypto.coseService
 import com.sphereon.kmp.DateTimeUtils
 import com.sphereon.kmp.getDateTime
 import com.sphereon.mdoc.data.IssuerAuthValidation
+import com.sphereon.mdoc.data.device.DocumentCbor
 import com.sphereon.mdoc.data.mso.MobileSecurityObjectCbor
-import com.sphereon.mdoc.data.mso.MobileSecurityObjectJson
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.promise
@@ -98,9 +98,9 @@ object IssuerAuthValidationJS {
      *
      *  This is a READER method.
      */
-    fun verifyDocTypeAsync(issuerAuth: COSE_Sign1<MobileSecurityObjectCbor>): Promise<IVerifyResult> =
+    fun verifyDocTypeAsync(document: DocumentCbor): Promise<IVerifyResult> =
         CoroutineScope(context = CoroutineName(NAME)).promise {
-            IssuerAuthValidation.verifyDocType(issuerAuth)
+            IssuerAuthValidation.verifyDocType(document)
         }
 
     /**

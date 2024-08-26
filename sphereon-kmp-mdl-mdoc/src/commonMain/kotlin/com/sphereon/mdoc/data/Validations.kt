@@ -5,6 +5,7 @@ import com.sphereon.crypto.ICoseCryptoService
 import com.sphereon.crypto.IKeyInfo
 import com.sphereon.crypto.IVerifyResults
 import com.sphereon.crypto.IX509Service
+import com.sphereon.crypto.KeyInfo
 import com.sphereon.crypto.VerifyResult
 import com.sphereon.crypto.VerifyResults
 import com.sphereon.crypto.cose.COSE_Sign1
@@ -14,6 +15,7 @@ import com.sphereon.kmp.getDateTime
 import com.sphereon.mdoc.MdocConst
 import com.sphereon.mdoc.data.device.DocumentCbor
 import com.sphereon.mdoc.data.mso.MobileSecurityObjectCbor
+import kotlin.js.ExperimentalJsCollectionsApi
 import kotlin.js.JsExport
 
 /**
@@ -82,6 +84,7 @@ object Validations {
         clockSkewAllowedInSec = clockSkewAllowedInSec
     )
 
+    @OptIn(ExperimentalJsCollectionsApi::class)
     suspend fun withParams(
         issuerAuth: COSE_Sign1<MobileSecurityObjectCbor>? = null,
         document: DocumentCbor? = null,
@@ -130,15 +133,15 @@ object Validations {
                 MdocVerification.CERTIFICATE_CHAIN -> IssuerAuthValidation.verifyCertificateChain(auth, x509Service, trustedCerts)
                 MdocVerification.ISSUER_AUTH_SIGNATURE -> IssuerAuthValidation.verifySign1(auth, coseCryptoService, keyInfo)
                 MdocVerification.VALIDITY -> IssuerAuthValidation.verifyValidityInfo(auth, dateTimeUtils, timeZoneId, clockSkewAllowedInSec)
-                MdocVerification.DOC_TYPE -> IssuerAuthValidation.verifyDocType(auth)
+                MdocVerification.DOC_TYPE -> IssuerAuthValidation.verifyDocType(document)
                 MdocVerification.DIGEST_VALUES -> IssuerAuthValidation.verifyDigests(auth)
             }
         }
 
         return VerifyResults(
             error = verifications.find { it.error }?.error ?: false,
-            keyInfo = keyInfo,
-            verifications = verifications.toTypedArray(),
+            keyInfo = if (keyInfo === null) null else KeyInfo.Static.fromDTO(keyInfo),
+            verifications = verifications.map { verification -> VerifyResult.Static.fromDTO(verification) }.toTypedArray(),
         )
 
 
