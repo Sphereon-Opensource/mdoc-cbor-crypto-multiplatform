@@ -68,7 +68,7 @@ data class DeviceResponseCbor(
      */
     val documents: Array<DocumentCbor>?,
 
-    val documentErrors: Array<DeviceResponseDocumentErrorCbor>?,
+    val documentErrors: Array<DeviceResponseDocumentErrorCbor>? = arrayOf(),
 
     val status: CborUInt = CborUInt(0)
 

@@ -13,6 +13,8 @@ import com.sphereon.cbor.StringLabel
 import com.sphereon.json.mdocJsonSerializer
 import com.sphereon.mdoc.data.DocumentErrorsCbor
 import com.sphereon.mdoc.data.DocumentErrorsJson
+import com.sphereon.mdoc.data.device.IssuerSignedCbor.Static
+import com.sphereon.mdoc.oid4vp.Oid4VPPresentationDefinition
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.encodeToString
@@ -104,7 +106,12 @@ data class DocumentCbor(
 
     val MSO = issuerSigned.MSO
     override fun cborBuilder(): CborBuilder<DocumentCbor> {
-        TODO("Not yet implemented")
+        val builder = CborMap.Static.builder(this)
+            .put(Static.DOC_TYPE, docType, false)
+            .put(Static.ISSUER_SIGNED, issuerSigned.toCbor(), false)
+            .put(Static.DEVICE_SIGNED, deviceSigned?.toCbor(), true)
+//            .put(Static.ERRORS, errors, true)
+        return builder.end()
     }
 
     override fun toJson(): DocumentJson {
@@ -113,6 +120,13 @@ data class DocumentCbor(
 
     fun limitDisclosures(docRequest: DocRequestCbor): IssuerSignedCbor {
         return docRequest.limitDisclosures(issuerSigned)
+    }
+
+    fun toSingleDocDeviceResponse(presentationDefinition: Oid4VPPresentationDefinition): DeviceResponseCbor {
+        // device signing
+        val docRequest = presentationDefinition.toDocRequest()
+        val mdoc = DocumentCbor(docType = this.docType, issuerSigned =  limitDisclosures(docRequest))
+        return DeviceResponseCbor(documents = arrayOf(mdoc))
     }
 
     fun getNameSpaces() = issuerSigned.nameSpaces?.value?.map { it.key.value }?.toTypedArray() ?: arrayOf()
