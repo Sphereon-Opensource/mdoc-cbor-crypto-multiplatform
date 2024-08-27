@@ -56,6 +56,6 @@ actual sealed interface IOid4VPPresentationSubmission {
 
 actual sealed interface IOid4vpSubmissionDescriptor {
     actual val id: String
-    actual val format: Oid4VPFormats
+    actual val format: String
     actual val path: String
 }

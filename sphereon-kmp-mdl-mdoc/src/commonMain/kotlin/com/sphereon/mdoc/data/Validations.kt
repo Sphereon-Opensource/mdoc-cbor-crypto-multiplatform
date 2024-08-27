@@ -43,9 +43,10 @@ object Validations {
     suspend fun fromDocument(
         document: DocumentCbor,
         x509Service: IX509Service = CryptoService.X509,
-        coseCryptoService: ICoseCryptoService = CryptoService.COSE,
-        keyInfo: IKeyInfo<ICoseKeyCbor>? = null,
         trustedCerts: Array<String>? = x509Service.getTrustedCerts(),
+        keyInfo: IKeyInfo<ICoseKeyCbor>? = null,
+        allowExpiredDocuments: Boolean = false,
+        coseCryptoService: ICoseCryptoService = CryptoService.COSE,
         dateTimeUtils: DateTimeUtils = getDateTime(),
         timeZoneId: String? = null,
         clockSkewAllowedInSec: Int = 120,
@@ -57,17 +58,19 @@ object Validations {
         coseCryptoService = coseCryptoService,
         keyInfo = keyInfo,
         trustedCerts = trustedCerts,
+        allowExpiredDocuments = allowExpiredDocuments,
         dateTimeUtils = dateTimeUtils,
         timeZoneId = timeZoneId,
-        clockSkewAllowedInSec = clockSkewAllowedInSec
+        clockSkewAllowedInSec = clockSkewAllowedInSec,
     )
 
     suspend fun fromIssuerAuth(
         issuerAuth: COSE_Sign1<MobileSecurityObjectCbor>,
-        x509Service: IX509Service = CryptoService.X509,
-        coseCryptoService: ICoseCryptoService = CryptoService.COSE,
         keyInfo: IKeyInfo<ICoseKeyCbor>? = null,
+        x509Service: IX509Service = CryptoService.X509,
         trustedCerts: Array<String>? = x509Service.getTrustedCerts(),
+        allowExpiredDocuments: Boolean = false,
+        coseCryptoService: ICoseCryptoService = CryptoService.COSE,
         dateTimeUtils: DateTimeUtils = getDateTime(),
         timeZoneId: String? = null,
         clockSkewAllowedInSec: Int = 120,
@@ -78,10 +81,11 @@ object Validations {
         x509Service = x509Service,
         coseCryptoService = coseCryptoService,
         keyInfo = keyInfo,
+        allowExpiredDocuments = allowExpiredDocuments,
         trustedCerts = trustedCerts,
         dateTimeUtils = dateTimeUtils,
         timeZoneId = timeZoneId,
-        clockSkewAllowedInSec = clockSkewAllowedInSec
+        clockSkewAllowedInSec = clockSkewAllowedInSec,
     )
 
     @OptIn(ExperimentalJsCollectionsApi::class)
@@ -90,9 +94,10 @@ object Validations {
         document: DocumentCbor? = null,
         mdocVerificationTypes: MdocVerificationTypes = MdocVerification.Static.ALL,
         x509Service: IX509Service = CryptoService.X509,
-        coseCryptoService: ICoseCryptoService = CryptoService.COSE,
         keyInfo: IKeyInfo<ICoseKeyCbor>? = null,
         trustedCerts: Array<String>? = x509Service.getTrustedCerts(),
+        allowExpiredDocuments: Boolean = false,
+        coseCryptoService: ICoseCryptoService = CryptoService.COSE,
         dateTimeUtils: DateTimeUtils = getDateTime(),
         timeZoneId: String? = null,
         clockSkewAllowedInSec: Int = 120,
@@ -132,14 +137,15 @@ object Validations {
             when (it) {
                 MdocVerification.CERTIFICATE_CHAIN -> IssuerAuthValidation.verifyCertificateChain(auth, x509Service, trustedCerts)
                 MdocVerification.ISSUER_AUTH_SIGNATURE -> IssuerAuthValidation.verifySign1(auth, coseCryptoService, keyInfo)
-                MdocVerification.VALIDITY -> IssuerAuthValidation.verifyValidityInfo(auth, dateTimeUtils, timeZoneId, clockSkewAllowedInSec)
+                MdocVerification.VALIDITY -> IssuerAuthValidation.verifyValidityInfo(auth, allowExpiredDocuments, dateTimeUtils, timeZoneId, clockSkewAllowedInSec )
                 MdocVerification.DOC_TYPE -> IssuerAuthValidation.verifyDocType(document)
                 MdocVerification.DIGEST_VALUES -> IssuerAuthValidation.verifyDigests(auth)
             }
         }
 
         return VerifyResults(
-            error = verifications.find { it.error }?.error ?: false,
+            // Only critical errors set the overall error
+            error = verifications.find { it.error && it.critical }?.error ?: false,
             keyInfo = if (keyInfo === null) null else KeyInfo.Static.fromDTO(keyInfo),
             verifications = verifications.map { verification -> VerifyResult.Static.fromDTO(verification) }.toTypedArray(),
         )

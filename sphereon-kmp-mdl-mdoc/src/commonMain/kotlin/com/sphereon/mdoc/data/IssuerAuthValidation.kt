@@ -126,6 +126,7 @@ object IssuerAuthValidation {
      */
     suspend fun verifyValidityInfo(
         issuerAuth: COSE_Sign1<MobileSecurityObjectCbor>,
+        allowExpiredDocuments: Boolean? = false,
         dateTimeUtils: DateTimeUtils = getDateTime(),
         timeZoneId: String? = null,
         clockSkewAllowedInSec: Int = 120,
@@ -189,7 +190,7 @@ object IssuerAuthValidation {
             val datesEqaul = nowStr == validUntilStr
             return VerifyResult(
                 error = true,
-                critical = true,
+                critical = allowExpiredDocuments != true,
                 message = "The document is not valid anymore. Current date/time: $nowStr ${if (datesEqaul) "(${now})" else ""} and valid Until $validUntilStr ${if (datesEqaul) "(${validUntil})" else ""}",
                 name = MdocConst.MDOC_LITERAL
             ).also { MdocConst.LOG.error("Error validating MSO validUntil against current time: $it") }

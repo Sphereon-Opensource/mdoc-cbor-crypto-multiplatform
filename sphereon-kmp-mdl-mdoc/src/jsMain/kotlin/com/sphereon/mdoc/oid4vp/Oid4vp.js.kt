@@ -71,7 +71,7 @@ actual sealed external interface IOid4vpSubmissionDescriptor {
     @JsName("id")
     actual val id: String
     @JsName("format")
-    actual val format: Oid4VPFormats
+    actual val format: String
     @JsName("path")
     actual val path: String
 }

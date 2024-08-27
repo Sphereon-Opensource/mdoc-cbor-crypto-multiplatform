@@ -3,7 +3,6 @@
 package com.sphereon.mdoc.oid4vp
 
 import assertedPathEntry
-import com.sphereon.crypto.cose.CoseAlgorithm
 import com.sphereon.crypto.cose.CoseSignatureAlgorithm
 import com.sphereon.json.HasToJsonString
 import com.sphereon.json.mdocJsonSerializer
@@ -370,6 +369,19 @@ data class Oid4VPPresentationSubmission(
     @SerialName("descriptor_map")
     override val descriptor_map: Array<Oid4vpSubmissionDescriptor>
 ) : IOid4VPPresentationSubmission {
+
+    fun assertValid(pd: IOid4VPPresentationDefinition) {
+        val definition = Oid4VPPresentationDefinition.Static.fromDTO(pd)
+        if (definition.id != definition_id) {
+            throw IllegalArgumentException("Definition id ${definition.id} is different from definition_id in presentation submission: ${definition_id}")
+        }
+        definition.input_descriptors.forEach { inputDescriptor ->
+            if (descriptor_map.find { mapItem -> mapItem.id === inputDescriptor.id } === null) {
+                throw IllegalArgumentException("Presentation definition input descriptor id ${inputDescriptor.id} was not present in presentation submission")
+            }
+        }
+    }
+
     object Static {
         fun fromPresentationDefinition(pd: IOid4VPPresentationDefinition, id: String = Uuid.v4String()): Oid4VPPresentationSubmission =
             Oid4VPPresentationSubmission(
@@ -378,12 +390,19 @@ data class Oid4VPPresentationSubmission(
                 descriptor_map = pd.input_descriptors.map { Oid4vpSubmissionDescriptor.Static.fromInputDescriptor(it) }.toTypedArray()
             )
 
+        fun fromDTO(dto: IOid4VPPresentationSubmission) = with(dto) {
+            Oid4VPPresentationSubmission(
+                definition_id = definition_id,
+                id = id,
+                descriptor_map = descriptor_map.map { Oid4vpSubmissionDescriptor.Static.fromDTO(it) }.toTypedArray()
+            )
+        }
     }
 }
 
 expect sealed interface IOid4vpSubmissionDescriptor {
     val id: String
-    val format: Oid4VPFormats
+    val format: String
     val path: String
 }
 
@@ -393,12 +412,17 @@ data class Oid4vpSubmissionDescriptor(
     @SerialName("id")
     override val id: String,
     @SerialName("format")
-    override val format: Oid4VPFormats = Oid4VPFormats.MSO_MDOC,
+    override val format: String = Oid4VPFormats.MSO_MDOC.value,
     @SerialName("path")
     override val path: String = "$"
 ) : IOid4vpSubmissionDescriptor {
+    init {
+        if (format != Oid4VPFormats.MSO_MDOC.value) { throw IllegalArgumentException("Value of format should be mso_mdoc") }
+    }
     object Static {
         fun fromInputDescriptor(descriptor: IOid4VPInputDescriptor): Oid4vpSubmissionDescriptor =
             with(descriptor) { Oid4vpSubmissionDescriptor(id = id) }
+
+        fun fromDTO(dto: IOid4vpSubmissionDescriptor) = with(dto) { Oid4vpSubmissionDescriptor(id = id, format = format, path = path) }
     }
 }
