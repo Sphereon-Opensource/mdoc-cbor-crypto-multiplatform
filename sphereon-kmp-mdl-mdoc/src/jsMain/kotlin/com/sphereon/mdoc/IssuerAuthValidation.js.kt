@@ -1,8 +1,5 @@
 package com.sphereon.mdoc
 
-import com.sphereon.cbor.CDDL
-import com.sphereon.crypto.cose.COSE_Sign1
-import com.sphereon.crypto.cose.ICoseKeyCbor
 import com.sphereon.crypto.CoseCryptoServiceJS
 import com.sphereon.crypto.CoseCryptoServiceJSAdapter
 import com.sphereon.crypto.CryptoServiceJS
@@ -10,6 +7,8 @@ import com.sphereon.crypto.IKeyInfo
 import com.sphereon.crypto.IVerifyResult
 import com.sphereon.crypto.IVerifySignatureResult
 import com.sphereon.crypto.IX509VerificationResult
+import com.sphereon.crypto.cose.COSE_Sign1
+import com.sphereon.crypto.cose.ICoseKeyCbor
 import com.sphereon.crypto.coseService
 import com.sphereon.kmp.DateTimeUtils
 import com.sphereon.kmp.getDateTime
@@ -112,12 +111,12 @@ object IssuerAuthValidationJS {
      */
     fun verifyValidityInfoAsync(
         issuerAuth: COSE_Sign1<MobileSecurityObjectCbor>,
-        allowExpiredDocument: Boolean? = false,
+        allowExpiredDocuments: Boolean? = false,
         dateTimeUtils: DateTimeUtils = getDateTime(),
         timeZoneId: String? = null,
         clockSkewAllowedInSec: Int = 120,
     ): Promise<IVerifyResult> = CoroutineScope(context = CoroutineName(NAME)).promise {
-        IssuerAuthValidation.verifyValidityInfo(issuerAuth, allowExpiredDocument, dateTimeUtils, timeZoneId, clockSkewAllowedInSec)
+        IssuerAuthValidation.verifyValidityInfo(issuerAuth, allowExpiredDocuments, dateTimeUtils, timeZoneId, clockSkewAllowedInSec)
     }
 
 }

@@ -96,7 +96,7 @@ object Validations {
         x509Service: IX509Service = CryptoService.X509,
         keyInfo: IKeyInfo<ICoseKeyCbor>? = null,
         trustedCerts: Array<String>? = x509Service.getTrustedCerts(),
-        allowExpiredDocuments: Boolean = false,
+        allowExpiredDocuments: Boolean? = false,
         coseCryptoService: ICoseCryptoService = CryptoService.COSE,
         dateTimeUtils: DateTimeUtils = getDateTime(),
         timeZoneId: String? = null,

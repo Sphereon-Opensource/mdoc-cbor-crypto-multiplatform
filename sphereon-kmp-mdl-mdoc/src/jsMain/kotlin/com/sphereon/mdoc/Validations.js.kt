@@ -47,6 +47,7 @@ object ValidationsJS {
         coseCryptoService: ICoseCryptoService = CryptoService.COSE,*/
         keyInfo: IKeyInfo<ICoseKeyCbor>? = null,
         trustedCerts: Array<String>? = null,
+        allowExpiredDocuments: Boolean? = false,
         dateTimeUtils: DateTimeUtils = getDateTime(),
         timeZoneId: String? = null,
         clockSkewAllowedInSec: Int = 120,
@@ -60,7 +61,8 @@ object ValidationsJS {
         trustedCerts = trustedCerts,
         dateTimeUtils = dateTimeUtils,
         timeZoneId = timeZoneId,
-        clockSkewAllowedInSec = clockSkewAllowedInSec
+        clockSkewAllowedInSec = clockSkewAllowedInSec,
+        allowExpiredDocuments = allowExpiredDocuments
     )
 
     fun fromIssuerAuthAsync(
@@ -69,6 +71,7 @@ object ValidationsJS {
         coseCryptoService: CoseCryptoService = CryptoService.COSE,*/
         keyInfo: IKeyInfo<ICoseKeyCbor>? = null,
         trustedCerts: Array<String>? = null,
+        allowExpiredDocuments: Boolean? = false,
         dateTimeUtils: DateTimeUtils = getDateTime(),
         timeZoneId: String? = null,
         clockSkewAllowedInSec: Int = 120,
@@ -82,7 +85,9 @@ object ValidationsJS {
         trustedCerts = trustedCerts,
         dateTimeUtils = dateTimeUtils,
         timeZoneId = timeZoneId,
-        clockSkewAllowedInSec = clockSkewAllowedInSec
+        clockSkewAllowedInSec = clockSkewAllowedInSec,
+        allowExpiredDocuments = allowExpiredDocuments
+
     )
 
     fun withParamsAsync(
@@ -93,6 +98,7 @@ object ValidationsJS {
         coseCryptoService: CoseCryptoService = CryptoService.COSE,*/
         keyInfo: IKeyInfo<ICoseKeyCbor>? = null,
         trustedCerts: Array<String>? = null,
+        allowExpiredDocuments: Boolean? = false,
         dateTimeUtils: DateTimeUtils = getDateTime(),
         timeZoneId: String? = null,
         clockSkewAllowedInSec: Int = 120,
@@ -107,7 +113,8 @@ object ValidationsJS {
             trustedCerts = trustedCerts,
             dateTimeUtils = dateTimeUtils,
             timeZoneId = timeZoneId,
-            clockSkewAllowedInSec = clockSkewAllowedInSec
+            clockSkewAllowedInSec = clockSkewAllowedInSec,
+            allowExpiredDocuments = allowExpiredDocuments
         )
     }
 }
