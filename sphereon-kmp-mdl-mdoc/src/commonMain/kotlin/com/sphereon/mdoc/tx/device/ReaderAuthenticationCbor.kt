@@ -134,7 +134,14 @@ data class SessionTranscriptCbor(
             mdocNonce: String = Uuid.v4String(),
             authorizationRequestNonce: String
         ) =
-            fromOid4vpHandover(OID4VPHandoverCbor.Static.fromClientIdAndResponseUri(clientId, responseUri, mdocNonce, authorizationRequestNonce))
+            fromOid4vpHandover(
+                OID4VPHandoverCbor.Static.fromClientIdAndResponseUri(
+                    clientId = clientId,
+                    responseUri = responseUri,
+                    mdocNonce = mdocNonce,
+                    authorizationRequestNonce = authorizationRequestNonce
+                )
+            )
 
 
         @JsName("cborDecode")
@@ -216,13 +223,13 @@ data class OID4VPHandoverJson(val clientIdHash: String, val responseUriHash: Str
         fun fromClientIdAndResponseUri(
             clientId: String,
             responseUri: String,
-            mdocNonce: String = Uuid.v4String(),
+            mdocGeneratedNonce: String = Uuid.v4String(),
             authorizationRequestNonce: String
         ) =
             oid4vpHandoverFromClientIdAndResponseUri(
                 clientId = clientId,
                 responseUri = responseUri,
-                mdocNonce = mdocNonce,
+                mdocGeneratedNonce = mdocGeneratedNonce,
                 authorizationRequestNonce = authorizationRequestNonce
             ).toJson()
 
@@ -230,7 +237,12 @@ data class OID4VPHandoverJson(val clientIdHash: String, val responseUriHash: Str
 }
 
 @JsExport
-data class OID4VPHandoverCbor(val clientIdHash: CborByteString, val responseUriHash: CborByteString, val nonce: CborString) :
+data class OID4VPHandoverCbor(
+    val clientIdHash: CborByteString,
+    val responseUriHash: CborByteString,
+    /** Authorization request nonce*/
+    val nonce: CborString
+) :
     HandoverCbor<OID4VPHandoverCbor, OID4VPHandoverJson>() {
     override fun cborBuilder(): CborBuilder<OID4VPHandoverCbor> =
         CborArray.Static.builder(this)
@@ -249,9 +261,9 @@ data class OID4VPHandoverCbor(val clientIdHash: CborByteString, val responseUriH
     object Static {
         const val CLIENT_ID_HASH = 0
         const val RESPONSE_URI_HASH = 1
-        const val NONCE = 1
+        const val AUTHORIZATION_REQUEST_NONCE = 2
         fun fromCborItem(a: CborArray<AnyCborItem>) =
-            OID4VPHandoverCbor(a.required(CLIENT_ID_HASH), a.required(RESPONSE_URI_HASH), a.required(NONCE))
+            OID4VPHandoverCbor(a.required(CLIENT_ID_HASH), a.required(RESPONSE_URI_HASH), a.required(AUTHORIZATION_REQUEST_NONCE))
 
         fun fromClientIdAndResponseUri(
             clientId: String,
@@ -262,7 +274,7 @@ data class OID4VPHandoverCbor(val clientIdHash: CborByteString, val responseUriH
             oid4vpHandoverFromClientIdAndResponseUri(
                 clientId = clientId,
                 responseUri = responseUri,
-                mdocNonce = mdocNonce,
+                mdocGeneratedNonce = mdocNonce,
                 authorizationRequestNonce = authorizationRequestNonce
             )
 

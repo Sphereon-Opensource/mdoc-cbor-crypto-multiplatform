@@ -113,6 +113,8 @@ kotlin {
                 implementation(projects.sphereonKmpCommon)
                 implementation(projects.sphereonKmpCbor)
                 implementation(libs.whyoleg.cryptography.core)
+                implementation(libs.kotlincrypto.core.digest)
+                implementation(libs.kotlincrypto.hash.sha2)
                 implementation(libs.kotlinx.datetime)
                 implementation(libs.kotlinx.serialization.core)
                 implementation(libs.kotlinx.serialization.json)

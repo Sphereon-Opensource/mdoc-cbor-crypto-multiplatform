@@ -4,7 +4,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlin.js.ExperimentalJsCollectionsApi
 import kotlin.js.JsExport
-import kotlin.js.JsName
 
 expect interface IVerifyResult {
     val name: String
@@ -23,7 +22,7 @@ expect interface IVerifyResults<out KeyType : IKey> {
 @Suppress("NON_EXPORTABLE_TYPE") // We are really exporting them because of the expect/actual
 @Serializable
 @JsExport
-data class VerifyResults<out KeyType : IKey>(
+data class VerifyResults<out KeyType : IKey> @OptIn(ExperimentalJsCollectionsApi::class) constructor(
 
     override val error: Boolean,
     override val verifications: Array<VerifyResult>,
@@ -140,11 +139,10 @@ expect interface IKeyInfo<out KeyType : IKey> {
 
 
 @JsExport
-@ExperimentalJsCollectionsApi
 @Serializable
 data class KeyInfo<out KeyType : IKey>(
-    override val kid: String?, /*val jwk: JWK,*/
-    override val key: KeyType?,
+    override val kid: String? = null, /*val jwk: JWK,*/
+    override val key: KeyType? = null,
     @Transient // fixme:
     override val opts: Map<*, *>? = null
 ) : IKeyInfo<KeyType> {

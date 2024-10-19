@@ -4,16 +4,32 @@ import com.sphereon.cbor.AnyCborItem
 import com.sphereon.cbor.CDDL
 import com.sphereon.cbor.CborArray
 import com.sphereon.cbor.CborBuilder
+import com.sphereon.cbor.CborByteString
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborString
 import com.sphereon.cbor.CborView
-import com.sphereon.json.JsonView
-import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.StringLabel
+import com.sphereon.cbor.cborSerializer
+import com.sphereon.cbor.encodeToCborByteArray
+import com.sphereon.cbor.toCborByteString
+import com.sphereon.crypto.CoseCryptoServiceObject
+import com.sphereon.crypto.ICoseCryptoService
+import com.sphereon.crypto.IKeyInfo
+import com.sphereon.crypto.KeyInfo
+import com.sphereon.crypto.cose.CoseHeaderCbor
+import com.sphereon.crypto.cose.CoseKeyJson
+import com.sphereon.crypto.cose.CoseSign1InputCbor
+import com.sphereon.crypto.cose.ICoseKeyCbor
+import com.sphereon.crypto.cose.ICoseKeyJson
+import com.sphereon.crypto.jose.IJwk
+import com.sphereon.crypto.jose.IJwkJson
+import com.sphereon.crypto.jose.Jwk
+import com.sphereon.json.JsonView
 import com.sphereon.json.mdocJsonSerializer
+import com.sphereon.kmp.Encoding
 import com.sphereon.mdoc.data.DocumentErrorsCbor
 import com.sphereon.mdoc.data.DocumentErrorsJson
-import com.sphereon.mdoc.data.device.IssuerSignedCbor.Static
+import com.sphereon.mdoc.data.mso.MobileSecurityObjectCbor
 import com.sphereon.mdoc.oid4vp.IOid4VPPresentationDefinition
 import com.sphereon.mdoc.oid4vp.Oid4VPPresentationDefinition
 import kotlinx.serialization.Serializable
@@ -21,6 +37,9 @@ import kotlinx.serialization.Transient
 import kotlinx.serialization.encodeToString
 import kotlin.js.JsExport
 import kotlin.js.JsName
+
+
+
 
 @JsExport
 @Serializable
@@ -94,7 +113,7 @@ data class DocumentCbor(
      * authentication. The DeviceNameSpaces structure can be an empty structure. The DeviceAuth structure
      * contains either the DeviceSignature or the DeviceMac element, both are defined in 9.1.3.
      */
-    val deviceSigned: DeviceSignedCbor? = null,
+    val deviceSigned: DeviceSignedCbor?,  // required when presenting. No null default on purpose!
 
     /**
      * If the device retrieval mdoc response structure does not include some data element or document
@@ -123,10 +142,25 @@ data class DocumentCbor(
         return docRequest.limitDisclosures(issuerSigned)
     }
 
-    fun toSingleDocDeviceResponse(presentationDefinition: IOid4VPPresentationDefinition): DeviceResponseCbor {
+    fun limitDisclosureFromPresentationDefinition(
+        presentationDefinition: IOid4VPPresentationDefinition,
+        deviceSigned: DeviceSignedCbor? = null
+    ): DocumentCbor {
+        val docRequest = Oid4VPPresentationDefinition.Static.fromDTO(presentationDefinition).toDocRequest()
+        if (docRequest.itemsRequest.docType !== this.docType) {
+            throw IllegalArgumentException("Document request docType ${docRequest.itemsRequest.docType} does not match docType ${this.docType}")
+        }
+        return DocumentCbor(docType = this.docType, issuerSigned = limitDisclosures(docRequest), deviceSigned = deviceSigned ?: this.deviceSigned)
+    }
+
+
+    fun toSingleDocDeviceResponse(
+        presentationDefinition: IOid4VPPresentationDefinition,
+    ): DeviceResponseCbor {
         // device signing
         val docRequest = Oid4VPPresentationDefinition.Static.fromDTO(presentationDefinition).toDocRequest()
-        val mdoc = DocumentCbor(docType = this.docType, issuerSigned =  limitDisclosures(docRequest))
+        val issuerSigned = limitDisclosures(docRequest)
+        val mdoc = DocumentCbor(docType = this.docType, issuerSigned = issuerSigned, deviceSigned = deviceSigned)
         return DeviceResponseCbor(documents = arrayOf(mdoc))
     }
 

@@ -1,6 +1,13 @@
 package com.sphereon.crypto
 
+import com.sphereon.crypto.X509ServiceJSAdapter.x509CallbackJS
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.asPromise
+import kotlinx.coroutines.async
 import kotlinx.coroutines.await
+import kotlinx.coroutines.launch
 import kotlin.js.Promise
 
 
@@ -75,6 +82,9 @@ object X509ServiceObjectJS : ICallbackServiceJS<IX509ServiceJS>, IX509ServiceJS 
             ) // Yes this is logs-exception anti pattern, but we are a lib with no knowledge about platform integration
             throw IllegalStateException("X509Callbacks have not been initialized. Please register your X509CallbacksJS implementation, or register a default implementaion")
         }
+
+        // TODO: Move to regular classes instead of object. And move towards more shared code with only the callback being called in the end, like the below approach
+        // return CoroutineScope(CoroutineName("X509")).async { X509ServiceObject.verifyCertificateChain<KeyType>(chainDER, chainPEM, trustedCerts = trustedCerts ?: this@X509ServiceObjectJS.getTrustedCerts()) }.asPromise()
         return this.platformCallback.verifyCertificateChainJS(
             chainDER,
             chainPEM,
@@ -137,7 +147,7 @@ internal object X509ServiceJSAdapter : X509CallbackService {
         chainDER: Array<ByteArray>?,
         chainPEM: Array<String>?,
         trustedCerts: Array<String>?,
-        verificationProfile: X509VerificationProfile
+        verificationProfile: X509VerificationProfile,
     ): IX509VerificationResult<KeyType> {
         CryptoConst.LOG.debug("Verifying certificate chain...")
         if (chainDER == null && chainPEM == null) {
@@ -159,7 +169,7 @@ internal object X509ServiceJSAdapter : X509CallbackService {
         }
 
         return try {
-            x509CallbackJS.verifyCertificateChainJS<KeyType>(chainDER, chainPEM, assertedCerts, verificationProfile)
+            X509ServiceObjectJS.verifyCertificateChainJS<KeyType>(chainDER, chainPEM, assertedCerts, verificationProfile)
                 .await()
         } catch (e: Exception) {
             CryptoConst.LOG.error(e.message ?: "X509 validation failed", e)

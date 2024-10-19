@@ -2,7 +2,9 @@
 
 package com.sphereon.mdoc.data
 
+import com.sphereon.cbor.CborArray
 import com.sphereon.cbor.CborBool
+import com.sphereon.cbor.CborEncodedItem
 import com.sphereon.cbor.CborInt
 import com.sphereon.cbor.CborItem
 import com.sphereon.cbor.CborMap
@@ -12,6 +14,9 @@ import com.sphereon.cbor.cddl_bstr
 import com.sphereon.cbor.cddl_int
 import com.sphereon.cbor.cddl_tstr
 import com.sphereon.cbor.toCborBool
+import com.sphereon.mdoc.data.device.IssuerSignedItemCbor
+import com.sphereon.mdoc.data.device.IssuerSignedItemJson
+import kotlinx.serialization.json.JsonElement
 
 
 import kotlin.js.JsExport
@@ -176,9 +181,13 @@ data class DataElementSimple(val identifier: cddl_tstr, val intentToRetain: cddl
 typealias DeviceResponseDocumentErrorJson = Map<String, Int>
 typealias DeviceResponseDocumentErrorCbor = Map<DocType, CborInt>
 
-typealias DeviceSignedItemsCbor = Map<DataElementIdentifier, DataElementValue<Any>>
-// fixme: Value should be Any
-typealias DeviceSignedItemsJson = Map<String, String>
+typealias DeviceSignedItemsCbor = CborMap<DataElementIdentifier, DataElementValue<Any>>
+typealias DeviceSignedItemsJson = Map<String, JsonElement>
+
+typealias DeviceNameSpacesCbor = CborMap<NameSpace, DeviceSignedItemsCbor>
+typealias DeviceNameSpacesJson = MutableMap<String, DeviceSignedItemsJson>
+
+
 
 typealias ErrorCode = cddl_int
 

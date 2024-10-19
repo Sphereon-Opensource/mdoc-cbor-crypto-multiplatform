@@ -135,7 +135,7 @@ data class IssuerSignedCbor(
 
     fun toDocument(): DocumentCbor {
         val decoded = MobileSecurityObjectCbor.Static.decodeCoseSign1(issuerAuth)
-        return DocumentCbor(docType = decoded?.docType ?: throw IllegalStateException("doctype not set"), issuerSigned = this)
+        return DocumentCbor(docType = decoded?.docType ?: throw IllegalStateException("doctype not set"), issuerSigned = this, deviceSigned = null)
     }
 
     fun toDocumentJson(): DocumentJson = toDocument().toJson()

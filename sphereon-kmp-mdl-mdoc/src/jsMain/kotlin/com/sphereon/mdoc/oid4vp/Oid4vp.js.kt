@@ -9,7 +9,7 @@ import kotlinx.serialization.SerialName
 actual sealed external interface IOid4VPFormat {
     @JsName("mso_mdoc")
     @SerialName("mso_mdoc")
-    actual val mso_mdoc: IOid4VPSupportedAlgorithm
+    actual val mso_mdoc: IOid4VPSupportedAlgorithm?
 }
 
 @JsExport

@@ -21,10 +21,10 @@ fun responseUriToHash(responseUri: String, generatedNonce: String): ByteArray {
 }
 
 
-fun oid4vpHandoverFromClientIdAndResponseUri(clientId: String, responseUri: String, mdocNonce: String = Uuid.v4String(), authorizationRequestNonce: String): OID4VPHandoverCbor {
+fun oid4vpHandoverFromClientIdAndResponseUri(clientId: String, responseUri: String, mdocGeneratedNonce: String = Uuid.v4String(), authorizationRequestNonce: String): OID4VPHandoverCbor {
     return OID4VPHandoverCbor(
-        clientIdHash = clientIdToHash(clientId, mdocNonce).toCborByteString(),
-        responseUriHash = responseUriToHash(responseUri, mdocNonce).toCborByteString(),
+        clientIdHash = clientIdToHash(clientId, mdocGeneratedNonce).toCborByteString(),
+        responseUriHash = responseUriToHash(responseUri, mdocGeneratedNonce).toCborByteString(),
         nonce = authorizationRequestNonce.toCborString()
     )
 }

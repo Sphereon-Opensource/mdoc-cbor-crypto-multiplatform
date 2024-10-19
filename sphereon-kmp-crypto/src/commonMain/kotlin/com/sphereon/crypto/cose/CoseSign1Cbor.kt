@@ -5,8 +5,6 @@ import com.sphereon.cbor.CDDL
 import com.sphereon.cbor.CborArray
 import com.sphereon.cbor.CborBuilder
 import com.sphereon.cbor.CborByteString
-import com.sphereon.cbor.CborEncodedItem
-import com.sphereon.cbor.CborItem
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborNull
 import com.sphereon.cbor.CborString
@@ -23,17 +21,16 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlin.js.JsExport
 import kotlin.js.JsName
-import kotlin.time.Duration.Companion.convert
 
 
 @JsExport
 @Serializable
 data class CoseSign1InputJson(
-    val protectedHeader: CoseHeaderJson,
+    val protectedHeader: CoseHeaderJson? = null,
 
-    val unprotectedHeader: CoseHeaderJson?,
+    val unprotectedHeader: CoseHeaderJson? = null,
 
-    val payload: String?, // base64url
+    val payload: String, // base64url
 
 ) : JsonView() {
     override fun toJsonString() = cryptoJsonSerializer.encodeToString(this)
@@ -42,9 +39,9 @@ data class CoseSign1InputJson(
 
 
     override fun toCbor(): CoseSign1InputCbor = CoseSign1InputCbor(
-        protectedHeader = protectedHeader.toCbor(),
+        protectedHeader = protectedHeader?.toCbor(),
         unprotectedHeader = unprotectedHeader?.toCbor(),
-        payload = payload?.toCborByteString(),
+        payload = payload.toCborByteString(),
     )
 }
 
@@ -83,24 +80,26 @@ data class CoseSign1Json(
 
 @JsExport
 data class CoseSign1InputCbor(
-    val protectedHeader: CoseHeaderCbor,
+    // This value is required in the eventual to be signed object, but can be filled using key info
+    val protectedHeader: CoseHeaderCbor? = null,
 
-    val unprotectedHeader: CoseHeaderCbor?,
+    val unprotectedHeader: CoseHeaderCbor? = null,
 
-    val payload: CborByteString?,
+    val payload: CborByteString,
 ) : CborView<CoseSign1InputCbor, CoseSign1InputJson, CborArray<AnyCborItem>>(
     CDDL.list
 ) {
     object Static {
         @JsName("fromCborItem")
         fun fromCborItem(a: CborArray<AnyCborItem>): CoseSign1InputCbor {
-            val protectedHeaderBytes: CborByteString = a.required(0)
+            val protectedHeaderBytes: CborByteString = a.required(0) // required. See above notice why the property is optional above
             val unprotectedHeaders = a.optional<CborMap<NumberLabel, AnyCborItem>>(1)
-            val payloadAvailable = a.value[2].value != null
+//            val payloadAvailable = a.value[2].value != null
             return CoseSign1InputCbor(
                 CoseHeaderCbor.Static.fromCborItem(protectedHeaderBytes.cborDecode()),
                 unprotectedHeaders?.let { CoseHeaderCbor.Static.fromCborItem(it) },
-                if (payloadAvailable) a.required(2) else null,
+                a.required(2),
+//                if (payloadAvailable) a.required(2) else null,
             )
         }
 
@@ -109,17 +108,42 @@ data class CoseSign1InputCbor(
             fromCborItem(cborSerializer.decode(encoded))
     }
 
+    class Builder(
+        private var protectedHeader: CoseHeaderCbor? = CoseHeaderCbor(),
+        private var unprotectedHeader: CoseHeaderCbor? = null,
+        private var payload: CborView<*, *, *>? = null
+    ) {
+
+        fun withProtectedHeader(protectedHeader: CoseHeaderCbor) = apply { this.protectedHeader = protectedHeader }
+        fun withUnprotectedHeader(unprotectedHeader: CoseHeaderCbor?) = apply { this.unprotectedHeader = unprotectedHeader }
+        fun withPayload(payload: CborView<*, *, *>) = apply { this.payload = payload }
+
+        fun build(): CoseSign1InputCbor {
+            val content = payload?.cborEncode()?.toCborByteString()
+            if (content === null) {
+                throw IllegalArgumentException("Payload is required")
+            }
+            return CoseSign1InputCbor(
+                payload = content,
+                unprotectedHeader = unprotectedHeader,
+                protectedHeader = protectedHeader
+            )
+        }
+    }
+
 
     override fun cborBuilder(): CborBuilder<CoseSign1InputCbor> {
-        return CborArray.Static.builder(this).add(CborByteString(protectedHeader.cborEncode()))
-            .add(unprotectedHeader?.toCbor()).add(payload ?: CborNull())
+        return CborArray.Static.builder(this)
+            .add(protectedHeader?.toCbor())
+            .add(unprotectedHeader?.toCbor())
+            .add(payload ?: CborNull())
             .end()
     }
 
     override fun toJson(): CoseSign1InputJson = CoseSign1InputJson(
-        protectedHeader = protectedHeader.toJson(),
+        protectedHeader = protectedHeader?.toJson(),
         unprotectedHeader = unprotectedHeader?.toJson(),
-        payload = payload?.encodeTo(Encoding.BASE64URL)
+        payload = payload.encodeTo(Encoding.BASE64URL)
     )
 
 }
@@ -138,11 +162,11 @@ data class CoseSign1Cbor<CborType>(
     val signature: CborByteString
 
 ) : CborView<CoseSign1Cbor<CborType>, CoseSign1Json, CborArray<AnyCborItem>>(CDDL.list) {
-   /* fun cborDecodePayload(convertFunction: (arg: AnyCborItem) -> CborType): CborType? {
-        val result = payload?.value?.let { cborSerializer.decode<CborEncodedItem<CborItem<*>>>(it) }?.decodedValue
-        return result?.let { convertFunction.invoke(it) }
-    }
-*/
+    /* fun cborDecodePayload(convertFunction: (arg: AnyCborItem) -> CborType): CborType? {
+         val result = payload?.value?.let { cborSerializer.decode<CborEncodedItem<CborItem<*>>>(it) }?.decodedValue
+         return result?.let { convertFunction.invoke(it) }
+     }
+ */
     fun toSignature1Structure() = CoseSignatureStructureCbor(
         structure = SigStructure.Signature1.toCbor(),
         externalAad = CborByteString(byteArrayOf()),
@@ -157,6 +181,10 @@ data class CoseSign1Cbor<CborType>(
     @JsName("toBeSignedJson")
     fun toBeSignedJson(key: ICoseKeyJson?, alg: CoseAlgorithm?) =
         ToBeSignedJson(hexValue = toSignature1Structure().cborEncode().encodeTo(Encoding.HEX), key = key, alg = alg)
+
+    fun detachedPayloadCopy(): CoseSign1Cbor<CborType> {
+        return this.copy(payload = null)
+    }
 
     object Static {
         @JsName("fromCborItem")

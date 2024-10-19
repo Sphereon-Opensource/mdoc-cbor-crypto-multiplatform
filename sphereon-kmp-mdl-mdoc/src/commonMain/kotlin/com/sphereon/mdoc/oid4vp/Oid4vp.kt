@@ -3,7 +3,7 @@
 package com.sphereon.mdoc.oid4vp
 
 import assertedPathEntry
-import com.sphereon.crypto.cose.CoseSignatureAlgorithm
+import com.sphereon.crypto.cose.CoseAlgorithm
 import com.sphereon.json.HasToJsonString
 import com.sphereon.json.mdocJsonSerializer
 import com.sphereon.json.toJsonDTO
@@ -134,7 +134,7 @@ data class Oid4VPInputDescriptor(
 
 expect sealed interface IOid4VPFormat {
     @SerialName("mso_mdoc")
-    val mso_mdoc: IOid4VPSupportedAlgorithm
+    val mso_mdoc: IOid4VPSupportedAlgorithm?
 }
 
 @Serializable
@@ -144,7 +144,7 @@ data class Oid4VPFormat(
 ) : IOid4VPFormat {
     object Static {
         fun fromDTO(dto: IOid4VPFormat) =
-            with(dto) { Oid4VPFormat(mso_mdoc = Oid4VPSupportedAlgorithm.Static.fromDTO(mso_mdoc)) }
+            with(dto) { Oid4VPFormat(mso_mdoc = Oid4VPSupportedAlgorithm.Static.fromDTO(mso_mdoc!!)) }
     }
 }
 
@@ -161,7 +161,7 @@ data class Oid4VPSupportedAlgorithm(
 ) : IOid4VPSupportedAlgorithm {
 
     @Transient
-    val algorithmObjects = alg.map { a -> CoseSignatureAlgorithm.Static.fromName(a) }.toTypedArray()
+    val algorithmObjects = alg.map { a -> CoseAlgorithm.Static.fromName(a) }.toTypedArray()
 
     object Static {
         fun fromDTO(dto: IOid4VPSupportedAlgorithm) =

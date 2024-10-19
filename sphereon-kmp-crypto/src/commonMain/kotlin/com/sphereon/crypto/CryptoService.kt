@@ -1,5 +1,7 @@
 package com.sphereon.crypto
 
+import CoseJoseKeyMappingService
+
 /**
  * The main object used by code to be calling into the platform specific callbacks for X509 Certificates and signature creation/verification
  *
@@ -9,6 +11,7 @@ package com.sphereon.crypto
 object CryptoService {
     val X509 = x509Service()
     val COSE = coseService()
+    val MAPPING = CoseJoseKeyMappingService
     // TODO: JOSE
 }
 

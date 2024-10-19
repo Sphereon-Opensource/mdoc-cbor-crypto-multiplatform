@@ -35,4 +35,9 @@ actual external interface IKey {
     @JsName("d")
     actual val d: Any?
 
+    // Mappings to help implementers easily get values in their poison of choice (COSE/JWA) no matter the key type
+    actual fun getAlgMapping(): AlgorithmMapping?
+    actual fun getKtyMapping(): KeyTypeMapping
+    actual fun getKeyOperationsMapping(): Array<KeyOperationsMapping>?
+    actual fun getX5cArray(): Array<String>?
 }

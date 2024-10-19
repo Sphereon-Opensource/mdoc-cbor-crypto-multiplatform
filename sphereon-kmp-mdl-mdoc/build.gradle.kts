@@ -119,6 +119,7 @@ kotlin {
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.kotlinx.io.core)
                 implementation(libs.kermit)
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
 
 
             }

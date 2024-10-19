@@ -9,7 +9,7 @@ import com.sphereon.crypto.cose.CoseHeaderCbor
 import com.sphereon.crypto.cose.CoseKeyJson
 import com.sphereon.crypto.cose.CoseKeyType
 import com.sphereon.crypto.cose.CoseSign1Cbor
-import com.sphereon.crypto.cose.CoseSignatureAlgorithm
+import com.sphereon.crypto.cose.CoseAlgorithm
 import com.sphereon.crypto.cose.CoseSignatureStructureCbor
 import com.sphereon.kmp.Encoding
 import com.sphereon.kmp.decodeFrom
@@ -152,7 +152,7 @@ class IssuerSignedTest {
     fun shouldCreateSigned() {
         val cose = CoseSign1Cbor<Any>(
             payload = "This is the content.".toCborByteString(),
-            protectedHeader = CoseHeaderCbor(alg = CoseSignatureAlgorithm.ES256),
+            protectedHeader = CoseHeaderCbor(alg = CoseAlgorithm.ES256),
             unprotectedHeader = CoseHeaderCbor(kid = "11".stringToCborByteString()),
             signature = CborByteString(
                 "8eb33e4ca31d1c465ab05aac34cc6b23d58fef5c083106c4d25a91aef0b0117e2af9a291aa32e14ab834dc56ed2a223444547e01f11d3b0916e5a4c345cacb36".decodeFrom(
@@ -168,7 +168,7 @@ class IssuerSignedTest {
             y = "IBOL-C3BttVivg-lSreASjpkttcsz-1rb7btKLv8EX4",
             d = "V8kgd2ZBRuh2dgyVINBUqpPDr7BOMGcF22CQMIUHtNM"
         ).toCbor()
-        val sigStructure = cose.toBeSignedCbor(coseKeyCbor, CoseSignatureAlgorithm.ES256)
+        val sigStructure = cose.toBeSignedCbor(coseKeyCbor, CoseAlgorithm.ES256)
         println(sigStructure.toCbor().encodeTo(Encoding.HEX))
         println(cose.cborEncode().encodeTo(Encoding.HEX))
     }

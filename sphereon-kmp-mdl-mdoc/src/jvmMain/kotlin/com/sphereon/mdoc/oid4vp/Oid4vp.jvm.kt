@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
 
 actual sealed interface IOid4VPFormat {
     @SerialName("mso_mdoc")
-    actual val mso_mdoc: IOid4VPSupportedAlgorithm
+    actual val mso_mdoc: IOid4VPSupportedAlgorithm?
 }
 
 actual sealed interface IOid4VPSupportedAlgorithm {

@@ -16,7 +16,6 @@ import com.sphereon.json.mdocJsonSerializer
 import com.sphereon.kmp.Encoding
 import com.sphereon.kmp.LongKMP
 import com.sphereon.kmp.encodeTo
-import com.sphereon.kmp.toKmpLong
 import com.sphereon.mdoc.data.DocType
 import com.sphereon.mdoc.data.NameSpace
 import com.sphereon.mdoc.data.mso.MobileSecurityObjectCbor.Static.fromCborItem

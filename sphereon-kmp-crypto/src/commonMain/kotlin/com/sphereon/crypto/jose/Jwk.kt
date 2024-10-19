@@ -1,14 +1,17 @@
 package com.sphereon.crypto.jose
 
+import com.sphereon.crypto.AlgorithmMapping
 import com.sphereon.crypto.cose.CoseKeyCbor
 import com.sphereon.crypto.cose.CoseKeyJson
 import com.sphereon.crypto.cose.ICoseKeyCbor
 import com.sphereon.crypto.cose.ICoseKeyJson
 import com.sphereon.crypto.IKey
+import com.sphereon.crypto.KeyOperationsMapping
+import com.sphereon.crypto.KeyTypeMapping
 import com.sphereon.crypto.toCoseCurve
 import com.sphereon.crypto.toCoseKeyOperations
 import com.sphereon.crypto.toCoseKeyType
-import com.sphereon.crypto.toCoseSignatureAlgorithm
+import com.sphereon.crypto.toCoseAlgorithm
 import com.sphereon.crypto.toJoseCurve
 import com.sphereon.crypto.toJoseKeyOperations
 import com.sphereon.crypto.toJoseKeyType
@@ -17,7 +20,6 @@ import com.sphereon.json.cryptoJsonSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -103,6 +105,22 @@ data class Jwk(
     override val additional: JsonObject?
         get() = TODO("Not yet implemented")
 
+    override fun getAlgMapping(): AlgorithmMapping? {
+        return alg?.let { AlgorithmMapping.Static.fromJose(it) }
+    }
+
+    override fun getKtyMapping(): KeyTypeMapping {
+        return KeyTypeMapping.Static.fromJose(this.kty)
+    }
+
+    override fun getKeyOperationsMapping(): Array<KeyOperationsMapping>? {
+        return key_ops?.map { KeyOperationsMapping.Static.fromJose(it) }?.toTypedArray()
+    }
+
+    override fun getX5cArray(): Array<String>? {
+        return x5c
+    }
+
     class Builder {
         var alg: JwaAlgorithm? = null
         var crv: JwaCurve? = null
@@ -164,7 +182,7 @@ data class Jwk(
     fun jwkToCoseKeyJson(): CoseKeyJson =
         CoseKeyJson.Builder()
             .withKty(this@Jwk.kty.toCoseKeyType() ?: throw IllegalArgumentException("kty value missing"))
-            .withAlg(alg?.toCoseSignatureAlgorithm())
+            .withAlg(alg?.toCoseAlgorithm())
             .withCrv(crv?.toCoseCurve())
             .withD(d)
 //                    .withE(e)

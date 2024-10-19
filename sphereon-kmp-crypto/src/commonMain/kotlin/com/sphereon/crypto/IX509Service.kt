@@ -21,7 +21,7 @@ interface IX509Service {
         chainDER: Array<ByteArray>? = null,
         chainPEM: Array<String>? = null,
         trustedCerts: Array<String>? = getTrustedCerts(),
-        verificationProfile: X509VerificationProfile = X509VerificationProfile.RFC_5280
+        verificationProfile: X509VerificationProfile = X509VerificationProfile.RFC_5280,
     ): IX509VerificationResult<KeyType>
 }
 

@@ -27,6 +27,22 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlin.js.JsExport
 
+/**
+ * Represents a COSE (CBOR Object Signing and Encryption) header in JSON format.
+ *
+ * This data class provides various common COSE header parameters as specified in RFC 8152.
+ * The parameters are defined to describe the cryptographic algorithm, critical fields,
+ * content type, key identifier, initialization vector, partial initialization vector,
+ * and x.509 certificate chain.
+ *
+ * @property alg The COSE algorithm parameter.
+ * @property crit An array of critical headers.
+ * @property contentType The content type of the payload.
+ * @property kid The key identifier for the key used.
+ * @property iv Initialization vector for encryption.
+ * @property partialIv Partial initialization vector.
+ * @property x5chain An array representing the x.509 certificate chain.
+ */
 @JsExport
 @Serializable
 data class CoseHeaderJson(
@@ -37,7 +53,7 @@ data class CoseHeaderJson(
      * See https://www.rfc-editor.org/rfc/rfc8152 Table 2
      *
      */
-    val alg: CoseSignatureAlgorithm? = null,
+    val alg: CoseAlgorithm? = null,
     val crit: Array<String>? = null,
     val contentType: String? = null,
     val kid: String? = null,
@@ -45,8 +61,21 @@ data class CoseHeaderJson(
     val partialIv: String? = null,
     val x5chain: Array<String>? = null,
 ) : JsonView() {
+    /**
+     * Converts the current instance of `CoseHeaderJson` to a JSON string.
+     *
+     * This method uses `cryptoJsonSerializer` to serialize the current
+     * instance to its JSON representation.
+     *
+     * @return A JSON string representation of the current `CoseHeaderJson` object.
+     */
     override fun toJsonString() = cryptoJsonSerializer.encodeToString(this)
 
+    /**
+     * Converts the current CoseHeader object to its CBOR (Concise Binary Object Representation) format.
+     *
+     * @return An instance of CoseHeaderCbor that represents the CBOR-encoded header information.
+     */
     override fun toCbor(): CoseHeaderCbor = CoseHeaderCbor(
         alg = alg,
         crit = crit?.toCborStringArray(),
@@ -61,6 +90,17 @@ data class CoseHeaderJson(
 }
 
 
+/**
+ * Represents a COSE header encoded in CBOR format.
+ *
+ * @property alg The algorithm identifier.
+ * @property crit Critical headers that must be understood.
+ * @property contentType A string describing the content type.
+ * @property kid The key identifier.
+ * @property iv Initialization vector for cipher operations.
+ * @property partialIv Partial initialization vector for cipher operations.
+ * @property x5chain Certificate chain.
+ */
 @JsExport
 data class CoseHeaderCbor(
 
@@ -71,14 +111,17 @@ data class CoseHeaderCbor(
      *
      */
 
-    val alg: CoseSignatureAlgorithm? = null,
+    val alg: CoseAlgorithm? = null,
     val crit: CborArray<CborString>? = null,
     val contentType: CborString? = null,
-    val kid: CborByteString? = null,
+    var kid: CborByteString? = null,
     val iv: CborByteString? = null,
     val partialIv: CborByteString? = null,
-    val x5chain: CborArray<CborByteString>? = null,
+    var x5chain: CborArray<CborByteString>? = null,
 ) : CborView<CoseHeaderCbor, CoseHeaderJson, CborMap<NumberLabel, AnyCborItem>>(CDDL.map) {
+    /**
+     * Utility object containing static properties and methods for handling COSE headers.
+     */
     object Static {
         val ALG = NumberLabel(1)
         val CRIT = NumberLabel(2)
@@ -88,6 +131,20 @@ data class CoseHeaderCbor(
         val PARTIAL_IV = NumberLabel(6)
         val X5CHAIN = NumberLabel(33)
 
+        /**
+         * Copies the given `CoseHeaderCbor` object or initializes a new one if the provided object is null.
+         *
+         * @param other The `CoseHeaderCbor` object to copy. If null, a new `CoseHeaderCbor` object is initialized.
+         * @return A new `CoseHeaderCbor` object, either a copy of the provided object or a newly created one.
+         */
+        fun copyOrInit(other: CoseHeaderCbor?) = if (other === null) CoseHeaderCbor() else other.copy()
+
+        /**
+         * Converts a CBOR map to a CoseHeaderCbor object.
+         *
+         * @param m The CBOR map containing NumberLabel keys and AnyCborItem values.
+         * @return A CoseHeaderCbor object populated with the converted values from the provided CBOR map.
+         */
         fun fromCborItem(m: CborMap<NumberLabel, AnyCborItem>): CoseHeaderCbor {
             val algValue = ALG.optional<AbstractCborInt<LongKMP>>(m)
                 ?.let { if (it.cddl == CDDL.nint) -it.value.toInt() else it.value.toInt() }
@@ -101,7 +158,7 @@ data class CoseHeaderCbor(
                 x5Chain = CborArray(mutableListOf(x5Chain))
             }
             @Suppress("UNCHECKED_CAST") return CoseHeaderCbor(
-                alg = CoseSignatureAlgorithm.Static.fromValue(algValue),
+                alg = CoseAlgorithm.Static.fromValue(algValue),
                 crit = CRIT.optional(m),
                 contentType = CONTENT_TYPE.optional(m),
                 kid = KID.optional(m),
@@ -111,9 +168,32 @@ data class CoseHeaderCbor(
             )
         }
 
+        /**
+         * Decodes a CBOR encoded byte array into its corresponding object.
+         *
+         * @param encoded The byte array containing CBOR encoded data.
+         * @return The decoded object.
+         */
         fun cborDecode(encoded: ByteArray) = fromCborItem(cborSerializer.decode(encoded))
     }
 
+    /**
+     * Builds a CBOR representation of the CoseHeaderCbor.
+     *
+     * The method constructs a CBOR map using the fields of the class:
+     * - ALG: The algorithm identifier.
+     * - CRIT: Critical headers.
+     * - CONTENT_TYPE: The content type.
+     * - KID: Key ID.
+     * - IV: Initialization Vector.
+     * - PARTIAL_IV: Partial Initialization Vector.
+     * - X5CHAIN: The X.509 certificate chain.
+     *
+     * If a single certificate is conveyed, it is placed in a CBOR byte string.
+     * If multiple certificates are conveyed, a CBOR array of byte strings is used, with each certificate being in its own byte string.
+     *
+     * @return A CborBuilder initialized with the various fields of the CoseHeaderCbor.
+     */
     override fun cborBuilder(): CborBuilder<CoseHeaderCbor> {
         return CborMap.Static.builder(this).put(Static.ALG, alg?.value?.numberToKmpLong()?.toInt()?.toNumberLabel(), true)
             .put(Static.CRIT, crit, true).put(Static.CONTENT_TYPE, contentType, true).put(Static.KID, kid, true).put(Static.IV, iv, true)
@@ -123,10 +203,16 @@ data class CoseHeaderCbor(
              * If multiple certificates are conveyed, a CBOR array of byte strings is used, with each certificate being in its own byte string.
              *
              */
-            .put(Static.X5CHAIN, if (x5chain?.value?.size == 1) x5chain.value[0] else x5chain, true).end()
+            .put(Static.X5CHAIN, if (x5chain?.value?.size == 1) x5chain!!.value[0] else x5chain, true).end()
 
     }
 
+
+    /**
+     * Converts the COSE header to a JSON representation.
+     *
+     * @return A CoseHeaderJson object containing the JSON representation of the COSE header.
+     */
     @OptIn(ExperimentalStdlibApi::class)
     override fun toJson(): CoseHeaderJson = CoseHeaderJson(
         alg = alg,
@@ -138,7 +224,24 @@ data class CoseHeaderCbor(
         x5chain = x5chain?.encodeToBase64Array()
     )
 
+    /**
+     * Checks if all the properties (x5chain, alg, partialIv, kid, iv, crit, contentType) are null.
+     *
+     * @return true if all properties are null; false otherwise.
+     */
+    fun isEmpty(): Boolean {
+        return this.x5chain == null && this.alg == null && this.partialIv == null && this.kid == null && this.iv == null && this.crit == null && this.contentType == null
+    }
 
+
+    /**
+     * Checks if this CoseHeaderCbor object is equal to another object.
+     * Two CoseHeaderCbor objects are considered equal if all their
+     * corresponding fields (alg, crit, contentType, kid, iv, partialIv, x5chain) are equal.
+     *
+     * @param other the object to compare with this CoseHeaderCbor object.
+     * @return true if the specified object is equal to this CoseHeaderCbor object, false otherwise.
+     */
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is CoseHeaderCbor) return false
@@ -154,6 +257,11 @@ data class CoseHeaderCbor(
         return true
     }
 
+    /**
+     * Generates a hash code value for this object based on its fields.
+     *
+     * @return an integer hash code value representing this object.
+     */
     override fun hashCode(): Int {
         var result = alg?.hashCode() ?: 0
         result = 31 * result + (crit?.hashCode() ?: 0)
@@ -165,6 +273,11 @@ data class CoseHeaderCbor(
         return result
     }
 
+    /**
+     * Returns a string representation of the `CoseHeaderCbor` instance.
+     *
+     * @return a string that includes the values of `alg`, `crit`, `contentType`, `kid`, `iv`, `partialIv`, and `x5chain`
+     */
     override fun toString(): String {
         return "CoseHeaderCbor(alg=$alg, crit=$crit, contentType=$contentType, kid=$kid, iv=$iv, partialIv=$partialIv, x5chain=$x5chain)"
     }

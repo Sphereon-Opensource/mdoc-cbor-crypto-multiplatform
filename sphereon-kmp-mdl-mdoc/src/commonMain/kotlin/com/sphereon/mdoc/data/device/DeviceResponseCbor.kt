@@ -18,6 +18,7 @@ import com.sphereon.kmp.LongKMP
 import com.sphereon.mdoc.data.DeviceResponseDocumentErrorCbor
 import com.sphereon.mdoc.data.DeviceResponseDocumentErrorJson
 import com.sphereon.mdoc.data.DocType
+import com.sphereon.mdoc.oid4vp.Oid4vpSignResult
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlin.js.JsExport
@@ -48,6 +49,32 @@ data class DeviceResponseJson(
     override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
     override fun toCbor(): DeviceResponseCbor {
         TODO("Not yet implemented")
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is DeviceResponseJson) return false
+
+        if (version != other.version) return false
+        if (documents != null) {
+            if (other.documents == null) return false
+            if (!documents.contentEquals(other.documents)) return false
+        } else if (other.documents != null) return false
+        if (documentErrors != null) {
+            if (other.documentErrors == null) return false
+            if (!documentErrors.contentEquals(other.documentErrors)) return false
+        } else if (other.documentErrors != null) return false
+        if (status != other.status) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = version.hashCode()
+        result = 31 * result + (documents?.contentHashCode() ?: 0)
+        result = 31 * result + (documentErrors?.contentHashCode() ?: 0)
+        result = 31 * result + status.hashCode()
+        return result
     }
 
 }
@@ -117,6 +144,33 @@ data class DeviceResponseCbor(
         @JsName("cborDecode")
         fun cborDecode(encoded: ByteArray): DeviceResponseCbor = fromCborItem(Cbor.decode(encoded))
     }
+
+    class Builder(
+        var documents: Array<DocumentCbor> = arrayOf(),
+        var documentErrors: Array<DeviceResponseDocumentErrorCbor> = arrayOf(),
+        var status: CborUInt = CborUInt(0)
+    ) {
+        fun withDocuments(documents: Array<DocumentCbor>) = apply { this.documents = documents }
+        fun addDocument(document: DocumentCbor) = apply { this.documents.plus(document) }
+        fun addDocumentOrErrorFromOid4vpSignResult(signResult: Oid4vpSignResult) = apply {
+            if (signResult.documentError !== null) this.addDocumentError(signResult.documentError) else if (signResult.document !== null) {
+                this.addDocument(signResult.document)
+            } else throw IllegalStateException("No error or document was returned from the mdoc signing. That should never happen")
+        }
+
+        fun withDocumentErrors(documentErrors: Array<DeviceResponseDocumentErrorCbor>?) = apply { this.documentErrors = documentErrors ?: arrayOf() }
+        fun addDocumentError(documentError: DeviceResponseDocumentErrorCbor) = apply { this.documentErrors.plus(documentError) }
+        fun withStatus(status: CborUInt) = apply { this.status = status }
+
+        fun build(): DeviceResponseCbor = DeviceResponseCbor(
+            documents = documents,
+            documentErrors = if (documentErrors.isNotEmpty()) documentErrors else null,
+            version = CborString("1.0"),
+            status = status
+        )
+
+    }
+
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
