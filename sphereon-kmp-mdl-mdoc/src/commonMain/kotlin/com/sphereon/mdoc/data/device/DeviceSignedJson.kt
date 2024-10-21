@@ -6,20 +6,9 @@ import com.sphereon.cbor.CborBuilder
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborView
 import com.sphereon.cbor.StringLabel
-import com.sphereon.cbor.toCborByteString
-import com.sphereon.crypto.CryptoService
-import com.sphereon.crypto.ICoseCryptoService
-import com.sphereon.crypto.KeyInfo
-import com.sphereon.crypto.cose.CoseSign1Cbor
-import com.sphereon.crypto.cose.CoseSign1InputCbor
 import com.sphereon.json.JsonView
-import com.sphereon.kmp.Uuid
 import com.sphereon.mdoc.data.DeviceNameSpacesCbor
 import com.sphereon.mdoc.data.DeviceSignedItemsJson
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.async
 import kotlinx.serialization.Serializable
 import kotlin.js.JsExport
 

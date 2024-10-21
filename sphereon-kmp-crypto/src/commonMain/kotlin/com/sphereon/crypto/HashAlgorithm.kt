@@ -4,7 +4,7 @@
 package com.sphereon.crypto
 
 import dev.whyoleg.cryptography.CryptographyAlgorithmId
-import dev.whyoleg.cryptography.algorithms.digest.Digest
+import dev.whyoleg.cryptography.algorithms.Digest
 import kotlinx.serialization.Serializable
 import kotlin.js.ExperimentalJsExport
 import kotlin.js.JsExport
@@ -19,9 +19,9 @@ enum class HashAlgorithm(val hashName: String) {
 
     @JsExport.Ignore
     fun toCryptoGraphicAlgorithm(): CryptographyAlgorithmId<Digest> {
-        return if (this == SHA256) dev.whyoleg.cryptography.algorithms.digest.SHA256
-        else if (this == SHA384) dev.whyoleg.cryptography.algorithms.digest.SHA384
-        else if (this == SHA512) dev.whyoleg.cryptography.algorithms.digest.SHA512
+        return if (this == SHA256) dev.whyoleg.cryptography.algorithms.SHA256
+        else if (this == SHA384) dev.whyoleg.cryptography.algorithms.SHA384
+        else if (this == SHA512) dev.whyoleg.cryptography.algorithms.SHA512
         else throw IllegalArgumentException()
     }
 

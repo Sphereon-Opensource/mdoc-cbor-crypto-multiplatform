@@ -5,23 +5,24 @@ import com.sphereon.cbor.localDateToDateStringISO
 import com.sphereon.crypto.cose.COSE_Sign1
 import com.sphereon.crypto.cose.ICoseKeyCbor
 import com.sphereon.crypto.CryptoConst
-import com.sphereon.crypto.CryptoService
-import com.sphereon.crypto.ICoseCryptoService
+import com.sphereon.crypto.CryptoServices
+import com.sphereon.crypto.DefaultCallbacks
+import com.sphereon.crypto.ICoseCryptoCallbackMarkerType
 import com.sphereon.crypto.IKeyInfo
 import com.sphereon.crypto.IVerifyResult
 import com.sphereon.crypto.IVerifySignatureResult
-import com.sphereon.crypto.IX509Service
+import com.sphereon.crypto.IX509ServiceMarkerType
 import com.sphereon.crypto.IX509VerificationResult
 import com.sphereon.crypto.VerifyResult
 import com.sphereon.crypto.X509VerificationProfile
 import com.sphereon.crypto.X509VerificationResult
+import com.sphereon.crypto.coseCryptoService
 import com.sphereon.kmp.DateTimeUtils
 import com.sphereon.kmp.getDateTime
 import com.sphereon.kmp.toLocalDateTimeKMP
 import com.sphereon.mdoc.MdocConst
 import com.sphereon.mdoc.data.device.DocumentCbor
 import com.sphereon.mdoc.data.mso.MobileSecurityObjectCbor
-import com.sphereon.mdoc.data.mso.MobileSecurityObjectJson
 
 /**
  * 9.3.1 Inspection procedure for issuer data authentication
@@ -50,8 +51,8 @@ object IssuerAuthValidation {
      */
     suspend fun verifyCertificateChain(
         issuerAuth: COSE_Sign1<MobileSecurityObjectCbor>,
-        x509Service: IX509Service = CryptoService.X509,
-        trustedCerts: Array<String>? = x509Service.getTrustedCerts()
+        x509PlatformCallbacks: IX509ServiceMarkerType = DefaultCallbacks.x509(),
+        trustedCerts: Array<String>? = null //x509PlatformCallbacks.getTrustedCerts()
     ): IX509VerificationResult<ICoseKeyCbor> {
         val x5chain =
             issuerAuth.protectedHeader.x5chain ?: issuerAuth.unprotectedHeader?.x5chain
@@ -63,7 +64,7 @@ object IssuerAuthValidation {
                 message = "No X.509 Chain present in the issuerAuth headers"
             )
         }
-        return x509Service.verifyCertificateChain(chainDER = x5chain.value.map { it.value }
+        return CryptoServices.x509(x509PlatformCallbacks).verifyCertificateChain(chainDER = x5chain.value.map { it.value }
             .toTypedArray(), trustedCerts = trustedCerts, verificationProfile = X509VerificationProfile.ISO_18013_5)
     }
 
@@ -75,13 +76,13 @@ object IssuerAuthValidation {
      */
     suspend fun verifySign1(
         issuerAuth: COSE_Sign1<MobileSecurityObjectCbor>,
-        coseCryptoService: ICoseCryptoService = CryptoService.COSE,
+        coseCryptoCallbacks: ICoseCryptoCallbackMarkerType = DefaultCallbacks.coseCrypto(),
         keyInfo: IKeyInfo<ICoseKeyCbor>?
     ): IVerifySignatureResult<ICoseKeyCbor> {
         if (keyInfo?.key?.d !== null) {
             throw AssertionError("Do not use private keys to verify!")
         }
-        return coseCryptoService.verify1(issuerAuth, keyInfo)
+        return coseCryptoService(coseCryptoCallbacks).verify1(issuerAuth, keyInfo, true)
     }
 
 
@@ -92,7 +93,7 @@ object IssuerAuthValidation {
      *
      *  This is a READER method. FIXME: Implement
      */
-    suspend fun verifyDigests(
+    fun verifyDigests(
         issuerAuth: COSE_Sign1<MobileSecurityObjectCbor>,
 //        deviceResponse: DeviceResponseCbor
     ): IVerifyResult = VerifyResult(
@@ -108,7 +109,7 @@ object IssuerAuthValidation {
      *
      *  This is a READER method.
      */
-    suspend fun verifyDocType(document: DocumentCbor?): IVerifyResult {
+    fun verifyDocType(document: DocumentCbor?): IVerifyResult {
         val docTypesMatch = document !== null && document.docType == document.MSO?.docType
         return VerifyResult(
             error = !docTypesMatch,

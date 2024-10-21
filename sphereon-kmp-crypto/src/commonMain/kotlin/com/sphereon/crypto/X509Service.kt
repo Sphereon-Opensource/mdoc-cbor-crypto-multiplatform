@@ -1,7 +1,6 @@
 package com.sphereon.crypto
 
 import kotlin.js.JsExport
-import kotlin.jvm.JvmStatic
 
 @JsExport
 enum class X509VerificationProfile {
@@ -9,15 +8,15 @@ enum class X509VerificationProfile {
     RFC_5280
 }
 
-
+expect interface IX509ServiceMarkerType
 /**
  * The main interface used for the platform specific callback. Has to be implemented by external developers.
  *
  * Not exported to JS as it has a similar interface exported using Promises instead of coroutines
  */
-interface IX509Service {
+interface IX509Service: IX509ServiceMarkerType {
     fun getTrustedCerts(): Array<String>?
-    suspend fun <KeyType: IKey> verifyCertificateChain(
+    suspend fun <KeyType : IKey> verifyCertificateChain(
         chainDER: Array<ByteArray>? = null,
         chainPEM: Array<String>? = null,
         trustedCerts: Array<String>? = getTrustedCerts(),
@@ -25,14 +24,14 @@ interface IX509Service {
     ): IX509VerificationResult<KeyType>
 }
 
-expect interface IX509VerificationResult<out KeyType: IKey>: IVerifyResult {
+expect interface IX509VerificationResult<out KeyType : IKey> : IVerifyResult {
     val publicKey: KeyType?
     val publicKeyAlgorithm: String?
     val publicKeyParams: Any?
 }
 
 @JsExport
-class X509VerificationResult<KeyType: IKey>(
+class X509VerificationResult<KeyType : IKey>(
     override val publicKey: KeyType? = null,
     override val publicKeyAlgorithm: String? = null,
     override val publicKeyParams: Any? = null,
@@ -47,48 +46,48 @@ class X509VerificationResult<KeyType: IKey>(
 /**
  * The main entry point for X509 Certificate validation, delegating to a platform specific callback implemented by external developers
  */
-interface X509CallbackService : ICallbackService<IX509Service>, IX509Service
+interface IX509ServiceUsingCallbacks<CallbackServiceType> : ICallbackService<CallbackServiceType>, IX509Service
 
 // The JSExport is on the actual JS impl which has an adaptor to Promises
-expect fun x509Service(): X509CallbackService
+expect fun <PlatformCallback: IX509ServiceMarkerType> x509Service(platformCallback: PlatformCallback = DefaultCallbacks.x509(), trustedCerts: Set<String>? = null): IX509ServiceUsingCallbacks<PlatformCallback>
 
 
 /**
  * The X509 Service object that can be used to register the actual callback. It is not available for JS,
  * which has its own adapted version supporting Promises. Actual implementations can use this object or provide their own
  */
-object X509ServiceObject : X509CallbackService {
-    @JvmStatic
-    private lateinit var platformCallback: IX509Service
+class X509Service(val platformCallback: IX509Service  = DefaultCallbacks.x509(), private var trustedCerts: Set<String>? = null) : IX509ServiceUsingCallbacks<IX509Service> {
+    init {
+        if (platformCallback === this) {
+            throw IllegalArgumentException("Platform callback cannot be myself. Platform callbacks share the same interface is the main x509Service class, but really should implement their own logic and be passed to the X509Service class")
+        }
+    }
 
     private var disabled = false
-    private var trustedCerts: Set<String>? = null
 
 
     override fun isEnabled(): Boolean {
         return !this.disabled
     }
 
-    override fun disable(): IX509Service {
+    override fun platform(): IX509Service {
+        return this.platformCallback
+    }
+
+    override fun disable() = apply {
         this.disabled = true
-        return this
     }
 
-    override fun enable(): IX509Service {
+    override fun enable() = apply {
         this.disabled = false
-        return this
     }
 
-    override fun register(platformCallback: IX509Service): X509CallbackService {
-        this.platformCallback = platformCallback
-        return this
-    }
 
     override fun getTrustedCerts(): Array<String>? {
         return this.trustedCerts?.toTypedArray()
     }
 
-    override suspend fun <KeyType: IKey> verifyCertificateChain(
+    override suspend fun <KeyType : IKey> verifyCertificateChain(
         chainDER: Array<ByteArray>?,
         chainPEM: Array<String>?,
         trustedCerts: Array<String>?,
@@ -102,9 +101,6 @@ object X509ServiceObject : X509CallbackService {
                 critical = false
             )
 
-        }
-        if (!X509ServiceObject::platformCallback.isInitialized) {
-            throw IllegalStateException("X509Callbacks have not been initialized. Please register your X509Service implementation, or register a default implementation")
         }
 
         val assertedCerts = trustedCerts ?: this.getTrustedCerts()

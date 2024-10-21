@@ -1,13 +1,6 @@
 package com.sphereon.crypto
 
-import com.sphereon.crypto.X509ServiceJSAdapter.x509CallbackJS
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.asPromise
-import kotlinx.coroutines.async
 import kotlinx.coroutines.await
-import kotlinx.coroutines.launch
 import kotlin.js.Promise
 
 
@@ -15,13 +8,13 @@ import kotlin.js.Promise
  * A version that resembles the internal X509Callbacks interface, but then using promises instead of coroutines to make it fit the JS world
  */
 @JsExport
-external interface IX509ServiceJS {
+external interface IX509ServiceJS: IX509ServiceMarkerType {
     @JsName("verifyCertificateChainJS")
-    fun <KeyType: IKey> verifyCertificateChainJS(
+    fun <KeyType : IKey> verifyCertificateChain(
         chainDER: Array<ByteArray>?,
         chainPEM: Array<String>?,
         trustedCerts: Array<String>?,
-        verificationProfile: X509VerificationProfile?
+        verificationProfile: X509VerificationProfile?,
     ): Promise<IX509VerificationResult<KeyType>>
 
     /**
@@ -30,36 +23,43 @@ external interface IX509ServiceJS {
     fun getTrustedCerts(): Array<String>?
 }
 
+interface IX509ServiceWithCallbacksJS : ICallbackServiceJS<IX509ServiceJS>, IX509ServiceJS
+
 /**
- * You can register your own X.509 JS implementation with this object using the register function
+ * You can register your own X.509 JS implementation with this class
  */
 @JsExport
-object X509ServiceObjectJS : ICallbackServiceJS<IX509ServiceJS>, IX509ServiceJS {
-    private lateinit var platformCallback: IX509ServiceJS
-    private var trustedCerts: Set<String>? = null
-    private var disabled = false
-
-
-    override fun disable(): IX509ServiceJS {
-        this.disabled = true
-        return this
+class X509ServiceJS(val platformCallback: IX509ServiceJS  = DefaultCallbacks.x509(), private var trustedCerts: Set<String>? = null) : IX509ServiceWithCallbacksJS {
+    init {
+        if (platformCallback === this) {
+            throw IllegalArgumentException("Platform callback cannot be myself. Platform callbacks share the same interface is the main x509Service class, but really should implement their own logic and be passed to the X509Service class")
+        }
     }
 
-    override fun enable(): IX509ServiceJS {
+    fun setTrustedCerts(trustedCerts: Array<String>?) {
+        this.trustedCerts = trustedCerts?.toSet()
+    }
+
+    private var disabled = false
+
+    override fun disable() = apply {
+        this.disabled = true
+    }
+
+    override fun enable() = apply {
         this.disabled = false
-        return this
     }
 
     override fun isEnabled(): Boolean {
         return !this.disabled
     }
 
-    override fun register(platformCallback: IX509ServiceJS): X509ServiceObjectJS {
-        this.platformCallback = platformCallback
-        return this
+    override fun platform(): IX509ServiceJS {
+        return this.platformCallback
     }
 
-    override fun <KeyType: IKey> verifyCertificateChainJS(
+
+    override fun <KeyType : IKey> verifyCertificateChain(
         chainDER: Array<ByteArray>?,
         chainPEM: Array<String>?,
         trustedCerts: Array<String>?,
@@ -75,27 +75,14 @@ object X509ServiceObjectJS : ICallbackServiceJS<IX509ServiceJS>, IX509ServiceJS 
                     critical = false
                 )
             )
-        } else if (!this::platformCallback.isInitialized) {
-            // TODO: Probably good to provide an option to the logger whether it should do log-throws
-            CryptoConst.LOG.error(
-                "X509 callback (JS) is not registered"
-            ) // Yes this is logs-exception anti pattern, but we are a lib with no knowledge about platform integration
-            throw IllegalStateException("X509Callbacks have not been initialized. Please register your X509CallbacksJS implementation, or register a default implementaion")
         }
 
-        // TODO: Move to regular classes instead of object. And move towards more shared code with only the callback being called in the end, like the below approach
-        // return CoroutineScope(CoroutineName("X509")).async { X509ServiceObject.verifyCertificateChain<KeyType>(chainDER, chainPEM, trustedCerts = trustedCerts ?: this@X509ServiceObjectJS.getTrustedCerts()) }.asPromise()
-        return this.platformCallback.verifyCertificateChainJS(
+        return this.platformCallback.verifyCertificateChain(
             chainDER,
             chainPEM,
             trustedCerts = trustedCerts ?: this.getTrustedCerts(),
             verificationProfile
         )
-    }
-
-    @JsName("setTrustedCerts")
-    fun setTrustedCerts(trustedCerts: Array<String>? = null) {
-        this.trustedCerts = trustedCerts?.toSet()
     }
 
     override fun getTrustedCerts(): Array<String>? {
@@ -113,37 +100,34 @@ object X509ServiceObjectJS : ICallbackServiceJS<IX509ServiceJS>, IX509ServiceJS 
  * also the coroutines would not export nicely anyway.
  *
  */
-internal object X509ServiceJSAdapter : X509CallbackService {
-    private val x509CallbackJS = X509ServiceObjectJS
-    private var trustedCerts: Set<String>? = null
+internal class X509ServiceJSAdapter(private val x509ServiceJS: X509ServiceJS = X509ServiceJS(), trustedCerts: Array<String>? = null) : IX509ServiceUsingCallbacks<IX509ServiceJS> {
 
-    override fun disable(): IX509Service {
-        this.x509CallbackJS.disable()
-        return this
+    init {
+        if (trustedCerts != null) {
+            x509ServiceJS.setTrustedCerts(trustedCerts)
+        }
     }
 
-    override fun enable(): IX509Service {
-        this.x509CallbackJS.enable()
-        return this
-    }
-
-    override fun isEnabled(): Boolean {
-        return this.x509CallbackJS.isEnabled()
-    }
-
-    override fun register(platformCallback: IX509Service): X509CallbackService {
-        throw Error("Register function should not be used on the adapter. It depends on the Javascript x509Service object")
-    }
 
     fun setTrustedCerts(trustedCerts: Array<String>?) {
-        this.trustedCerts = trustedCerts?.toSet()
+        x509ServiceJS.setTrustedCerts(trustedCerts)
     }
+
+    override fun disable() = apply {
+        x509ServiceJS.disable()
+    }
+
+    override fun enable() = apply { x509ServiceJS.enable() }
+
+    override fun isEnabled() = x509ServiceJS.isEnabled()
+
+    override fun platform() = x509ServiceJS.platformCallback
 
     override fun getTrustedCerts(): Array<String>? {
-        return this.trustedCerts?.toTypedArray()
+        return x509ServiceJS.getTrustedCerts()
     }
 
-    override suspend fun <KeyType: IKey> verifyCertificateChain(
+    override suspend fun <KeyType : IKey> verifyCertificateChain(
         chainDER: Array<ByteArray>?,
         chainPEM: Array<String>?,
         trustedCerts: Array<String>?,
@@ -169,7 +153,7 @@ internal object X509ServiceJSAdapter : X509CallbackService {
         }
 
         return try {
-            X509ServiceObjectJS.verifyCertificateChainJS<KeyType>(chainDER, chainPEM, assertedCerts, verificationProfile)
+            x509ServiceJS.verifyCertificateChain<KeyType>(chainDER, chainPEM, assertedCerts, verificationProfile)
                 .await()
         } catch (e: Exception) {
             CryptoConst.LOG.error(e.message ?: "X509 validation failed", e)
@@ -187,7 +171,13 @@ internal object X509ServiceJSAdapter : X509CallbackService {
 
 }
 
-/**
- * The actual implementation is using the internal object above, which is hidden from external developers
- */
-actual fun x509Service(): X509CallbackService = X509ServiceJSAdapter
+actual fun <PlatformCallback: IX509ServiceMarkerType> x509Service(platformCallback: PlatformCallback, trustedCerts: Set<String>?): IX509ServiceUsingCallbacks<PlatformCallback> {
+    val jsPlatformCallback = platformCallback.unsafeCast<IX509ServiceJS>()
+    if (jsPlatformCallback === undefined) {
+        throw IllegalArgumentException("Invalid platform callback supplied: Needs to be of type IX509ServiceJS, but is of type ${platformCallback.toString()} instead")
+    }
+    return X509ServiceJSAdapter(X509ServiceJS(jsPlatformCallback)).unsafeCast<IX509ServiceUsingCallbacks<PlatformCallback>>()
+}
+
+@JsExport
+actual external interface IX509ServiceMarkerType

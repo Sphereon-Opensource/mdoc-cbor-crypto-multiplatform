@@ -1,15 +1,14 @@
 package com.sphereon.mdoc
 
-import com.sphereon.crypto.CoseCryptoServiceJS
-import com.sphereon.crypto.CoseCryptoServiceJSAdapter
-import com.sphereon.crypto.CryptoServiceJS
+import com.sphereon.crypto.DefaultCallbacks
+import com.sphereon.crypto.ICoseCryptoCallbackJS
 import com.sphereon.crypto.IKeyInfo
 import com.sphereon.crypto.IVerifyResult
 import com.sphereon.crypto.IVerifySignatureResult
+import com.sphereon.crypto.IX509ServiceJS
 import com.sphereon.crypto.IX509VerificationResult
 import com.sphereon.crypto.cose.COSE_Sign1
 import com.sphereon.crypto.cose.ICoseKeyCbor
-import com.sphereon.crypto.coseService
 import com.sphereon.kmp.DateTimeUtils
 import com.sphereon.kmp.getDateTime
 import com.sphereon.mdoc.data.IssuerAuthValidation
@@ -53,12 +52,12 @@ object IssuerAuthValidationJS {
      */
     fun verifyCertificateChainAsync(
         issuerAuth: COSE_Sign1<MobileSecurityObjectCbor>,
-//        x509Service: X509Service = CryptoService.X509, // todo, look into this. Do we want to expose it here anyway?
-        trustedCerts: Array<String>?// = x509Service.getTrustedCerts()
+        x509PlatformCallbacks: IX509ServiceJS = DefaultCallbacks.x509(),
+        trustedCerts: Array<String>? = x509PlatformCallbacks.getTrustedCerts()
     ): Promise<IX509VerificationResult<ICoseKeyCbor>> = CoroutineScope(context = CoroutineName(NAME)).promise {
         IssuerAuthValidation.verifyCertificateChain(
             issuerAuth = issuerAuth,
-//            x509Service = x509Service,
+            x509PlatformCallbacks = x509PlatformCallbacks,
             trustedCerts = trustedCerts
         )
     }
@@ -71,11 +70,11 @@ object IssuerAuthValidationJS {
      */
     fun verifySign1Async(
         issuerAuth: COSE_Sign1<MobileSecurityObjectCbor>,
-        coseCryptoService: CoseCryptoServiceJS = CryptoServiceJS.COSE, // TODO: Test this with other services
-        keyInfo: IKeyInfo<ICoseKeyCbor>?
+        coseCryptoCallbacks: ICoseCryptoCallbackJS = DefaultCallbacks.coseCrypto(),
+        keyInfo: IKeyInfo<ICoseKeyCbor>? = null
     ): Promise<IVerifySignatureResult<ICoseKeyCbor>> =
         CoroutineScope(context = CoroutineName(NAME)).promise {
-            IssuerAuthValidation.verifySign1(issuerAuth = issuerAuth, coseCryptoService = if (coseCryptoService === CryptoServiceJS.COSE) coseService() else CoseCryptoServiceJSAdapter(coseCryptoService) , keyInfo = keyInfo) }
+            IssuerAuthValidation.verifySign1(issuerAuth = issuerAuth, coseCryptoCallbacks = coseCryptoCallbacks , keyInfo = keyInfo) }
 
 
     /**

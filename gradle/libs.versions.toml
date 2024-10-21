@@ -9,7 +9,7 @@ serialization = "1.7.1"
 coroutines = "1.9.0"
 io = "0.3.4"
 datetime = "0.6.0"
-whyoleg-cryptography = "0.3.1"
+whyoleg-cryptography = "0.4.0"
 kermit = "2.0.4"
 base64 = "2.2.1"
 kotlincrypto = "0.5.3"
@@ -38,6 +38,8 @@ whyoleg-cryptography-serialization-pem = { module = "dev.whyoleg.cryptography:cr
 whyoleg-cryptography-serialization-asn1 = { module = "dev.whyoleg.cryptography:cryptography-serialization-asn1", version.ref = "whyoleg-cryptography" }
 whyoleg-cryptography-serialization-asn1-modules = { module = "dev.whyoleg.cryptography:cryptography-serialization-asn1-modules", version.ref = "whyoleg-cryptography" }
 whyoleg-cryptography-random = { module = "dev.whyoleg.cryptography:cryptography-random", version.ref = "whyoleg-cryptography" }
+whyoleg-cryptography-provider-webcrypto = { module = "dev.whyoleg.cryptography:cryptography-provider-webcrypto", version.ref = "whyoleg-cryptography" }
+whyoleg-cryptography-provider-jdk = { module = "dev.whyoleg.cryptography:cryptography-provider-jdk", version.ref = "whyoleg-cryptography" }
 kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
 encoding-base64 = { module = "io.matthewnelson.encoding:base64", version.ref = "base64" }
 

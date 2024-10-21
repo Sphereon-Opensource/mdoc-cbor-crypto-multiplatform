@@ -121,6 +121,7 @@ kotlin {
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.kotlinx.io.core)
                 implementation(libs.kermit)
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
             }
         }
         val commonTest by getting {
@@ -131,6 +132,7 @@ kotlin {
         }
         val jvmMain by getting {
             dependencies {
+                implementation(libs.whyoleg.cryptography.provider.jdk)
             }
         }
         val jvmTest by getting
@@ -139,7 +141,7 @@ kotlin {
                 implementation(projects.sphereonKmpCommon)
                 implementation(npm("@js-joda/core", "5.6.3"))
                 implementation(npm("@js-joda/timezone", "2.3.0"))
-                implementation("dev.whyoleg.cryptography:cryptography-provider-webcrypto:0.3.1")
+                implementation(libs.whyoleg.cryptography.provider.webcrypto)
             }
         }
 

@@ -1,12 +1,14 @@
 package com.sphereon.mdoc
 
-import CoseJoseKeyMappingService
-import CoseJoseKeyMappingService.toCoseKeyInfo
+
 import com.sphereon.cbor.CborByteString
 import com.sphereon.cbor.encodeToCborByteArray
 import com.sphereon.cbor.toCborByteString
-import com.sphereon.crypto.CoseCryptoServiceObject
-import com.sphereon.crypto.ICoseCryptoService
+import com.sphereon.crypto.CoseJoseKeyMappingService
+import com.sphereon.crypto.CoseJoseKeyMappingService.toCoseKeyInfo
+import com.sphereon.crypto.CryptoServices
+import com.sphereon.crypto.DefaultCallbacks
+import com.sphereon.crypto.ICoseCryptoCallbackService
 import com.sphereon.crypto.IKeyInfo
 import com.sphereon.crypto.KeyInfo
 import com.sphereon.crypto.cose.CoseHeaderCbor
@@ -21,7 +23,7 @@ import com.sphereon.mdoc.data.device.DocRequestCbor
 import com.sphereon.mdoc.data.device.DocumentCbor
 import com.sphereon.mdoc.data.mso.MobileSecurityObjectCbor
 
-class MdocSignService(val cryptoService: ICoseCryptoService = CoseCryptoServiceObject) {
+class MdocSignService(val cryptoCallbackService: ICoseCryptoCallbackService = DefaultCallbacks.coseCrypto()) {
 
     object Static {
 
@@ -31,7 +33,12 @@ class MdocSignService(val cryptoService: ICoseCryptoService = CoseCryptoServiceO
                 return toCoseKeyInfo(keyInfo)
             }
 
-            val info = mso?.deviceKeyInfo?.deviceKey?.let { KeyInfo(key = CoseJoseKeyMappingService.toCoseKey(it), kid = it.kid?.encodeTo(Encoding.BASE64URL)) } ?: keyInfo
+            val info = mso?.deviceKeyInfo?.deviceKey?.let {
+                KeyInfo(
+                    key = CoseJoseKeyMappingService.toCoseKey(it),
+                    kid = it.kid?.encodeTo(Encoding.BASE64URL)
+                )
+            } ?: keyInfo
             if (info === null) {
                 throw IllegalArgumentException("No key information provided and it could not be derived from the Mobile Security Object")
             }
@@ -46,7 +53,8 @@ class MdocSignService(val cryptoService: ICoseCryptoService = CoseCryptoServiceO
         deviceAuthentication: DeviceAuthenticationCbor,
         deviceKeyInfo: IKeyInfo<*>? = null,
         unprotectedHeader: CoseHeaderCbor? = null,
-        protectedHeader: CoseHeaderCbor? = null
+        protectedHeader: CoseHeaderCbor? = null,
+        requireDeviceX5Chain: Boolean = false,
     ): DocumentCbor {
         if (request.itemsRequest.docType != document.docType) {
             throw IllegalArgumentException("Document request docType ${request.itemsRequest.docType} does not match document docType ${document.docType}")
@@ -67,17 +75,21 @@ class MdocSignService(val cryptoService: ICoseCryptoService = CoseCryptoServiceO
             }
             protected.kid = kid
         }
+        if (protected.alg === null) {
+            keyInfo.key.alg
+        }
 
         val input = CoseSign1InputCbor.Builder()
             .withPayload(deviceAuthentication)
             .withProtectedHeader(protected)
             .withUnprotectedHeader(unprotectedHeader)
             .build()
-        val deviceSignature = this.cryptoService.sign1<DeviceAuthenticationCbor>(
+        val signResult = CryptoServices.cose(cryptoCallbackService).sign1<DeviceAuthenticationCbor>(
             input = input,
-            keyInfo = keyInfo
-        ).detachedPayloadCopy()
-
+            keyInfo = keyInfo,
+            requireX5Chain = requireDeviceX5Chain
+        )
+        val deviceSignature = signResult.coseSign1.detachedPayloadCopy()
         return DocumentCbor(
             docType = request.itemsRequest.docType,
             deviceSigned = DeviceSignedCbor(

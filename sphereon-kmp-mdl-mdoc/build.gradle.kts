@@ -117,9 +117,9 @@ kotlin {
                 implementation(libs.kotlinx.serialization.core)
                 implementation(libs.kotlinx.serialization.json)
                 implementation(libs.kotlinx.coroutines.core)
+                implementation(libs.whyoleg.cryptography.core)
                 implementation(libs.kotlinx.io.core)
                 implementation(libs.kermit)
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
 
 
             }
@@ -132,9 +132,14 @@ kotlin {
         }
         val jvmMain by getting {
             dependencies {
+
             }
         }
-        val jvmTest by getting
+        val jvmTest by getting {
+            dependencies {
+                implementation(libs.whyoleg.cryptography.provider.jdk)
+            }
+        }
         val jsMain by getting {
             dependencies {
                 implementation(projects.sphereonKmpCommon)
@@ -147,6 +152,7 @@ kotlin {
                 implementation(libs.kotest.framework.engine)
                 implementation(libs.kotest.framework.datatest)
                 implementation(libs.kotest.property)
+                implementation(libs.whyoleg.cryptography.provider.webcrypto)
             }
         }
         /* val nativeMain by getting {

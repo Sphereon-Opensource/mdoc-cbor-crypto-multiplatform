@@ -1,9 +1,8 @@
+package com.sphereon.crypto
+
 import com.sphereon.cbor.CborArray
 import com.sphereon.cbor.CborByteString
 import com.sphereon.cbor.toCborByteString
-import com.sphereon.crypto.IKey
-import com.sphereon.crypto.IKeyInfo
-import com.sphereon.crypto.KeyInfo
 import com.sphereon.crypto.cose.CoseKeyCbor
 import com.sphereon.crypto.cose.CoseKeyJson
 import com.sphereon.crypto.cose.ICoseKeyCbor

@@ -1,21 +1,20 @@
 package com.sphereon.mdoc.data
 
-import com.sphereon.crypto.CryptoService
-import com.sphereon.crypto.ICoseCryptoService
+import com.sphereon.crypto.DefaultCallbacks
+import com.sphereon.crypto.ICoseCryptoCallbackService
 import com.sphereon.crypto.IKeyInfo
 import com.sphereon.crypto.IVerifyResults
 import com.sphereon.crypto.IX509Service
 import com.sphereon.crypto.KeyInfo
 import com.sphereon.crypto.VerifyResult
 import com.sphereon.crypto.VerifyResults
-import com.sphereon.crypto.cose.COSE_Sign1
+import com.sphereon.crypto.cose.CoseSign1Cbor
 import com.sphereon.crypto.cose.ICoseKeyCbor
 import com.sphereon.kmp.DateTimeUtils
 import com.sphereon.kmp.getDateTime
 import com.sphereon.mdoc.MdocConst
 import com.sphereon.mdoc.data.device.DocumentCbor
 import com.sphereon.mdoc.data.mso.MobileSecurityObjectCbor
-import kotlin.js.ExperimentalJsCollectionsApi
 import kotlin.js.JsExport
 
 /**
@@ -42,11 +41,11 @@ object Validations {
 
     suspend fun fromDocument(
         document: DocumentCbor,
-        x509Service: IX509Service = CryptoService.X509,
+        x509Service: IX509Service = DefaultCallbacks.x509(),
         trustedCerts: Array<String>? = x509Service.getTrustedCerts(),
         keyInfo: IKeyInfo<ICoseKeyCbor>? = null,
         allowExpiredDocuments: Boolean = false,
-        coseCryptoService: ICoseCryptoService = CryptoService.COSE,
+        coseCryptoService: ICoseCryptoCallbackService = DefaultCallbacks.coseCrypto(),
         dateTimeUtils: DateTimeUtils = getDateTime(),
         timeZoneId: String? = null,
         clockSkewAllowedInSec: Int = 120,
@@ -65,12 +64,12 @@ object Validations {
     )
 
     suspend fun fromIssuerAuth(
-        issuerAuth: COSE_Sign1<MobileSecurityObjectCbor>,
+        issuerAuth: CoseSign1Cbor<MobileSecurityObjectCbor>,
         keyInfo: IKeyInfo<ICoseKeyCbor>? = null,
-        x509Service: IX509Service = CryptoService.X509,
+        x509Service: IX509Service = DefaultCallbacks.x509(),
         trustedCerts: Array<String>? = x509Service.getTrustedCerts(),
         allowExpiredDocuments: Boolean = false,
-        coseCryptoService: ICoseCryptoService = CryptoService.COSE,
+        coseCryptoService: ICoseCryptoCallbackService = DefaultCallbacks.coseCrypto(),
         dateTimeUtils: DateTimeUtils = getDateTime(),
         timeZoneId: String? = null,
         clockSkewAllowedInSec: Int = 120,
@@ -88,16 +87,16 @@ object Validations {
         clockSkewAllowedInSec = clockSkewAllowedInSec,
     )
 
-    @OptIn(ExperimentalJsCollectionsApi::class)
+
     suspend fun withParams(
-        issuerAuth: COSE_Sign1<MobileSecurityObjectCbor>? = null,
+        issuerAuth: CoseSign1Cbor<MobileSecurityObjectCbor>? = null,
         document: DocumentCbor? = null,
         mdocVerificationTypes: MdocVerificationTypes = MdocVerification.Static.ALL,
-        x509Service: IX509Service = CryptoService.X509,
+        x509Service: IX509Service  = DefaultCallbacks.x509(),
         keyInfo: IKeyInfo<ICoseKeyCbor>? = null,
         trustedCerts: Array<String>? = x509Service.getTrustedCerts(),
         allowExpiredDocuments: Boolean? = false,
-        coseCryptoService: ICoseCryptoService = CryptoService.COSE,
+        coseCryptoService: ICoseCryptoCallbackService = DefaultCallbacks.coseCrypto(),
         dateTimeUtils: DateTimeUtils = getDateTime(),
         timeZoneId: String? = null,
         clockSkewAllowedInSec: Int = 120,

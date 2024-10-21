@@ -353,8 +353,7 @@ sealed class AlgorithmMapping(
          * @param cose The COSE algorithm to be converted.
          * @throws IllegalArgumentException if the given COSE algorithm does not have a corresponding JOSE algorithm.
          */
-        fun toJose(cose: CoseAlgorithm) = asList.find { it.coseAlgorithm === cose }?.joseAlgorithm
-            ?: throw IllegalArgumentException("coseKeyType $cose not found")
+        fun toJose(cose: CoseAlgorithm) = fromCose(cose).joseAlgorithm
 
         /**
          * Converts a given JWA algorithm to the corresponding COSE algorithm.
@@ -363,8 +362,7 @@ sealed class AlgorithmMapping(
          * @throws IllegalArgumentException if the provided JWA algorithm is not found in the mapping.
          * @return The corresponding COSE algorithm.
          */
-        fun toCose(jose: JwaAlgorithm) = asList.find { it.joseAlgorithm === jose }?.coseAlgorithm
-            ?: throw IllegalArgumentException("joseKeyType $jose not found")
+        fun toCose(jose: JwaAlgorithm) = fromJose(jose).coseAlgorithm
 
         /**
          * Retrieves the algorithm mapping matching the given JSON Web Algorithm (JWA) algorithm.
@@ -372,7 +370,7 @@ sealed class AlgorithmMapping(
          * @param jose The JWA algorithm to match.
          * @return The corresponding algorithm mapping, or null if not found.
          */
-        fun fromJose(jose: JwaAlgorithm) = asList.find { it.joseAlgorithm === jose }
+        fun fromJose(jose: JwaAlgorithm?) = asList.find { it.joseAlgorithm == jose } ?: throw IllegalArgumentException("jose alg $jose not found")
 
         /**
          * Converts a given COSE algorithm to its corresponding internal representation.
@@ -380,7 +378,7 @@ sealed class AlgorithmMapping(
          * @param cose the COSE algorithm to be converted.
          * @return the internal representation of the given COSE algorithm if found, null otherwise.
          */
-        fun fromCose(cose: CoseAlgorithm) = asList.find { it.coseAlgorithm === cose }
+        fun fromCose(cose: CoseAlgorithm?) = asList.find { it.coseAlgorithm == cose }  ?: throw IllegalArgumentException("cose alg $cose not found")
 
         /**
          * Converts a provided algorithm representation to a `JwaAlgorithm`.
@@ -565,6 +563,10 @@ sealed class CurveMapping(
          */
         val asList = listOf(P_256, P_384, P_521, Secp256k1, Ed25519, X25519)
 
+        fun fromJose(jose: JwaCurve?) = asList.find { it.joseCurve == jose } ?: throw IllegalArgumentException("jose curve $jose not found")
+
+        fun fromCose(cose: CoseCurve?) = asList.find { it.coseCurve == cose } ?: throw IllegalArgumentException("cose curve $cose not found")
+
         /**
          * Converts a given COSE curve to its corresponding JOSE curve.
          *
@@ -572,8 +574,7 @@ sealed class CurveMapping(
          * @throws IllegalArgumentException if the provided COSE curve is not found.
          * @return The corresponding JOSE curve.
          */
-        fun toJose(cose: CoseCurve) = asList.find { it.coseCurve === cose }?.joseCurve
-            ?: throw IllegalArgumentException("cose Curve $cose not found")
+        fun toJose(cose: CoseCurve) = fromCose(cose).joseCurve
 
         /**
          * Converts a JwaCurve to its corresponding CoseCurve.
@@ -582,9 +583,7 @@ sealed class CurveMapping(
          * @throws IllegalArgumentException if the specified jose curve is not found.
          * @return The corresponding CoseCurve.
          */
-        fun toCose(jose: JwaCurve) = asList.find { it.joseCurve === jose }?.coseCurve
-            ?: throw IllegalArgumentException("jose Curve $jose not found")
-
+        fun toCose(jose: JwaCurve) = fromJose(jose).coseCurve
 
     }
 }

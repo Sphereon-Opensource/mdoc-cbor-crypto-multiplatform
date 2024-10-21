@@ -604,7 +604,7 @@ expect interface ICoseKeyCbor : IKey {
  * @param additional Additional attributes (optional).
  */
 @JsExport
-class CoseKeyCbor(
+data class CoseKeyCbor(
     override val kty: CborUInt,
     override val kid: CborByteString? = null,
     override val alg: CborUInt? = null,

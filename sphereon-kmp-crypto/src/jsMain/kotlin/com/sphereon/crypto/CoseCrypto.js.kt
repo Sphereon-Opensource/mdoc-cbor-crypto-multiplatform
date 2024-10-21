@@ -1,39 +1,57 @@
 package com.sphereon.crypto
 
-import CoseJoseKeyMappingService
-import com.sphereon.crypto.CoseCryptoServiceObject.verifyAndAmendKeyInfo
-import com.sphereon.crypto.cose.CoseKeyCbor
 import com.sphereon.crypto.cose.CoseSign1Cbor
 import com.sphereon.crypto.cose.CoseSign1InputCbor
 import com.sphereon.crypto.cose.ICoseKeyCbor
-import kotlinx.coroutines.GlobalScope
+import com.sphereon.crypto.cose.ToBeSignedCbor
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asPromise
 import kotlinx.coroutines.async
 import kotlinx.coroutines.await
 import kotlin.js.Promise
 
-/**
- * A version that resembles the internal CoseCrypto interface, but then using promises instead of coroutines to make it fit the JS world
- */
+
 @JsExport
-external interface ICoseCryptoCallbackJS {
-    @JsName("sign1")
-    fun <CborType> sign1(
-        input: CoseSign1InputCbor,
-        keyInfo: IKeyInfo<*>?
-    ): Promise<CoseSign1Cbor<CborType>>
+external interface ICoseCryptoCallbackJS: ICoseCryptoCallbackMarkerType {
+    @JsName("sign")
+    fun sign(
+        input: ToBeSignedCbor,
+    ): Promise<ByteArray>
 
     @JsName("verify1")
     fun verify1(
         input: CoseSign1Cbor<*>,
-        keyInfo: IKeyInfo<*>?
+        keyInfo: IKeyInfo<ICoseKeyCbor>
     ): Promise<IVerifySignatureResult<ICoseKeyCbor>>
 
-    fun resolvePublicKey(keyInfo: IKeyInfo<*>): Promise<ICoseKeyCbor>
+    fun resolvePublicKey(keyInfo: IKeyInfo<*>): Promise<IKey>
 }
 
+
 /**
- * You can register your own COSE JS implementation with this object using the register function
+ * A version that resembles the internal CoseCrypto interface, but then using promises instead of coroutines to make it fit the JS world
+ */
+@JsExport
+external interface ICoseCryptoServiceJS {
+    fun <CborType> sign1(
+        input: CoseSign1InputCbor,
+        keyInfo: IKeyInfo<*>?
+    ): Promise<CoseSign1Result<CborType>>
+
+    fun verify1(
+        input: CoseSign1Cbor<*>,
+        keyInfo: IKeyInfo<*>?,
+        requireX5Chain: Boolean
+    ): Promise<IVerifySignatureResult<ICoseKeyCbor>>
+
+    fun resolvePublicKey(keyInfo: IKeyInfo<*>): Promise<IKey>
+}
+
+private const val COSE_CRYPTO_SERVICE_JS_SCOPE = "CoseCryptoServiceJS"
+
+/**
+ * You can register your own COSE JS implementation with this class via the constructor
  *
  * This is the main integration point in JS to perform signature creation and verification for CBOR/COSE
  *
@@ -44,99 +62,81 @@ external interface ICoseCryptoCallbackJS {
  * We do provide some defaults and examples
  */
 @JsExport
-object CoseCryptoServiceJS : ICallbackServiceJS<ICoseCryptoCallbackJS>, ICoseCryptoCallbackJS {
-    private lateinit var platformCallback: ICoseCryptoCallbackJS
-    private var disabled = false
+class CoseCryptoServiceJS(override val platformCallback: ICoseCryptoCallbackJS = DefaultCallbacks.coseCrypto()) : AbstractCoseCryptoService<ICoseCryptoCallbackJS>(platformCallback),
+    ICoseCryptoServiceJS {
 
-    override fun disable(): CoseCryptoServiceJS {
-        this.disabled = true
-        return this
+
+    @JsExport.Ignore
+    override suspend fun resolvePublicCborKey(keyInfo: IKeyInfo<*>): ICoseKeyCbor {
+        var key = keyInfo.key
+        if (key === null) {
+            key = resolvePublicKey(keyInfo).await()
+        }
+        return CoseJoseKeyMappingService.toCoseKey(key)
     }
 
-    override fun enable(): CoseCryptoServiceJS {
-        this.disabled = false
-        return this
-    }
-
-    override fun isEnabled(): Boolean {
-        return !this.disabled
-    }
-
-    override fun register(platformCallback: ICoseCryptoCallbackJS): CoseCryptoServiceJS {
-        this.platformCallback = platformCallback
-        return this
+    override fun platform(): ICoseCryptoCallbackJS {
+        return this.platformCallback
     }
 
     override fun <CborType> sign1(
         input: CoseSign1InputCbor,
         keyInfo: IKeyInfo<*>?
-    ): Promise<CoseSign1Cbor<CborType>> {
-        
+    ): Promise<CoseSign1Result<CborType>> {
+        return CoroutineScope(CoroutineName(COSE_CRYPTO_SERVICE_JS_SCOPE)).async {
+            val (preSignInputResult, toSign, preSignKeyInfoResult) = preSign1(input, keyInfo, true)
+            val signature = platformCallback.sign(toSign).await()
+            return@async this@CoseCryptoServiceJS.postSign1<CborType>(preSignInputResult, preSignKeyInfoResult, signature)
+        }.asPromise()
 
-        if (!isEnabled()) {
-            CryptoConst.LOG.info("COSE sign1 (JS) has been disabled")
-            throw IllegalStateException("COSE service is disabled; cannot sign")
-        } else if (!this::platformCallback.isInitialized) {
-            // TODO: Probably good to provide an option to the logger whether it should do log-throws
-            CryptoConst.LOG.error(
-                "COSE callback (JS) is not registered"
-            ) // Yes this is logs-exception antipattern, but we are a lib with no knowledge about platform integration
-            throw IllegalStateException("COSE service (JS) has not been initialized. Please register your CoseCallbacksJS implementation, or register a default implementation")
-        }
-        return this.platformCallback.sign1(input, keyInfo)
     }
+
 
     override fun verify1(
         input: CoseSign1Cbor<*>,
-        keyInfo: IKeyInfo<*>?
+        keyInfo: IKeyInfo<*>?,
+        requireX5Chain: Boolean
     ): Promise<IVerifySignatureResult<ICoseKeyCbor>> {
-        var info: IKeyInfo<ICoseKeyCbor>? = keyInfo?.let { CoseJoseKeyMappingService.toCoseKeyInfo(it) }
-        if (!isEnabled()) {
-            CryptoConst.LOG.info("COSE service (JS) has been disabled")
-            return Promise.resolve(
-                VerifySignatureResult(
+        return CoroutineScope(CoroutineName(COSE_CRYPTO_SERVICE_JS_SCOPE)).async {
+            val (protectedHeader, info) = verifyAndAmendKeyInfo(
+                protectedHeader = input.protectedHeader,
+                unprotectedHeader = input.unprotectedHeader,
+                keyInfo = keyInfo,
+                requireX5Chain = requireX5Chain
+            )
+            try {
+                assertEnabled()
+            } catch (e: IllegalStateException) {
+                return@async VerifySignatureResult(
                     keyInfo = info,
                     name = CryptoConst.COSE_LITERAL,
-                    message = "COSE signature creation/verification has been disabled",
-                    error = false,
-                    critical = false
+                    message = "COSE signing/verification has been disabled or not callback has been regenstered! ${e.message}",
+                    error = isEnabled(),
+                    critical = isEnabled()
                 )
-            )
-        } else if (!this::platformCallback.isInitialized) {
-            // TODO: Probably good to provide an option to the logger whether it should do log-throws
-            CryptoConst.LOG.error(
-                "COSE callback (JS) is not registered"
-            ) // Yes this is logs-exception antipattern, but we are a lib with no knowledge about platform integration
-            throw IllegalStateException("COSE have not been initialized. Please register your CoseCallbacksJS implementation, or register a default implementation")
-        }
-        val sigAlg = input.protectedHeader.alg ?: input.unprotectedHeader?.alg
-        val keyType = sigAlg?.keyType ?: info?.key?.getKtyMapping()?.cose
-        if (keyType == null) {
-            return Promise.resolve(VerifySignatureResult(
-                keyInfo = info,
-                name = CryptoConst.COSE_LITERAL,
-                error = true,
-                message = "No signature algorithm or key type found or provided",
-                critical = true
-            ))
-        }
+            }
 
-        if (info === null) {
-            // Let's create a key info for platform specific code from the x5chain // TODO: We could also get the leaf cert and fill the rest, see also above
-            info = KeyInfo(key = CoseKeyCbor(x5chain = input.protectedHeader.x5chain, kty = keyType.toCbor()))
-        }
-
-        return this.platformCallback.verify1(input, keyInfo = info)
+            val sigAlg = input.protectedHeader.alg ?: input.unprotectedHeader?.alg
+            val keyType = sigAlg?.keyType ?: info.key?.getKtyMapping()?.cose
+            if (keyType == null) {
+                return@async VerifySignatureResult(
+                    keyInfo = info,
+                    name = CryptoConst.COSE_LITERAL,
+                    error = true,
+                    message = "No signature algorithm or key type found or provided",
+                    critical = true
+                )
+            }
+            return@async platformCallback.verify1(input = input, keyInfo = info).await()
+        }.asPromise()
     }
 
-    override fun resolvePublicKey(keyInfo: IKeyInfo<*>): Promise<ICoseKeyCbor> {
-        return platformCallback.resolvePublicKey(keyInfo)
-    }
+    override fun resolvePublicKey(keyInfo: IKeyInfo<*>): Promise<IKey> = this.platformCallback.resolvePublicKey(keyInfo)
 }
 
 
 /**
- * Internal object that has the JS exposed service as its callback.
+ * Internal class that has the JS exposed service as its callback.
  *
  * The main responsibility it to convert the JS Promises into the Coroutines used in the X509Service.
  *
@@ -145,76 +145,51 @@ object CoseCryptoServiceJS : ICallbackServiceJS<ICoseCryptoCallbackJS>, ICoseCry
  * also the coroutines would not export nicely anyway.
  *
  */
-open class CoseCryptoServiceJSAdapter(val coseCallbackJS: CoseCryptoServiceJS = CoseCryptoServiceJS) :
-    CoseCryptoCallbackService {
+class CoseCryptoServiceJSAdapter(val coseCallbackJS: CoseCryptoServiceJS = CoseCryptoServiceJS()) :
+    AbstractCoseCryptoService<ICoseCryptoCallbackJS>(coseCallbackJS.platformCallback),
+    ICoseCryptoService {
 
-    override fun disable(): ICoseCryptoService {
-        this.coseCallbackJS.disable()
-        return this
-    }
-
-    override fun enable(): ICoseCryptoService {
-        this.coseCallbackJS.enable()
-        return this
-    }
-
-    override fun isEnabled(): Boolean {
-        return this.coseCallbackJS.isEnabled()
-    }
-
-    override fun register(platformCallback: ICoseCryptoService): CoseCryptoCallbackService {
-        throw Error("Register function should not be used on the adapter. It depends on the Javascript coseCryptoService object")
-    }
 
     override suspend fun <CborType> sign1(
         input: CoseSign1InputCbor,
-        keyInfo: IKeyInfo<*>?
-    ): CoseSign1Cbor<CborType> {
-        CryptoConst.LOG.debug("Creating COSE_Sign1 signature...")
-
-        return try {
-            // Let's do some validations, so the platform callback can be sure there is a signature and key alg available
-            val pair = verifyAndAmendKeyInfo(input, keyInfo)
-            coseCallbackJS.sign1<CborType>(input = pair.first, keyInfo = pair.second).await()
-        } catch (e: Exception) {
-            throw e
-        }.also {
-            CryptoConst.LOG.info("Create COSE_Sign1 signature result: $it")
-        }
-    }
+        keyInfo: IKeyInfo<*>?,
+        requireX5Chain: Boolean
+    ): CoseSign1Result<CborType> = coseCallbackJS.sign1<CborType>(input = input, keyInfo = keyInfo).await()
 
 
     override suspend fun verify1(
         input: CoseSign1Cbor<*>,
-        keyInfo: IKeyInfo<*>?
-    ): IVerifySignatureResult<ICoseKeyCbor> {
-        CryptoConst.LOG.debug("Verifying COSE_Sign1 signature...")
-        val info: IKeyInfo<ICoseKeyCbor>? = keyInfo?.let { CoseJoseKeyMappingService.toCoseKeyInfo(it) }
-        return try {
-            coseCallbackJS.verify1(input = input, keyInfo = info).await()
-        } catch (e: Exception) {
-            CryptoConst.LOG.error(e.message ?: "COSE_Sign1 signature verification failed", e)
-            VerifySignatureResult(
-                keyInfo = info,
-                name = CryptoConst.COSE_LITERAL,
-                error = true,
-                message = "COSE_Sign1 signature verification failed ${e.message}",
-                critical = true
-            )
-        }.also {
-            CryptoConst.LOG.info("COSE_Sign1 signature result: $it")
+        keyInfo: IKeyInfo<*>?,
+        requireX5Chain: Boolean
+    ): IVerifySignatureResult<ICoseKeyCbor> = coseCallbackJS.verify1(input = input, keyInfo = keyInfo, requireX5Chain = true).await()
+
+    override suspend fun resolvePublicKey(keyInfo: IKeyInfo<*>): IKey = coseCallbackJS.resolvePublicKey(keyInfo).await()
+
+    override suspend fun resolvePublicCborKey(keyInfo: IKeyInfo<*>): ICoseKeyCbor {
+        var key = keyInfo.key
+        if (key === null) {
+            key = resolvePublicKey(keyInfo)
         }
+        return CoseJoseKeyMappingService.toCoseKey(key)
     }
 
-    override suspend fun resolvePublicKey(keyInfo: IKeyInfo<*>): ICoseKeyCbor {
-        return coseCallbackJS.resolvePublicKey(keyInfo).await()
+    override fun platform(): ICoseCryptoCallbackJS {
+        return coseCallbackJS.platformCallback
     }
+
 }
 
-object CoseCryptoServiceJSAdapterObject : CoseCryptoServiceJSAdapter(CoseCryptoServiceJS)
-
 /**
- * The actual implementation is using the internal class above, which is hidden from external developers
+ * Class used by Kotlin code. Wraps a supplied platform callback in the Adapter, which in turn delegates to the JS implementation
  */
+@JsExport.Ignore
+actual fun coseCryptoService(platformCallback: ICoseCryptoCallbackMarkerType): ICoseCryptoService {
+    val jsPlatformCallback = platformCallback.unsafeCast<ICoseCryptoCallbackJS>()
+    if (jsPlatformCallback === undefined) {
+        throw IllegalArgumentException("Invalid platform callback supplied: Needs to be of type ICoseCryptoCallbackJS, but is of type ${platformCallback::class.simpleName} instead")
+    }
+    return CoseCryptoServiceJSAdapter(CoseCryptoServiceJS(jsPlatformCallback))
+}
 
-actual fun coseService(): CoseCryptoCallbackService = CoseCryptoServiceJSAdapterObject
+@JsExport
+actual external interface ICoseCryptoCallbackMarkerType
