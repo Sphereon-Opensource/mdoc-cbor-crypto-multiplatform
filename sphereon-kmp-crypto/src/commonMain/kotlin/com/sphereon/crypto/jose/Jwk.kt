@@ -1,21 +1,21 @@
 package com.sphereon.crypto.jose
 
-import com.sphereon.crypto.AlgorithmMapping
+import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.crypto.cose.CoseKeyCbor
 import com.sphereon.crypto.cose.CoseKeyJson
 import com.sphereon.crypto.cose.ICoseKeyCbor
 import com.sphereon.crypto.cose.ICoseKeyJson
 import com.sphereon.crypto.IKey
-import com.sphereon.crypto.KeyOperationsMapping
-import com.sphereon.crypto.KeyTypeMapping
-import com.sphereon.crypto.toCoseCurve
-import com.sphereon.crypto.toCoseKeyOperations
-import com.sphereon.crypto.toCoseKeyType
-import com.sphereon.crypto.toCoseAlgorithm
-import com.sphereon.crypto.toJoseCurve
-import com.sphereon.crypto.toJoseKeyOperations
-import com.sphereon.crypto.toJoseKeyType
-import com.sphereon.crypto.toJoseSignatureAlgorithm
+import com.sphereon.crypto.generic.KeyOperationsMapping
+import com.sphereon.crypto.generic.KeyTypeMapping
+import com.sphereon.crypto.generic.toCoseCurve
+import com.sphereon.crypto.generic.toCoseKeyOperations
+import com.sphereon.crypto.generic.toCoseKeyType
+import com.sphereon.crypto.generic.toCoseAlgorithm
+import com.sphereon.crypto.generic.toJoseCurve
+import com.sphereon.crypto.generic.toJoseKeyOperations
+import com.sphereon.crypto.generic.toJoseKeyType
+import com.sphereon.crypto.generic.toJoseSignatureAlgorithm
 import com.sphereon.json.cryptoJsonSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -368,8 +368,8 @@ data class Jwk(
      *
      * @return the algorithm mapping derived from the 'alg' field, or null if 'alg' is not defined.
      */
-    override fun getAlgMapping(): AlgorithmMapping? {
-        return alg?.let { AlgorithmMapping.Static.fromJose(it) }
+    override fun getAlgMapping(): SignatureAlgorithm? {
+        return alg?.let { SignatureAlgorithm.Static.fromJose(it) }
     }
 
     /**

@@ -3,18 +3,18 @@
 package com.sphereon.crypto.providers
 
 import com.sphereon.cbor.CborUInt
-import com.sphereon.crypto.AlgorithmMapping
+import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.crypto.CoseJoseKeyMappingService
-import com.sphereon.crypto.CurveMapping
-import com.sphereon.crypto.HashAlgorithm
+import com.sphereon.crypto.generic.CurveMapping
+import com.sphereon.crypto.generic.DigestAlg
 import com.sphereon.crypto.ICoseCryptoCallbackService
 import com.sphereon.crypto.IKey
 import com.sphereon.crypto.IKeyInfo
-import com.sphereon.crypto.IVerifySignatureResult
+import com.sphereon.crypto.generic.IVerifySignatureResult
 import com.sphereon.crypto.KeyInfo
-import com.sphereon.crypto.KeyOperationsMapping
-import com.sphereon.crypto.KeyTypeMapping
-import com.sphereon.crypto.VerifySignatureResult
+import com.sphereon.crypto.generic.KeyOperationsMapping
+import com.sphereon.crypto.generic.KeyTypeMapping
+import com.sphereon.crypto.generic.VerifySignatureResult
 import com.sphereon.crypto.cose.CoseAlgorithm
 import com.sphereon.crypto.cose.CoseKeyCbor
 import com.sphereon.crypto.cose.CoseKeyType
@@ -82,7 +82,7 @@ interface GenerateKeyParams {
     val use: JwkUse?
     val keyOperations: Array<out KeyOperationsMapping>?
     val curve: CurveMapping?
-    val alg: AlgorithmMapping?
+    val alg: SignatureAlgorithm?
 }
 
 /**
@@ -106,7 +106,9 @@ interface ICryptoProvider {
      *
      * @return An array of AlgorithmMapping objects representing the supported algorithms.
      */
-    fun supportedAlg(): Array<AlgorithmMapping>
+    fun supportedSignatureAlgorithms(): Array<SignatureAlgorithm>
+
+    fun supportedDigests(): Array<DigestAlg> // convenience, derived from signature algos above
 
     /**
      * Retrieves an array of supported elliptic curve mappings.
@@ -124,13 +126,6 @@ interface ICryptoProvider {
      */
     fun isSupportedCurve(curve: CurveMapping): Boolean
 
-    /**
-     * Retrieves the array of hash algorithms that are supported by the cryptographic provider.
-     *
-     * @return An array of supported hash algorithms.
-     */
-    fun supportedDigests(): Array<HashAlgorithm>
-
 
     /**
      * Asynchronously generates a cryptographic key pair based on the specified elliptic curve mapping.
@@ -144,7 +139,7 @@ interface ICryptoProvider {
         use: JwkUse? = null,
         keyOperations: Array<out KeyOperationsMapping>? = null,
         curve: CurveMapping? = null,
-        alg: AlgorithmMapping? = null
+        alg: SignatureAlgorithm? = null
     ): CryptoProviderKeyPair
 
 
@@ -226,7 +221,8 @@ class EcDSACryptoProvider(provider: CryptographyProvider = CryptographyProvider.
      *
      * @return An array containing the supported HashAlgorithm values: SHA256, SHA384, and SHA512.
      */
-    override fun supportedDigests(): Array<HashAlgorithm> = arrayOf(HashAlgorithm.SHA256, HashAlgorithm.SHA384, HashAlgorithm.SHA512)
+    override fun supportedDigests(): Array<DigestAlg> =
+        supportedSignatureAlgorithms().filter { it.digestAlgorithm !== null }.map { it.digestAlgorithm!! }.toSet().toTypedArray()
 
 
     /**
@@ -241,11 +237,11 @@ class EcDSACryptoProvider(provider: CryptographyProvider = CryptographyProvider.
         use: JwkUse?,
         keyOperations: Array<out KeyOperationsMapping>?,
         curve: CurveMapping?,
-        alg: AlgorithmMapping?
+        alg: SignatureAlgorithm?
     ): CryptoProviderKeyPair {
         val cuveMapping = curve ?: CurveMapping.P_256
         val keyUse = use ?: JwkUse.sig
-        val algMapping = alg ?: AlgorithmMapping.ES256
+        val algMapping = alg ?: SignatureAlgorithm.ECDSA_SHA256
         val curveMapping = curve ?: CurveMapping.P_256
         val keyOpsMapping = keyOperations ?: arrayOf(KeyOperationsMapping.SIGN)
         checkSupportedCurve(cuveMapping)
@@ -322,14 +318,15 @@ class EcDSACryptoProvider(provider: CryptographyProvider = CryptographyProvider.
      *
      * @return An array containing supported key types, specifically KeyTypeMapping.EC2.
      */
-    override fun supportedKeyTypes(): Array<KeyTypeMapping> = arrayOf(KeyTypeMapping.EC2)
+    override fun supportedKeyTypes(): Array<KeyTypeMapping> = arrayOf(KeyTypeMapping.EC)
 
     /**
      * Returns an array of supported ECDSA algorithm mappings.
      *
      * @return An array containing AlgorithmMapping.ES256, AlgorithmMapping.ES384, AlgorithmMapping.ES512
      */
-    override fun supportedAlg(): Array<AlgorithmMapping> = arrayOf(AlgorithmMapping.ES256, AlgorithmMapping.ES384, AlgorithmMapping.ES512)
+    override fun supportedSignatureAlgorithms(): Array<SignatureAlgorithm> =
+        arrayOf(SignatureAlgorithm.ECDSA_SHA256, SignatureAlgorithm.ECDSA_SHA384, SignatureAlgorithm.ECDSA_SHA512)
 
     /**
      * Resolves the public key asynchronously based on the given key information.
@@ -369,7 +366,7 @@ class EcDSACryptoProvider(provider: CryptographyProvider = CryptographyProvider.
         }".hexToByteArray()
         val privateKeyBytes = key.d?.decodeFromBase64Url()
         val curveImpl = resolveCurve(CurveMapping.Static.fromJose(key.crv))
-        val algImpl = resolveDigest(AlgorithmMapping.Static.fromJose(key.alg))
+        val algImpl = resolveDigest(SignatureAlgorithm.Static.fromJose(key.alg))
 
         return KeyInfoContext(key, publicKeyBytes, privateKeyBytes, curveImpl, algImpl)
     }
@@ -427,7 +424,7 @@ class EcDSACryptoProvider(provider: CryptographyProvider = CryptographyProvider.
         use: JwkUse = JwkUse.sig,
         keyOperations: Array<out KeyOperationsMapping> = arrayOf(KeyOperationsMapping.SIGN),
         curve: CurveMapping = CurveMapping.P_256,
-        alg: AlgorithmMapping = AlgorithmMapping.ES256
+        alg: SignatureAlgorithm = SignatureAlgorithm.ECDSA_SHA256
     ): Jwk {
 
         val x = publicKeyBytes.copyOfRange(1, 33).encodeTo(Encoding.BASE64URL)
@@ -479,11 +476,11 @@ class EcDSACryptoProvider(provider: CryptographyProvider = CryptographyProvider.
      * @param alg The algorithm mapping to resolve.
      * @return The corresponding CryptographyAlgorithmId for the given digest.
      */
-    private fun resolveDigest(alg: AlgorithmMapping): CryptographyAlgorithmId<Digest> {
+    private fun resolveDigest(alg: SignatureAlgorithm): CryptographyAlgorithmId<Digest> {
         return when (alg) {
-            is AlgorithmMapping.ES256 -> SHA256
-            is AlgorithmMapping.ES384 -> SHA384
-            is AlgorithmMapping.ES512 -> SHA512
+            is SignatureAlgorithm.ECDSA_SHA256 -> SHA256
+            is SignatureAlgorithm.ECDSA_SHA384 -> SHA384
+            is SignatureAlgorithm.ECDSA_SHA512 -> SHA512
             else -> throw IllegalArgumentException("Algorithm $alg not supported")
         }
     }
@@ -524,7 +521,8 @@ class CoseCryptoProviderToCallbackAdapter(private val providers: Array<ICryptoPr
      */
     private fun getProvider(alg: CoseAlgorithm, kty: CoseKeyType): ICryptoProvider {
         return providers.find {
-            it.supportedKeyTypes().contains(KeyTypeMapping.Static.fromCose(kty)) && it.supportedAlg().contains(AlgorithmMapping.Static.fromCose(alg))
+            it.supportedKeyTypes().contains(KeyTypeMapping.Static.fromCose(kty)) && it.supportedSignatureAlgorithms()
+                .contains(SignatureAlgorithm.Static.fromCose(alg))
         } ?: throw IllegalArgumentException("Crypto Provider for kty $kty and alg ${alg} not found")
     }
 

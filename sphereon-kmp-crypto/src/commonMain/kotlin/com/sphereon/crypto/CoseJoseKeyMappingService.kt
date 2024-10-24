@@ -68,14 +68,51 @@ object CoseJoseKeyMappingService {
 
     fun toJwkKeyInfo(keyInfo: IKeyInfo<*>): KeyInfo<Jwk> {
         val key = keyInfo.key?.let { toJoseJwk(it) }
-        return KeyInfo(key = key, kid = keyInfo.kid ?: key?.kid, opts = keyInfo.opts)
+        return KeyInfo(key = key, kid = keyInfo.kid ?: key?.kid, opts = keyInfo.opts, signatureAlgorithm = keyInfo.signatureAlgorithm)
     }
 
+    fun toResolvedJwkKeyInfo(resolvedKeyInfo: IResolvedKeyInfo<*>): ResolvedKeyInfo<Jwk> {
+        val jwk = toJoseJwk(key = resolvedKeyInfo.key)
+        with(resolvedKeyInfo) {
+            return ResolvedKeyInfo(key = jwk, kid = kid, signatureAlgorithm = signatureAlgorithm, opts = opts)
+        }
+    }
 
 
     fun toCoseKeyInfo(keyInfo: IKeyInfo<*>): KeyInfo<CoseKeyCbor> {
         val key = keyInfo.key?.let { toCoseKey(it) }
-        return KeyInfo(key = key, kid = keyInfo.kid ?: key?.kid?.encodeTo(Encoding.BASE64URL), opts = keyInfo.opts)
+        return KeyInfo(
+            key = key,
+            kid = keyInfo.kid ?: key?.kid?.encodeTo(Encoding.BASE64URL),
+            opts = keyInfo.opts,
+            signatureAlgorithm = keyInfo.signatureAlgorithm
+        )
+    }
+
+    fun toResolvedCoseKeyInfo(resolvedKeyInfo: IResolvedKeyInfo<*>): ResolvedKeyInfo<CoseKeyCbor> {
+        val coseKey = toCoseKey(key = resolvedKeyInfo.key)
+        with(resolvedKeyInfo) {
+            return ResolvedKeyInfo(key = coseKey, kid = kid, signatureAlgorithm = signatureAlgorithm, opts = opts)
+        }
+    }
+
+    fun isResolvedKeyInfo(keyInfo: IKeyInfo<*>): Boolean = keyInfo.key != null
+
+    fun <KeyType : IKey> toResolvedKeyInfo(keyInfo: IKeyInfo<*>, key: KeyType?): ResolvedKeyInfo<KeyType> =
+        ResolvedKeyInfo.Static.fromKeyInfo(keyInfo, key)
+
+
+    fun <KeyType : IKey> toResolvedKeyInfoWithResolver(
+        keyInfo: IKeyInfo<KeyType>,
+        resolveCallback: ((keyInfo: IKeyInfo<KeyType>) -> ResolvedKeyInfo<KeyType>)?
+    ): ResolvedKeyInfo<KeyType> {
+        if (!isResolvedKeyInfo(keyInfo)) {
+            if (resolveCallback == null) {
+                throw IllegalArgumentException("KeyInfo is not resolved and no resolve callback is provided")
+            }
+            return resolveCallback(keyInfo)
+        }
+        return keyInfo as ResolvedKeyInfo<KeyType>
     }
 
 

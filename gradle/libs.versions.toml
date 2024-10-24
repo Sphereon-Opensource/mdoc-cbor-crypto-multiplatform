@@ -8,11 +8,12 @@ kotest = "5.9.0"
 serialization = "1.7.1"
 coroutines = "1.9.0"
 io = "0.3.4"
-datetime = "0.6.0"
+datetime = "0.6.1"
 whyoleg-cryptography = "0.4.0"
 kermit = "2.0.4"
 base64 = "2.2.1"
 kotlincrypto = "0.5.3"
+kache = "2.1.0"
 
 [libraries]
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
@@ -30,9 +31,9 @@ kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-c
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
 kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "io" }
-kotlincrypto-core-digest = { module = "org.kotlincrypto.core:digest", version.ref = "kotlincrypto"}
-kotlincrypto-hash-sha2 = { module = "org.kotlincrypto.hash:sha2", version.ref = "kotlincrypto"}
-kotlincrypto-hash-sha3 = { module = "org.kotlincrypto.hash:sha3", version.ref = "kotlincrypto"}
+kotlincrypto-core-digest = { module = "org.kotlincrypto.core:digest", version.ref = "kotlincrypto" }
+kotlincrypto-hash-sha2 = { module = "org.kotlincrypto.hash:sha2", version.ref = "kotlincrypto" }
+kotlincrypto-hash-sha3 = { module = "org.kotlincrypto.hash:sha3", version.ref = "kotlincrypto" }
 whyoleg-cryptography-core = { module = "dev.whyoleg.cryptography:cryptography-core", version.ref = "whyoleg-cryptography" }
 whyoleg-cryptography-serialization-pem = { module = "dev.whyoleg.cryptography:cryptography-serialization-pem", version.ref = "whyoleg-cryptography" }
 whyoleg-cryptography-serialization-asn1 = { module = "dev.whyoleg.cryptography:cryptography-serialization-asn1", version.ref = "whyoleg-cryptography" }
@@ -42,7 +43,7 @@ whyoleg-cryptography-provider-webcrypto = { module = "dev.whyoleg.cryptography:c
 whyoleg-cryptography-provider-jdk = { module = "dev.whyoleg.cryptography:cryptography-provider-jdk", version.ref = "whyoleg-cryptography" }
 kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
 encoding-base64 = { module = "io.matthewnelson.encoding:base64", version.ref = "base64" }
-
+kache = { module = "com.mayakapps.kache:kache", version.ref = "kache" }
 
 [plugins]
 androidLibrary = { id = "com.android.library", version.ref = "agp" }

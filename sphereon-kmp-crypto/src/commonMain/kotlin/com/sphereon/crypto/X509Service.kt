@@ -1,5 +1,7 @@
 package com.sphereon.crypto
 
+import com.sphereon.crypto.generic.IVerifyResult
+import com.sphereon.crypto.generic.VerifyResult
 import kotlin.js.JsExport
 
 @JsExport

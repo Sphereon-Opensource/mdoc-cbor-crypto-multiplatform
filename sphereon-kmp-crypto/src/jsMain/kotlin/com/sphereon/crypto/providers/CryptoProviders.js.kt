@@ -3,7 +3,7 @@ package com.sphereon.crypto.providers
 import com.sphereon.crypto.ICoseCryptoCallbackJS
 import com.sphereon.crypto.IKey
 import com.sphereon.crypto.IKeyInfo
-import com.sphereon.crypto.IVerifySignatureResult
+import com.sphereon.crypto.generic.IVerifySignatureResult
 import com.sphereon.crypto.cose.CoseSign1Cbor
 import com.sphereon.crypto.cose.ICoseKeyCbor
 import com.sphereon.crypto.cose.ToBeSignedCbor

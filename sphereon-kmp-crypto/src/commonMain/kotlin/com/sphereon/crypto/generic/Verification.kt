@@ -1,8 +1,9 @@
-package com.sphereon.crypto
+package com.sphereon.crypto.generic
 
+import com.sphereon.crypto.IKey
+import com.sphereon.crypto.IKeyInfo
+import com.sphereon.crypto.KeyInfo
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
-import kotlin.js.ExperimentalJsCollectionsApi
 import kotlin.js.JsExport
 
 expect interface IVerifyResult {
@@ -22,7 +23,7 @@ expect interface IVerifyResults<out KeyType : IKey> {
 @Suppress("NON_EXPORTABLE_TYPE") // We are really exporting them because of the expect/actual
 @Serializable
 @JsExport
-data class VerifyResults<out KeyType : IKey> @OptIn(ExperimentalJsCollectionsApi::class) constructor(
+data class VerifyResults<out KeyType : IKey>(
 
     override val error: Boolean,
     override val verifications: Array<VerifyResult>,
@@ -88,7 +89,7 @@ open class VerifyResult(
     }
 
     object Static {
-        fun fromDTO(dto: IVerifyResult) = with(dto) {VerifyResult(name = name, error = error, message = message, critical = critical)}
+        fun fromDTO(dto: IVerifyResult) = with(dto) { VerifyResult(name = name, error = error, message = message, critical = critical) }
     }
 }
 
@@ -125,52 +126,5 @@ class VerifySignatureResult<out KeyType : IKey>(
         return "VerifySignatureResult(keyInfo=$keyInfo)"
     }
 
-
-}
-
-
-expect interface IKeyInfo<out KeyType : IKey> {
-    val kid: String?
-
-    /*val jwk: JWK,*/
-    val key: KeyType?
-    val opts: Map<*, *>?
-}
-
-
-@JsExport
-@Serializable
-data class KeyInfo<out KeyType : IKey>(
-    override val kid: String? = null, /*val jwk: JWK,*/
-    override val key: KeyType? = null,
-    @Transient // fixme:
-    override val opts: Map<*, *>? = null
-) : IKeyInfo<KeyType> {
-
-    override fun hashCode(): Int {
-        var result = kid?.hashCode() ?: 0
-        result = 31 * result + (key?.hashCode() ?: 0)
-        result = 31 * result + (opts?.hashCode() ?: 0)
-        return result
-    }
-
-    override fun toString(): String {
-        return "KeyInfo(kid=$kid, coseKey=$key, opts=$opts)"
-    }
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is KeyInfo<*>) return false
-
-        if (kid != other.kid) return false
-        if (key != other.key) return false
-        if (opts != other.opts) return false
-
-        return true
-    }
-
-    object Static {
-        fun <KeyType: IKey>fromDTO(dto: IKeyInfo<out KeyType>) = with(dto) { KeyInfo(kid = kid, key = key, opts = opts) }
-    }
 
 }

@@ -1,4 +1,4 @@
-package com.sphereon.crypto
+package com.sphereon.crypto.generic
 
 import com.sphereon.cbor.CborNumber
 import com.sphereon.crypto.cose.CoseAlgorithm
@@ -9,6 +9,7 @@ import com.sphereon.crypto.jose.JoseKeyOperations
 import com.sphereon.crypto.jose.JwaAlgorithm
 import com.sphereon.crypto.jose.JwaCurve
 import com.sphereon.crypto.jose.JwaKeyType
+import kotlinx.serialization.Serializable
 import kotlin.js.JsExport
 
 /**
@@ -33,7 +34,7 @@ sealed class KeyTypeMapping(private val coseKeyType: CoseKeyType, private val jo
      * This object maps the `CoseKeyType.EC2`, which represents Elliptic Curve Keys with x- and y-coordinate pairs, to the `JwaKeyType.EC`, which are used for cryptographic operations
      * .
      */
-    object EC2 : KeyTypeMapping(CoseKeyType.EC2, JwaKeyType.EC)
+    object EC : KeyTypeMapping(CoseKeyType.EC2, JwaKeyType.EC)
 
     /**
      * The `RSA` object represents the RSA key type mapping between COSE (CBOR Object Signing and Encryption)
@@ -77,7 +78,7 @@ sealed class KeyTypeMapping(private val coseKeyType: CoseKeyType, private val jo
          *
          * Each element in the list represents a specific key type used in cryptographic operations.
          */
-        val asList = listOf(OKP, EC2, RSA)
+        val asList = listOf(OKP, EC, RSA)
 
         /**
          * Converts a given COSE key type to the corresponding JOSE key type.
@@ -195,16 +196,24 @@ fun CoseKeyType.toJoseKeyType() = KeyTypeMapping.Static.toJose(this)
 fun JwaKeyType.toCoseKeyType() = KeyTypeMapping.Static.toCose(this)
 
 
+
 /**
- * Represents a mapping between COSE algorithms and JOSE algorithms.
+ * Represents a Signature Algorithm with various algorithm properties and identifiers.
  *
- * @property coseAlgorithm The COSE algorithm associated with this mapping.
- * @property joseAlgorithm The JOSE algorithm associated with this mapping.
+ * @property coseAlgorithm The COSE (CBOR Object Signing and Encryption) algorithm identifier.
+ * @property joseAlgorithm The JOSE (JSON Object Signing and Encryption) algorithm identifier.
+ * @property cryptoAlgorithm The cryptographic algorithm used for the signature.
+ * @property digestAlgorithm The hash algorithm used in the signature process.
+ * @property maskGenFunction The mask generation function algorithm.
  */
 @JsExport
-sealed class AlgorithmMapping(
-    private val coseAlgorithm: CoseAlgorithm,
-    private val joseAlgorithm: JwaAlgorithm
+@Serializable
+sealed class SignatureAlgorithm(
+    private val coseAlgorithm: CoseAlgorithm? = null, // we expose this as cose
+    private val joseAlgorithm: JwaAlgorithm? = null, // we expose this as jose
+    val cryptoAlgorithm: CryptoAlg,
+    val digestAlgorithm: DigestAlg? = null,
+    val maskGenFunction: MaskGenFunction? = null
 ) {
     /**
      * The `EdDSA` object represents an Elliptic Curve signature scheme using the Edwards-curve Digital Signature Algorithm.
@@ -214,7 +223,7 @@ sealed class AlgorithmMapping(
      * This class is used for cryptographic operations involving the EdDSA signature scheme, enabling interoperability
      * between different cryptographic frameworks and standards that support EdDSA.
      */
-    object EdDSA : AlgorithmMapping(CoseAlgorithm.EdDSA, JwaAlgorithm.EdDSA)
+    object ED25519 : SignatureAlgorithm(CoseAlgorithm.EdDSA, JwaAlgorithm.EdDSA, cryptoAlgorithm = CryptoAlg.ED25519)
 
     /**
      * Represents the ECDSA algorithm with SHA-256 hashing.
@@ -222,7 +231,7 @@ sealed class AlgorithmMapping(
      * This algorithm is used for digital signatures and is mapped to the
      * COSE (CBOR Object Signing and Encryption) algorithm identifier -7 and the corresponding JWA (JSON Web Algorithm) identifier ES256.
      */
-    object ES256 : AlgorithmMapping(CoseAlgorithm.ES256, JwaAlgorithm.ES256)
+    object ECDSA_SHA256 : SignatureAlgorithm(CoseAlgorithm.ES256, JwaAlgorithm.ES256, cryptoAlgorithm = CryptoAlg.ECDSA)
 
     /**
      * Represents the ECDSA with SHA-384 algorithm mapping.
@@ -232,7 +241,7 @@ sealed class AlgorithmMapping(
      * COSE Algorithm: ES384
      * JWA Algorithm: ES384
      */
-    object ES384 : AlgorithmMapping(CoseAlgorithm.ES384, JwaAlgorithm.ES384)
+    object ECDSA_SHA384 : SignatureAlgorithm(CoseAlgorithm.ES384, JwaAlgorithm.ES384, cryptoAlgorithm = CryptoAlg.ECDSA)
 
     /**
      * Object representing the ES512 algorithm mapping.
@@ -242,7 +251,7 @@ sealed class AlgorithmMapping(
      * @see CoseAlgorithm.ES512
      * @see JwaAlgorithm.ES512
      */
-    object ES512 : AlgorithmMapping(CoseAlgorithm.ES512, JwaAlgorithm.ES512)
+    object ECDSA_SHA512 : SignatureAlgorithm(CoseAlgorithm.ES512, JwaAlgorithm.ES512, cryptoAlgorithm = CryptoAlg.ECDSA)
 
     /**
      * An object that maps the COSE algorithm ES256K to the JWA algorithm ES256K.
@@ -252,7 +261,7 @@ sealed class AlgorithmMapping(
      * signatures in environments where both COSE (CBOR Object Signing and Encryption) and JWA
      * (JSON Web Algorithms) standards are supported.
      */
-    object ES256K : AlgorithmMapping(CoseAlgorithm.ES256K, JwaAlgorithm.ES256K)
+    object ES256K : SignatureAlgorithm(CoseAlgorithm.ES256K, JwaAlgorithm.ES256K, cryptoAlgorithm = CryptoAlg.ECDSA, TODO("Curve"))
 
     /**
      * This object represents the HS256 algorithm, which is a specific type of HMAC utilizing SHA-256.
@@ -261,13 +270,13 @@ sealed class AlgorithmMapping(
      * to the JWA algorithm `JwaAlgorithm.HS256`. This class can be used to handle cryptographic
      * operations that require HMAC with SHA-256.
      */
-    object HS256 : AlgorithmMapping(CoseAlgorithm.HS256, JwaAlgorithm.HS256)
+    object HMAC_SHA256 : SignatureAlgorithm(CoseAlgorithm.HS256, JwaAlgorithm.HS256, cryptoAlgorithm = CryptoAlg.HMAC)
 
     /**
      * HS384 object represents the algorithm mapping configuration for the HMAC with SHA-384 signature algorithm.
      * It extends the AlgorithmMapping class and links the COSE and JWA algorithm identifiers for HS384.
      */
-    object HS384 : AlgorithmMapping(CoseAlgorithm.HS384, JwaAlgorithm.HS384)
+    object HMAC_SHA384 : SignatureAlgorithm(CoseAlgorithm.HS384, JwaAlgorithm.HS384, cryptoAlgorithm = CryptoAlg.HMAC)
 
     /**
      * An object that provides a mapping between COSE and JOSE algorithms for the HS512 (HMAC with SHA-512) algorithm.
@@ -275,7 +284,7 @@ sealed class AlgorithmMapping(
      * This object is used to map the COSE algorithm identifier `CoseAlgorithm.HS512` to the
      * corresponding JOSE algorithm identifier `JwaAlgorithm.HS512`.
      */
-    object HS512 : AlgorithmMapping(CoseAlgorithm.HS512, JwaAlgorithm.HS512)
+    object HMAC_SHA512 : SignatureAlgorithm(CoseAlgorithm.HS512, JwaAlgorithm.HS512, cryptoAlgorithm = CryptoAlg.HMAC)
 
     /**
      * Object PS256 represents an algorithm mapping for the PS256 algorithm.
@@ -290,7 +299,7 @@ sealed class AlgorithmMapping(
      * @property jwaAlgorithm
      * Identifier for the JWA algorithm.
      */
-    object PS256 : AlgorithmMapping(CoseAlgorithm.PS256, JwaAlgorithm.PS256)
+    object RSA_SSA_PSS_SHA256_MGF1 : SignatureAlgorithm(CoseAlgorithm.PS256, JwaAlgorithm.PS256, cryptoAlgorithm = CryptoAlg.RSA, digestAlgorithm = DigestAlg.SHA256, maskGenFunction = MaskGenFunction.MGF1)
 
     /**
      * PS384 object represents an algorithm mapping specifically for PS384 algorithm.
@@ -302,7 +311,7 @@ sealed class AlgorithmMapping(
      * This class maps the PS384 algorithm supported by COSE (RFC 8152) to the PS384 algorithm
      * recognized by JOSE (RFC 7518).
      */
-    object PS384 : AlgorithmMapping(CoseAlgorithm.PS384, JwaAlgorithm.PS384)
+    object RSA_SSA_PSS_SHA384_MGF1 : SignatureAlgorithm(CoseAlgorithm.PS384, JwaAlgorithm.PS384, cryptoAlgorithm = CryptoAlg.RSA, digestAlgorithm = DigestAlg.SHA384, maskGenFunction = MaskGenFunction.MGF1)
 
     /**
      * Represents the RSASSA-PSS signature algorithm using SHA-512 hashing.
@@ -310,7 +319,22 @@ sealed class AlgorithmMapping(
      * Maps the COSE algorithm identifier for RSASSA-PSS with SHA-512 to the corresponding JWA algorithm.
      * Primarily used in contexts requiring RSASSA-PSS signature with SHA-512 as specified by COSE and JOSE standards.
      */
-    object PS512 : AlgorithmMapping(CoseAlgorithm.PS512, JwaAlgorithm.PS512)
+    object RSA_SSA_PSS_SHA512_MGF1 : SignatureAlgorithm(CoseAlgorithm.PS512, JwaAlgorithm.PS512, cryptoAlgorithm = CryptoAlg.RSA, digestAlgorithm = DigestAlg.SHA512, maskGenFunction = MaskGenFunction.MGF1)
+
+
+    object RSA_RAW : SignatureAlgorithm(cryptoAlgorithm = CryptoAlg.RSA)
+    object RSA_SSA_PSS_RAW_MGF1: SignatureAlgorithm(cryptoAlgorithm = CryptoAlg.RSA, maskGenFunction= MaskGenFunction.MGF1)
+
+    object RSA_SHA256: SignatureAlgorithm(coseAlgorithm = null /*TODO*/ , joseAlgorithm = JwaAlgorithm.RS256, cryptoAlgorithm = CryptoAlg.RSA, digestAlgorithm = DigestAlg.SHA256)
+    object RSA_SHA384: SignatureAlgorithm(coseAlgorithm = null /*TODO*/ , joseAlgorithm = JwaAlgorithm.RS384, cryptoAlgorithm = CryptoAlg.RSA, digestAlgorithm = DigestAlg.SHA384)
+    object RSA_SHA512: SignatureAlgorithm(coseAlgorithm = null /*TODO*/ , joseAlgorithm = JwaAlgorithm.RS512, cryptoAlgorithm = CryptoAlg.RSA, digestAlgorithm = DigestAlg.SHA512)
+
+/*
+    RSA_SHA3_256(CryptoAlg.RSA, DigestAlg.SHA3_256),
+    RSA_SHA3_512(CryptoAlg.RSA, DigestAlg.SHA3_512),
+    RSA_SSA_PSS_SHA3_256_MGF1(CryptoAlg.RSA, DigestAlg.SHA3_256, MaskGenFunction.MGF1),
+    RSA_SSA_PSS_SHA3_512_MGF1(CryptoAlg.RSA, DigestAlg.SHA3_512, MaskGenFunction.MGF1),
+*/
 
     /**
      * Holds the instance of the `joseAlgorithm` used for cryptographic operations.
@@ -345,7 +369,7 @@ sealed class AlgorithmMapping(
          * This list includes various algorithms such as EdDSA, ES256K, ES256, ES384, ES512, HS256, HS384, HS512, PS256, PS384, and PS512.
          * It is utilized by functions to map between different cryptographic algorithm standards.
          */
-        val asList = listOf(EdDSA, ES256K, ES256, ES384, ES512, HS256, HS384, HS512, PS256, PS384, PS512)
+        val asList = listOf(ED25519, ES256K, ECDSA_SHA256, ECDSA_SHA384, ECDSA_SHA512, HMAC_SHA256, HMAC_SHA384, HMAC_SHA512, RSA_SSA_PSS_SHA256_MGF1, RSA_SSA_PSS_SHA384_MGF1, RSA_SSA_PSS_SHA512_MGF1)
 
         /**
          * Converts a given COSE algorithm to its corresponding JOSE algorithm.
@@ -353,7 +377,7 @@ sealed class AlgorithmMapping(
          * @param cose The COSE algorithm to be converted.
          * @throws IllegalArgumentException if the given COSE algorithm does not have a corresponding JOSE algorithm.
          */
-        fun toJose(cose: CoseAlgorithm) = fromCose(cose).joseAlgorithm
+        fun toJose(cose: CoseAlgorithm?) = fromCose(cose).joseAlgorithm!!
 
         /**
          * Converts a given JWA algorithm to the corresponding COSE algorithm.
@@ -362,7 +386,7 @@ sealed class AlgorithmMapping(
          * @throws IllegalArgumentException if the provided JWA algorithm is not found in the mapping.
          * @return The corresponding COSE algorithm.
          */
-        fun toCose(jose: JwaAlgorithm) = fromJose(jose).coseAlgorithm
+        fun toCose(jose: JwaAlgorithm?) = fromJose(jose).coseAlgorithm!!
 
         /**
          * Retrieves the algorithm mapping matching the given JSON Web Algorithm (JWA) algorithm.
@@ -387,7 +411,7 @@ sealed class AlgorithmMapping(
          * @return The corresponding `JwaAlgorithm`.
          * @throws IllegalArgumentException if the provided algorithm cannot be converted to a `JwaAlgorithm`.
          */
-        fun toJoseAlg(alg: Any): JwaAlgorithm {
+        fun toJoseAlg(alg: Any?): JwaAlgorithm {
             return when (alg) {
                 is String -> JwaAlgorithm.Static.fromValue(alg)
                     ?: throw IllegalArgumentException("cose alg $alg could not be converted to jose algorithm")
@@ -407,7 +431,7 @@ sealed class AlgorithmMapping(
          * @return The corresponding `CoseAlgorithm` for the provided algorithm representation.
          * @throws IllegalArgumentException If the algorithm cannot be converted to a `CoseAlgorithm`.
          */
-        fun toCoseAlg(alg: Any): CoseAlgorithm {
+        fun toCoseAlg(alg: Any?): CoseAlgorithm {
             return when (alg) {
                 is String -> toCoseAlgFromJose(alg)
                 is Int -> CoseAlgorithm.Static.fromValue(alg)
@@ -429,7 +453,7 @@ sealed class AlgorithmMapping(
          * @throws IllegalArgumentException If the COSE algorithm identifier is not recognized.
          * @return The equivalent JOSE algorithm.
          */
-        fun toJoseAlgFromCose(algorithm: Int) =
+        fun toJoseAlgFromCose(algorithm: Int?) =
             toJose(CoseAlgorithm.Static.fromValue(algorithm) ?: throw IllegalArgumentException("coseKeyType $algorithm not found"))
 
         /**
@@ -439,7 +463,7 @@ sealed class AlgorithmMapping(
          * @throws IllegalArgumentException If the provided JOSE algorithm name is not found.
          * @return The corresponding COSE algorithm.
          */
-        fun toCoseAlgFromJose(algorithm: String) =
+        fun toCoseAlgFromJose(algorithm: String?): CoseAlgorithm =
             toCose(JwaAlgorithm.Static.fromValue(algorithm) ?: throw IllegalArgumentException("joseKeyType $algorithm not found"))
 
     }
@@ -455,7 +479,7 @@ sealed class AlgorithmMapping(
  * @return The corresponding JOSE signature algorithm as defined in the AlgorithmMapping.
  */
 @JsExport
-fun CoseAlgorithm.toJoseSignatureAlgorithm() = AlgorithmMapping.Static.toJose(this)
+fun CoseAlgorithm.toJoseSignatureAlgorithm() = SignatureAlgorithm.Static.toJose(this)
 
 /**
  * Converts a JWA (JSON Web Algorithm) algorithm to a COSE (CBOR Object Signing and Encryption) algorithm.
@@ -467,7 +491,7 @@ fun CoseAlgorithm.toJoseSignatureAlgorithm() = AlgorithmMapping.Static.toJose(th
  * @throws IllegalArgumentException if no corresponding COSE algorithm is found.
  */
 @JsExport
-fun JwaAlgorithm.toCoseAlgorithm() = AlgorithmMapping.Static.toCose(this)
+fun JwaAlgorithm.toCoseAlgorithm() = SignatureAlgorithm.Static.toCose(this)
 
 // TODO Enc algos
 

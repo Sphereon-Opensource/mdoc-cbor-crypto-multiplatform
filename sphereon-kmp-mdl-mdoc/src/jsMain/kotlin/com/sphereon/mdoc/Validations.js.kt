@@ -3,7 +3,7 @@ package com.sphereon.mdoc
 import com.sphereon.crypto.cose.COSE_Sign1
 import com.sphereon.crypto.cose.ICoseKeyCbor
 import com.sphereon.crypto.IKeyInfo
-import com.sphereon.crypto.IVerifyResults
+import com.sphereon.crypto.generic.IVerifyResults
 import com.sphereon.kmp.DateTimeUtils
 import com.sphereon.kmp.getDateTime
 import com.sphereon.mdoc.data.MdocVerification

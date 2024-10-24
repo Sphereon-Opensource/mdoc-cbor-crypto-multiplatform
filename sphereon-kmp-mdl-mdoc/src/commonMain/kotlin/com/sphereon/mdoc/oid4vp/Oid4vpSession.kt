@@ -2,8 +2,8 @@ import com.sphereon.cbor.Cbor
 import com.sphereon.cbor.CborArray
 import com.sphereon.cbor.toCborByteString
 import com.sphereon.cbor.toCborString
-import com.sphereon.crypto.HashAlgorithm
-import com.sphereon.crypto.hash
+import com.sphereon.crypto.generic.DigestAlg
+import com.sphereon.crypto.generic.hash
 import com.sphereon.kmp.Uuid
 import com.sphereon.mdoc.tx.device.OID4VPHandoverCbor
 
@@ -12,12 +12,12 @@ import com.sphereon.mdoc.tx.device.OID4VPHandoverCbor
  */
 fun clientIdToHash(clientId: String, generatedNonce: String): ByteArray {
     val clientIdToHash = Cbor.encode(CborArray.Static.builder<Any>().addString(clientId).addString(generatedNonce).end().build())
-    return hash(clientIdToHash, HashAlgorithm.SHA256)
+    return hash(clientIdToHash, DigestAlg.SHA256)
 }
 
 fun responseUriToHash(responseUri: String, generatedNonce: String): ByteArray {
     val responseUriToHash = Cbor.encode(CborArray.Static.builder<Any>().addString(responseUri).addString(generatedNonce).end().build())
-    return hash(responseUriToHash, HashAlgorithm.SHA256)
+    return hash(responseUriToHash, DigestAlg.SHA256)
 }
 
 

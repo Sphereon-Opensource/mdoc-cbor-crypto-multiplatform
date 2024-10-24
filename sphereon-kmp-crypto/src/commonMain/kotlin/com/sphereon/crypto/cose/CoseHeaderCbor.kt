@@ -137,7 +137,7 @@ data class CoseHeaderCbor(
          * @param other The `CoseHeaderCbor` object to copy. If null, a new `CoseHeaderCbor` object is initialized.
          * @return A new `CoseHeaderCbor` object, either a copy of the provided object or a newly created one.
          */
-        fun copyOrInit(other: CoseHeaderCbor?) = if (other === null) CoseHeaderCbor() else other.copy()
+        fun copyOrInit(other: CoseHeaderCbor?, alg: CoseAlgorithm? = null) = if (other === null) CoseHeaderCbor(alg = alg) else other.copy(alg = alg)
 
         /**
          * Converts a CBOR map to a CoseHeaderCbor object.

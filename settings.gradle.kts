@@ -57,5 +57,6 @@ include(
     "sphereon-kmp-common",
     "sphereon-kmp-cbor",
     "sphereon-kmp-crypto",
+    "sphereon-kmp-ades-client",
     "sphereon-kmp-mdl-mdoc",
 )

@@ -1,6 +1,6 @@
 package com.sphereon.crypto.cose
 
-import com.sphereon.crypto.HashAlgorithm
+import com.sphereon.crypto.generic.DigestAlg
 import com.sphereon.crypto.jose.AlgorithmType
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -37,7 +37,7 @@ enum class CoseAlgorithm(
     val keyType: CoseKeyType?,
 
     @JsName("hash")
-    val hash: HashAlgorithm?,
+    val hash: DigestAlg?,
 
     @JsName("tagLength")
     val tagLength: Int?,
@@ -70,7 +70,7 @@ enum class CoseAlgorithm(
         "ES256",
         -7,
         CoseKeyType.EC2,
-        HashAlgorithm.SHA256,
+        DigestAlg.SHA256,
         null,
         CoseCurve.P_256,
         "ECDSA w/ SHA-256", AlgorithmType.SIGNATURE
@@ -95,7 +95,7 @@ enum class CoseAlgorithm(
         "ES256K",
         -47,
         CoseKeyType.EC2,
-        HashAlgorithm.SHA256,
+        DigestAlg.SHA256,
         null,
         CoseCurve.secp256k1,
         "ECDSA secp256k1 curve w/ SHA-256", AlgorithmType.SIGNATURE
@@ -118,7 +118,7 @@ enum class CoseAlgorithm(
         "ES384",
         -35,
         CoseKeyType.EC2,
-        HashAlgorithm.SHA384,
+        DigestAlg.SHA384,
         null,
         CoseCurve.P_384,
         "ECDSA w/ SHA-384", AlgorithmType.SIGNATURE
@@ -138,7 +138,7 @@ enum class CoseAlgorithm(
         "ES512",
         -36,
         CoseKeyType.EC2,
-        HashAlgorithm.SHA512,
+        DigestAlg.SHA512,
         null,
         CoseCurve.P_521,
         "ECDSA w/ SHA-512", AlgorithmType.SIGNATURE
@@ -173,7 +173,7 @@ enum class CoseAlgorithm(
         "HS256/64",
         4,
         null,
-        HashAlgorithm.SHA256,
+        DigestAlg.SHA256,
         64,
         null,
         "HMAC w/ SHA-256 truncated to 64 bits", AlgorithmType.SIGNATURE
@@ -191,7 +191,7 @@ enum class CoseAlgorithm(
      * @property description A brief description of the algorithm ("HMAC w/ SHA-256").
      * @property algorithmType The type of the algorithm, which is a signature algorithm.
      */
-    HS256("HS256", 5, CoseKeyType.Symmetric, HashAlgorithm.SHA256, 256, null, "HMAC w/ SHA-256", AlgorithmType.SIGNATURE),
+    HS256("HS256", 5, CoseKeyType.Symmetric, DigestAlg.SHA256, 256, null, "HMAC w/ SHA-256", AlgorithmType.SIGNATURE),
 
     /**
      * The HS384 enumeration represents the HMAC with SHA-384 algorithm.Specifies the parameters used for the algorithm, including the name, key length, key type, hash algorithm
@@ -206,7 +206,7 @@ enum class CoseAlgorithm(
      * @property description A brief description of the algorithm, which is "HMAC w/ SHA-384".
      * @property algorithmType The category of the algorithm, which is `AlgorithmType.SIGNATURE`.
      */
-    HS384("HS384", 6, CoseKeyType.Symmetric, HashAlgorithm.SHA384, 384, null, "HMAC w/ SHA-384", AlgorithmType.SIGNATURE),
+    HS384("HS384", 6, CoseKeyType.Symmetric, DigestAlg.SHA384, 384, null, "HMAC w/ SHA-384", AlgorithmType.SIGNATURE),
 
     /**
      * Represents the HS512 (HMAC using SHA-512) cryptographic algorithm.
@@ -220,7 +220,7 @@ enum class CoseAlgorithm(
      * @property description A textual description of the algorithm.
      * @property algorithmType The category of the algorithm (e.g., signature, encryption).
      */
-    HS512("HS512", 7, CoseKeyType.Symmetric, HashAlgorithm.SHA512, 512, null, "HMAC w/ SHA-512", AlgorithmType.SIGNATURE),
+    HS512("HS512", 7, CoseKeyType.Symmetric, DigestAlg.SHA512, 512, null, "HMAC w/ SHA-512", AlgorithmType.SIGNATURE),
 
     /**
      * Represents the PS256 algorithm configuration for signing using RSASSA-PSS with SHA-256.
@@ -238,7 +238,7 @@ enum class CoseAlgorithm(
         "PS256",
         -37,
         CoseKeyType.RSA,
-        HashAlgorithm.SHA256,
+        DigestAlg.SHA256,
         256,
         CoseCurve.P_256,
         "RSASSA-PSS w/ SHA-256", AlgorithmType.SIGNATURE
@@ -261,7 +261,7 @@ enum class CoseAlgorithm(
         "PS384",
         -38,
         CoseKeyType.RSA,
-        HashAlgorithm.SHA384,
+        DigestAlg.SHA384,
         384,
         CoseCurve.P_384,
         "RSASSA-PSS w/ SHA-384", AlgorithmType.SIGNATURE
@@ -295,7 +295,7 @@ enum class CoseAlgorithm(
         "PS512",
         -39,
         CoseKeyType.RSA,
-        HashAlgorithm.SHA512,
+        DigestAlg.SHA512,
         512,
         CoseCurve.P_521,
         "RSASSA-PSS w/ SHA-512", AlgorithmType.SIGNATURE
@@ -497,7 +497,7 @@ enum class CoseAlgorithm(
         "HMAC 256/64",
         4,
         CoseKeyType.Symmetric,
-        hash = HashAlgorithm.SHA256,
+        hash = DigestAlg.SHA256,
         tagLength = 64,
         curve = null,
         "HMAC w/ SHA-256 truncated to 64 bits", AlgorithmType.ENCRYPTION
@@ -521,7 +521,7 @@ enum class CoseAlgorithm(
         "HMAC 256/256",
         5,
         CoseKeyType.Symmetric,
-        hash = HashAlgorithm.SHA256,
+        hash = DigestAlg.SHA256,
         tagLength = 256,
         curve = null,
         "HMAC w/ SHA-256", AlgorithmType.ENCRYPTION
@@ -543,7 +543,7 @@ enum class CoseAlgorithm(
         "HMAC 384/384",
         6,
         CoseKeyType.Symmetric,
-        hash = HashAlgorithm.SHA384,
+        hash = DigestAlg.SHA384,
         tagLength = 384,
         curve = null,
         "HMAC w/ SHA-384", AlgorithmType.ENCRYPTION
@@ -565,7 +565,7 @@ enum class CoseAlgorithm(
         "HMAC 512/512",
         7,
         CoseKeyType.Symmetric,
-        hash = HashAlgorithm.SHA512,
+        hash = DigestAlg.SHA512,
         tagLength = 512,
         curve = null,
         "HMAC w/ SHA-512", AlgorithmType.ENCRYPTION

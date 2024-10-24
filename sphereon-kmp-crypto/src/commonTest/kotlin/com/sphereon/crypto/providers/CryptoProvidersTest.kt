@@ -1,13 +1,13 @@
 package com.sphereon.crypto.providers
 
 
-import com.sphereon.crypto.AlgorithmMapping
-import com.sphereon.crypto.CurveMapping
-import com.sphereon.crypto.HashAlgorithm
+import com.sphereon.crypto.generic.SignatureAlgorithm
+import com.sphereon.crypto.generic.CurveMapping
+import com.sphereon.crypto.generic.DigestAlg
 import com.sphereon.crypto.IKey
 import com.sphereon.crypto.IKeyInfo
 import com.sphereon.crypto.KeyInfo
-import com.sphereon.crypto.KeyTypeMapping
+import com.sphereon.crypto.generic.KeyTypeMapping
 import com.sphereon.crypto.jose.JwaAlgorithm
 import com.sphereon.crypto.jose.JwaCurve
 import com.sphereon.crypto.jose.JwaKeyType
@@ -51,7 +51,7 @@ class EcDSACryptoProviderTest {
     fun testSupportedDigests() {
         val digests = ecdsaCryptoProvider.supportedDigests()
         assertContentEquals(
-            arrayOf(HashAlgorithm.SHA256, HashAlgorithm.SHA384, HashAlgorithm.SHA512),
+            arrayOf(DigestAlg.SHA256, DigestAlg.SHA384, DigestAlg.SHA512),
             digests
         )
     }
@@ -59,7 +59,7 @@ class EcDSACryptoProviderTest {
     @Test
     fun testGenerateKeyAsync() = runTest {
         val curve = CurveMapping.P_256
-        val result = ecdsaCryptoProvider.generateKeyAsync(curve = curve, alg = AlgorithmMapping.ES256)
+        val result = ecdsaCryptoProvider.generateKeyAsync(curve = curve, alg = SignatureAlgorithm.ECDSA_SHA256)
         assertNotNull(result)
     }
 
@@ -75,14 +75,14 @@ class EcDSACryptoProviderTest {
     @Test
     fun testSupportedKeyTypes() {
         val keyTypes = ecdsaCryptoProvider.supportedKeyTypes()
-        assertContentEquals(arrayOf(KeyTypeMapping.EC2), keyTypes)
+        assertContentEquals(arrayOf(KeyTypeMapping.EC), keyTypes)
     }
 
     @Test
     fun testSupportedAlg() {
-        val algorithms = ecdsaCryptoProvider.supportedAlg()
+        val algorithms = ecdsaCryptoProvider.supportedSignatureAlgorithms()
         assertContentEquals(
-            arrayOf(AlgorithmMapping.ES256, AlgorithmMapping.ES384, AlgorithmMapping.ES512),
+            arrayOf(SignatureAlgorithm.ECDSA_SHA256, SignatureAlgorithm.ECDSA_SHA384, SignatureAlgorithm.ECDSA_SHA512),
             algorithms
         )
     }
@@ -98,6 +98,7 @@ class EcDSACryptoProviderTest {
     fun testResolvePublicKeyThrowsExceptionForMissingKey() {
         val keyInfo = object : IKeyInfo<IKey> {
             override val kid: String = "kid"
+            override val signatureAlgorithm: SignatureAlgorithm? = null
             override val key: IKey? = null
             override val opts: Map<*, *>? = null
         }

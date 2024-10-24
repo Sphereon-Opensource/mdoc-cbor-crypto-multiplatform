@@ -13,10 +13,10 @@ import com.sphereon.cbor.NumberLabel
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.encodeToArray
 import com.sphereon.cbor.toCborByteString
-import com.sphereon.crypto.AlgorithmMapping
+import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.crypto.IKey
-import com.sphereon.crypto.KeyOperationsMapping
-import com.sphereon.crypto.KeyTypeMapping
+import com.sphereon.crypto.generic.KeyOperationsMapping
+import com.sphereon.crypto.generic.KeyTypeMapping
 import com.sphereon.json.JsonView
 import com.sphereon.json.cryptoJsonSerializer
 import com.sphereon.kmp.Encoding
@@ -165,8 +165,8 @@ class CoseKeyJson(
      * @return the AlgorithmMapping corresponding to the current algorithm if it exists,
      *         or null if the algorithm is not defined.
      */
-    override fun getAlgMapping(): AlgorithmMapping? {
-        return alg?.let { AlgorithmMapping.Static.fromCose(it) }
+    override fun getAlgMapping(): SignatureAlgorithm? {
+        return alg?.let { SignatureAlgorithm.Static.fromCose(it) }
     }
 
     /**
@@ -683,8 +683,8 @@ data class CoseKeyCbor(
      * @return An instance of AlgorithmMapping if the algorithm value is successfully mapped;
      *         otherwise, returns null.
      */
-    override fun getAlgMapping(): AlgorithmMapping? {
-        return alg?.let { CoseAlgorithm.Static.fromValue(it.value.toInt())?.let { coseAlg -> AlgorithmMapping.Static.fromCose(coseAlg) } }
+    override fun getAlgMapping(): SignatureAlgorithm? {
+        return alg?.let { CoseAlgorithm.Static.fromValue(it.value.toInt())?.let { coseAlg -> SignatureAlgorithm.Static.fromCose(coseAlg) } }
     }
 
     /**

@@ -34,7 +34,7 @@ data class DeviceKeyInfoJson(
 
 @JsExport
 data class DeviceKeyInfoCbor(
-    val deviceKey: COSE_Key,
+    val deviceKey: CoseKeyCbor,
     val keyAuthorizations: KeyAuthorizationsCbor? = null,
     val keyInfo: KeyInfoCbor? = null,
 ) : CborView<DeviceKeyInfoCbor, DeviceKeyInfoJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {

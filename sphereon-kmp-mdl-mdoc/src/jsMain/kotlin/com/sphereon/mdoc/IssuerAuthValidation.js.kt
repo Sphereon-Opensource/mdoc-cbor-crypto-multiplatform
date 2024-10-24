@@ -3,8 +3,8 @@ package com.sphereon.mdoc
 import com.sphereon.crypto.DefaultCallbacks
 import com.sphereon.crypto.ICoseCryptoCallbackJS
 import com.sphereon.crypto.IKeyInfo
-import com.sphereon.crypto.IVerifyResult
-import com.sphereon.crypto.IVerifySignatureResult
+import com.sphereon.crypto.generic.IVerifyResult
+import com.sphereon.crypto.generic.IVerifySignatureResult
 import com.sphereon.crypto.IX509ServiceJS
 import com.sphereon.crypto.IX509VerificationResult
 import com.sphereon.crypto.cose.COSE_Sign1

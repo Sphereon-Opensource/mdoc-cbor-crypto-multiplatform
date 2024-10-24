@@ -4,6 +4,8 @@ import com.sphereon.crypto.cose.CoseSign1Cbor
 import com.sphereon.crypto.cose.CoseSign1InputCbor
 import com.sphereon.crypto.cose.ICoseKeyCbor
 import com.sphereon.crypto.cose.ToBeSignedCbor
+import com.sphereon.crypto.generic.IVerifySignatureResult
+import com.sphereon.crypto.generic.VerifySignatureResult
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asPromise

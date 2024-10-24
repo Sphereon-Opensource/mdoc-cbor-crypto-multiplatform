@@ -3,11 +3,11 @@ package com.sphereon.mdoc.data
 import com.sphereon.crypto.DefaultCallbacks
 import com.sphereon.crypto.ICoseCryptoCallbackService
 import com.sphereon.crypto.IKeyInfo
-import com.sphereon.crypto.IVerifyResults
+import com.sphereon.crypto.generic.IVerifyResults
 import com.sphereon.crypto.IX509Service
 import com.sphereon.crypto.KeyInfo
-import com.sphereon.crypto.VerifyResult
-import com.sphereon.crypto.VerifyResults
+import com.sphereon.crypto.generic.VerifyResult
+import com.sphereon.crypto.generic.VerifyResults
 import com.sphereon.crypto.cose.CoseSign1Cbor
 import com.sphereon.crypto.cose.ICoseKeyCbor
 import com.sphereon.kmp.DateTimeUtils

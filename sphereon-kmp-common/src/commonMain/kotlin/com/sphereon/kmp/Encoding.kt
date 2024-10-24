@@ -3,6 +3,10 @@ package com.sphereon.kmp
 import io.matthewnelson.encoding.base64.Base64
 import io.matthewnelson.encoding.core.Decoder.Companion.decodeToByteArray
 import io.matthewnelson.encoding.core.Encoder.Companion.encodeToString
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlin.js.JsExport
 
 @JsExport
@@ -67,4 +71,52 @@ fun ByteArray.encodeTo(encoding: Encoding): String = when (encoding) {
     Encoding.BASE64 -> this.encodeToBase64(urlSafe = false)
     Encoding.HEX -> this.encodeToHex()
     Encoding.UTF8 -> this.decodeToString()
+}
+
+
+/**
+ * Serializer that can be used in Kotlin's serialization support to convert byte arrays into base64 strings and vice versa.
+ */
+object Base64Serializer : KSerializer<ByteArray> {
+
+    override val descriptor = PrimitiveSerialDescriptor("Base64", kotlinx.serialization.descriptors.PrimitiveKind.STRING)
+
+    /**
+     * Serializes the given byte array into a base64 string.
+     */
+    override fun serialize(encoder: Encoder, value: ByteArray) {
+        return encoder.encodeString(value.encodeToBase64(urlSafe = false))
+    }
+
+    /**
+     * Deserializes the given base64 string into a byte array.
+     */
+    override fun deserialize(decoder: Decoder): ByteArray {
+        val str = decoder.decodeString()
+        return str.decodeFromBase64(urlSafe = false)
+    }
+}
+
+
+/**
+ * Serializer that can be used in Kotlin's serialization support to convert byte arrays into base64 strings and vice versa.
+ */
+object Base64UrlSerializer : KSerializer<ByteArray> {
+
+    override val descriptor = PrimitiveSerialDescriptor("Base64Url", kotlinx.serialization.descriptors.PrimitiveKind.STRING)
+
+    /**
+     * Serializes the given byte array into a base64 string.
+     */
+    override fun serialize(encoder: Encoder, value: ByteArray) {
+        return encoder.encodeString(value.encodeToBase64(urlSafe = true))
+    }
+
+    /**
+     * Deserializes the given base64 string into a byte array.
+     */
+    override fun deserialize(decoder: Decoder): ByteArray {
+        val str = decoder.decodeString()
+        return str.decodeFromBase64(urlSafe = true)
+    }
 }

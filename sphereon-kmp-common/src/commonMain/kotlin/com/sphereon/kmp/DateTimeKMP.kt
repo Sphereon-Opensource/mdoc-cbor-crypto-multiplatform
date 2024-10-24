@@ -3,6 +3,7 @@ package com.sphereon.kmp
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.serializers.InstantIso8601Serializer
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.KSerializer
@@ -78,19 +79,7 @@ class LocalDateTimeKMP(
 //fun LocalDateTimeKMP.localDateToCborFullDate() = this.localDateToDateStringISO().toCborFullDate()
 
 
-object InstantIso8601SerializerKMP : KSerializer<Instant> {
-
-    override val descriptor: SerialDescriptor =
-        PrimitiveSerialDescriptor("com.sphereon.kmp.datetime.Instant", PrimitiveKind.STRING)
-
-    override fun deserialize(decoder: Decoder): Instant =
-        Instant.parse(decoder.decodeString())
-
-    override fun serialize(encoder: Encoder, value: Instant) {
-        encoder.encodeString(value.toString())
-    }
-
-}
+typealias InstantIso8601SerializerKMP  = InstantIso8601Serializer
 
 
 /**

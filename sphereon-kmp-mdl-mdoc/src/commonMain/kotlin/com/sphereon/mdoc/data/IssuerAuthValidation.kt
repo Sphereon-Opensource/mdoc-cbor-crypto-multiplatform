@@ -9,11 +9,11 @@ import com.sphereon.crypto.CryptoServices
 import com.sphereon.crypto.DefaultCallbacks
 import com.sphereon.crypto.ICoseCryptoCallbackMarkerType
 import com.sphereon.crypto.IKeyInfo
-import com.sphereon.crypto.IVerifyResult
-import com.sphereon.crypto.IVerifySignatureResult
+import com.sphereon.crypto.generic.IVerifyResult
+import com.sphereon.crypto.generic.IVerifySignatureResult
 import com.sphereon.crypto.IX509ServiceMarkerType
 import com.sphereon.crypto.IX509VerificationResult
-import com.sphereon.crypto.VerifyResult
+import com.sphereon.crypto.generic.VerifyResult
 import com.sphereon.crypto.X509VerificationProfile
 import com.sphereon.crypto.X509VerificationResult
 import com.sphereon.crypto.coseCryptoService

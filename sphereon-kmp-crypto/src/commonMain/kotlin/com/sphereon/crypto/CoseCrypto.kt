@@ -8,7 +8,8 @@ import com.sphereon.crypto.cose.CoseSign1Cbor
 import com.sphereon.crypto.cose.CoseSign1InputCbor
 import com.sphereon.crypto.cose.ICoseKeyCbor
 import com.sphereon.crypto.cose.ToBeSignedCbor
-import com.sphereon.crypto.jose.Jwk
+import com.sphereon.crypto.generic.IVerifySignatureResult
+import com.sphereon.crypto.generic.VerifySignatureResult
 import com.sphereon.kmp.Encoding
 import kotlin.js.JsExport
 

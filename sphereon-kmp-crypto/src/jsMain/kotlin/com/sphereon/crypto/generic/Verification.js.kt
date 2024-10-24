@@ -1,4 +1,7 @@
-package com.sphereon.crypto
+package com.sphereon.crypto.generic
+
+import com.sphereon.crypto.IKey
+import com.sphereon.crypto.IKeyInfo
 
 @JsExport
 actual external interface IVerifyResult {
@@ -16,17 +19,6 @@ actual external interface IVerifyResult {
 actual external interface IVerifySignatureResult<out KeyType : IKey> : IVerifyResult {
     @JsName("keyInfo")
     actual val keyInfo: IKeyInfo<KeyType>?
-}
-
-@JsExport
-actual external interface IKeyInfo<out KeyType : IKey> {
-    @JsName("kid")
-    actual val kid: String?
-    @JsName("key")
-    actual val key: KeyType?
-    @JsName("opts")
-    actual val opts: Map<*, *>?
-
 }
 
 @JsExport
