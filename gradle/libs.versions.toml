@@ -14,6 +14,7 @@ kermit = "2.0.4"
 base64 = "2.2.1"
 kotlincrypto = "0.5.3"
 kache = "2.1.0"
+kable = "0.34.0"
 
 [libraries]
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
@@ -44,6 +45,7 @@ whyoleg-cryptography-provider-jdk = { module = "dev.whyoleg.cryptography:cryptog
 kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
 encoding-base64 = { module = "io.matthewnelson.encoding:base64", version.ref = "base64" }
 kache = { module = "com.mayakapps.kache:kache", version.ref = "kache" }
+kable-core = { module = "com.juul.kable:kable-core", version.ref = "kable"}
 
 [plugins]
 androidLibrary = { id = "com.android.library", version.ref = "agp" }

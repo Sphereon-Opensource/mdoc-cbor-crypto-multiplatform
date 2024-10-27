@@ -1,5 +1,5 @@
 allprojects {
-    group = "com.sphereon"
+    group = "com.sphereon.kmp"
     version = "0.2.0-SNAPSHOT"
 }
 

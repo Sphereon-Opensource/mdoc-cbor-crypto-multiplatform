@@ -133,18 +133,58 @@ expect interface IKey {
 }
 
 
+/**
+ * Represents the interface for key information.
+ *
+ * Provides a structure to hold key-related metadata and configuration details
+ * necessary for cryptographic operations.
+ *
+ * @param KeyType The specific type of key implementing the IKey interface.
+ */
 expect interface IKeyInfo<out KeyType : IKey> {
+    /**
+     * A nullable String variable representing the name or identifier of a kid.
+     *
+     * Can be `null` when the kid's name or identifier is not provided.
+     */
     val kid: String?
+    /**
+     * Represents the algorithm used for generating and verifying digital signatures.
+     * This variable may hold a specific algorithm or be null if an algorithm is not set.
+     * Common algorithms include RSA, DSA, and ECDSA.
+     */
     val signatureAlgorithm: SignatureAlgorithm?
 
+    /**
+     * Represents a cryptographic key that can be used for various security operations such as encryption, decryption, signing, and verification.
+     *
+     * This key may be optional and can be null. The actual implementation of the key is determined by the KeyType.
+     */
     /*val jwk: JWK,*/
     val key: KeyType?
+    /**
+     * A map containing configuration options.
+     *
+     * The `opts` variable is a nullable map where both the keys and values can be of any type.
+     * This map is used to store various configuration parameters that can be accessed and utilized
+     * throughout the application. A null value indicates that there are no configuration options specified.
+     */
     val opts: Map<*, *>?
 }
 
 
+/**
+ * Represents a resolved cryptographic key information interface.
+ *
+ * This interface guarantees that the key is present and resolved, providing concrete access to the key.
+ *
+ * @param KeyType Generic type that extends IKey, representing the cryptographic key type.
+ */
 expect interface IResolvedKeyInfo<out KeyType : IKey> : IKeyInfo<KeyType> {
-    // Same as the above, but now wit a key guaranteed to be present (resolved)
+    /**
+     * A unique identifier that is guaranteed to be present (resolved) for the object.
+     */
+// Same as the above, but now wit a key guaranteed to be present (resolved)
     override val key: KeyType
 }
 

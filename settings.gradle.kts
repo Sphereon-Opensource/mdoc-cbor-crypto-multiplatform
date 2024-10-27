@@ -46,17 +46,12 @@ dependencyResolutionManagement {
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version("0.8.0")
 }
-//enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
-/*
-plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version "0.5.0"
-}
-*/
 
 include(
     "sphereon-kmp-common",
     "sphereon-kmp-cbor",
     "sphereon-kmp-crypto",
     "sphereon-kmp-ades-client",
-    "sphereon-kmp-mdl-mdoc",
+    "sphereon-kmp-mdoc-core",
+    "sphereon-kmp-mdoc-datatransfer-ble"
 )
