@@ -4,6 +4,7 @@ import com.sphereon.crypto.ICoseCryptoCallbackJS
 import com.sphereon.crypto.IKey
 import com.sphereon.crypto.IKeyInfo
 import com.sphereon.crypto.IResolvedKeyInfo
+import com.sphereon.crypto.cose.CoseCryptoProviderToCallbackAdapter
 import com.sphereon.crypto.cose.CoseSign1Cbor
 import com.sphereon.crypto.cose.ICoseKeyCbor
 import com.sphereon.crypto.cose.ToBeSignedCbor

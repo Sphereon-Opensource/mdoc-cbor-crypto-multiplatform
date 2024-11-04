@@ -120,7 +120,7 @@ kotlin {
                 implementation(libs.whyoleg.cryptography.core)
                 implementation(libs.kotlinx.io.core)
                 implementation(libs.kermit)
-
+                implementation(libs.kable.core)
 
             }
         }
@@ -128,7 +128,6 @@ kotlin {
             dependencies {
                 implementation(kotlin("test"))
                 implementation(libs.kotlinx.coroutines.test)
-                implementation(projects.sphereonKmpCryptoKms)
             }
         }
         val jvmMain by getting {
@@ -154,6 +153,7 @@ kotlin {
                 implementation(libs.kotest.framework.datatest)
                 implementation(libs.kotest.property)
                 implementation(libs.whyoleg.cryptography.provider.webcrypto)
+
             }
         }
         /* val nativeMain by getting {

@@ -5,7 +5,7 @@ import com.sphereon.crypto.DefaultCallbacks
 import com.sphereon.crypto.X509Service
 import com.sphereon.crypto.kms.CoseJoseProvidedKeyResolverService
 import com.sphereon.crypto.kms.KeyManagerService
-import com.sphereon.crypto.providers.CoseCryptoProviderToCallbackAdapter
+import com.sphereon.crypto.cose.CoseCryptoProviderToCallbackAdapter
 import com.sphereon.crypto.providers.EcDSACryptoProvider
 import com.sphereon.json.oid4vpJsonSerializer
 import com.sphereon.kmp.Encoding

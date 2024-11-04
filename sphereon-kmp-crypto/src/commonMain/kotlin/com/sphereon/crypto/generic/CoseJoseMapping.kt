@@ -5,6 +5,7 @@ import com.sphereon.crypto.cose.CoseAlgorithm
 import com.sphereon.crypto.cose.CoseCurve
 import com.sphereon.crypto.cose.CoseKeyOperations
 import com.sphereon.crypto.cose.CoseKeyType
+import com.sphereon.crypto.generic.SignatureAlgorithm.RSA_SSA_PSS_SHA256_MGF1.coseAlgorithm
 import com.sphereon.crypto.jose.JoseKeyOperations
 import com.sphereon.crypto.jose.JwaAlgorithm
 import com.sphereon.crypto.jose.JwaCurve

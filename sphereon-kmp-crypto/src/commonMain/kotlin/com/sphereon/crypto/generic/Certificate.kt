@@ -1,7 +1,6 @@
 package com.sphereon.crypto.generic
 
 import com.sphereon.kmp.Base64Serializer
-import com.sphereon.kmp.Base64UrlSerializer
 import kotlinx.datetime.Instant
 import kotlin.js.JsExport
 

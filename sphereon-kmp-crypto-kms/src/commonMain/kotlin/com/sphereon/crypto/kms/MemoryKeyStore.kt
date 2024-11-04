@@ -19,7 +19,7 @@ enum class KeyStoreType {
 /**
  *
  */
-class MemoryKeyStore(
+class MemoryKeyStoreService(
     override val settings: KeyProviderSettings = KeyProviderSettings(
         id = Uuid.v4String(), config = KeyProviderConfig(
             type = KeyProviderType.MEMORY, cacheEnabled = false /* In memory so caching not needed*/

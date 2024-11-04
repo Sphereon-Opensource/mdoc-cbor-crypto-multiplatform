@@ -19,6 +19,9 @@ val serializers = SerializersModule {
 }
 val json = Json { serializersModule = serializers }
 
+
+//FIXME: Replace IKeyEntry with IKeyInfo everywhere
+
 /**
  * The Key Entry interface which is the base interface for all Key entries.
  */

@@ -1,10 +1,8 @@
 package com.sphereon.crypto.sign.model
 
 import com.sphereon.crypto.SigningException
-import com.sphereon.crypto.generic.DigestAlg
 import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.kmp.Base64Serializer
-import com.sphereon.kmp.Base64UrlSerializer
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.serializers.InstantIso8601Serializer

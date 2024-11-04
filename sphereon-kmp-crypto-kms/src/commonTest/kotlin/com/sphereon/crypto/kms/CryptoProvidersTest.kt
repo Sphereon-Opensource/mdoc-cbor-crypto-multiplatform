@@ -1,4 +1,4 @@
-package com.sphereon.crypto.providers
+package com.sphereon.crypto.kms
 
 
 import com.sphereon.crypto.generic.Curve
