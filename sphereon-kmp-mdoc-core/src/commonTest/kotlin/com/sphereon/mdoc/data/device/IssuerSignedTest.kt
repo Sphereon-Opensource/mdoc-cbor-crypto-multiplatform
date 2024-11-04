@@ -4,13 +4,15 @@ import com.sphereon.cbor.CborArray
 import com.sphereon.cbor.CborByteString
 import com.sphereon.cbor.stringToCborByteString
 import com.sphereon.cbor.toCborByteString
+import com.sphereon.crypto.KeyInfo
+import com.sphereon.crypto.cose.CoseAlgorithm
 import com.sphereon.crypto.cose.CoseCurve
 import com.sphereon.crypto.cose.CoseHeaderCbor
 import com.sphereon.crypto.cose.CoseKeyJson
 import com.sphereon.crypto.cose.CoseKeyType
 import com.sphereon.crypto.cose.CoseSign1Cbor
-import com.sphereon.crypto.cose.CoseAlgorithm
 import com.sphereon.crypto.cose.CoseSignatureStructureCbor
+import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.kmp.Encoding
 import com.sphereon.kmp.decodeFrom
 import com.sphereon.kmp.decodeFromHex
@@ -92,7 +94,6 @@ class IssuerSignedTest {
     }
 
 
-
     @OptIn(ExperimentalStdlibApi::class)
     @Test
     fun shouldDecodeAndEncodeSprindFunkeIssuerAuthTestVector() {
@@ -168,7 +169,7 @@ class IssuerSignedTest {
             y = "IBOL-C3BttVivg-lSreASjpkttcsz-1rb7btKLv8EX4",
             d = "V8kgd2ZBRuh2dgyVINBUqpPDr7BOMGcF22CQMIUHtNM"
         ).toCbor()
-        val sigStructure = cose.toBeSignedCbor(coseKeyCbor, CoseAlgorithm.ES256)
+        val sigStructure = cose.toBeSignedCbor(KeyInfo(key = coseKeyCbor), SignatureAlgorithm.ECDSA_SHA256)
         println(sigStructure.toCbor().encodeTo(Encoding.HEX))
         println(cose.cborEncode().encodeTo(Encoding.HEX))
     }

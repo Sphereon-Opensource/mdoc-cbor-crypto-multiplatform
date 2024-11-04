@@ -16,7 +16,8 @@ import kotlin.js.JsExport
  * Represents a mapping between COSE key types and JWA key types.
  */
 @JsExport
-sealed class KeyTypeMapping(private val coseKeyType: CoseKeyType, private val joseKeyType: JwaKeyType) {
+@Serializable
+sealed class KeyType(private val coseKeyType: CoseKeyType, private val joseKeyType: JwaKeyType) {
 
     /**
      * Represents a specific key type mapping for Octet Key Pairs (OKP).
@@ -25,7 +26,7 @@ sealed class KeyTypeMapping(private val coseKeyType: CoseKeyType, private val jo
      * It ensures that cryptographic operations involving OKPs are correctly mapped between
      * COSE and JWA specifications.
      */
-    object OKP : KeyTypeMapping(CoseKeyType.OKP, JwaKeyType.OKP)
+    object OKP : KeyType(CoseKeyType.OKP, JwaKeyType.OKP)
 
     /**
      * The `EC2` object is a specific instance of `KeyTypeMapping` for Elliptic Curve Keys (EC) as per COSE (CBOR Object Signing and Encryption) and JWA (JSON Web Algorithms) specifications
@@ -34,7 +35,7 @@ sealed class KeyTypeMapping(private val coseKeyType: CoseKeyType, private val jo
      * This object maps the `CoseKeyType.EC2`, which represents Elliptic Curve Keys with x- and y-coordinate pairs, to the `JwaKeyType.EC`, which are used for cryptographic operations
      * .
      */
-    object EC : KeyTypeMapping(CoseKeyType.EC2, JwaKeyType.EC)
+    object EC : KeyType(CoseKeyType.EC2, JwaKeyType.EC)
 
     /**
      * The `RSA` object represents the RSA key type mapping between COSE (CBOR Object Signing and Encryption)
@@ -47,7 +48,7 @@ sealed class KeyTypeMapping(private val coseKeyType: CoseKeyType, private val jo
      * The mapping allows for interoperability between different key representation standards, ensuring
      * RSA keys can be correctly interpreted and utilized within COSE and JWA frameworks.
      */
-    object RSA : KeyTypeMapping(CoseKeyType.RSA, JwaKeyType.RSA)
+    object RSA : KeyType(CoseKeyType.RSA, JwaKeyType.RSA)
 
     /**
      * Represents a key type for the 'jose' variable, used in the context of
@@ -181,7 +182,7 @@ sealed class KeyTypeMapping(private val coseKeyType: CoseKeyType, private val jo
  * @throws IllegalArgumentException If the COSE key type cannot be mapped to a JOSE key type.
  */
 @JsExport
-fun CoseKeyType.toJoseKeyType() = KeyTypeMapping.Static.toJose(this)
+fun CoseKeyType.toJoseKeyType() = KeyType.Static.toJose(this)
 
 /**
  * Converts a `JwaKeyType` instance to the corresponding `CoseKeyType`.
@@ -193,7 +194,7 @@ fun CoseKeyType.toJoseKeyType() = KeyTypeMapping.Static.toJose(this)
  * @throws IllegalArgumentException if no corresponding `CoseKeyType` is found.
  */
 @JsExport
-fun JwaKeyType.toCoseKeyType() = KeyTypeMapping.Static.toCose(this)
+fun JwaKeyType.toCoseKeyType() = KeyType.Static.toCose(this)
 
 
 
@@ -213,6 +214,7 @@ sealed class SignatureAlgorithm(
     private val joseAlgorithm: JwaAlgorithm? = null, // we expose this as jose
     val cryptoAlgorithm: CryptoAlg,
     val digestAlgorithm: DigestAlg? = null,
+    val curve: Curve?,
     val maskGenFunction: MaskGenFunction? = null
 ) {
     /**
@@ -223,7 +225,7 @@ sealed class SignatureAlgorithm(
      * This class is used for cryptographic operations involving the EdDSA signature scheme, enabling interoperability
      * between different cryptographic frameworks and standards that support EdDSA.
      */
-    object ED25519 : SignatureAlgorithm(CoseAlgorithm.EdDSA, JwaAlgorithm.EdDSA, cryptoAlgorithm = CryptoAlg.ED25519)
+    object ED25519 : SignatureAlgorithm(CoseAlgorithm.EdDSA, JwaAlgorithm.EdDSA, cryptoAlgorithm = CryptoAlg.ED25519, curve = Curve.Ed25519)
 
     /**
      * Represents the ECDSA algorithm with SHA-256 hashing.
@@ -231,7 +233,7 @@ sealed class SignatureAlgorithm(
      * This algorithm is used for digital signatures and is mapped to the
      * COSE (CBOR Object Signing and Encryption) algorithm identifier -7 and the corresponding JWA (JSON Web Algorithm) identifier ES256.
      */
-    object ECDSA_SHA256 : SignatureAlgorithm(CoseAlgorithm.ES256, JwaAlgorithm.ES256, cryptoAlgorithm = CryptoAlg.ECDSA)
+    object ECDSA_SHA256 : SignatureAlgorithm(CoseAlgorithm.ES256, JwaAlgorithm.ES256, cryptoAlgorithm = CryptoAlg.ECDSA, curve = Curve.P_256)
 
     /**
      * Represents the ECDSA with SHA-384 algorithm mapping.
@@ -241,7 +243,7 @@ sealed class SignatureAlgorithm(
      * COSE Algorithm: ES384
      * JWA Algorithm: ES384
      */
-    object ECDSA_SHA384 : SignatureAlgorithm(CoseAlgorithm.ES384, JwaAlgorithm.ES384, cryptoAlgorithm = CryptoAlg.ECDSA)
+    object ECDSA_SHA384 : SignatureAlgorithm(CoseAlgorithm.ES384, JwaAlgorithm.ES384, cryptoAlgorithm = CryptoAlg.ECDSA, curve = Curve.P_384)
 
     /**
      * Object representing the ES512 algorithm mapping.
@@ -251,7 +253,7 @@ sealed class SignatureAlgorithm(
      * @see CoseAlgorithm.ES512
      * @see JwaAlgorithm.ES512
      */
-    object ECDSA_SHA512 : SignatureAlgorithm(CoseAlgorithm.ES512, JwaAlgorithm.ES512, cryptoAlgorithm = CryptoAlg.ECDSA)
+    object ECDSA_SHA512 : SignatureAlgorithm(CoseAlgorithm.ES512, JwaAlgorithm.ES512, cryptoAlgorithm = CryptoAlg.ECDSA, curve = Curve.P_521)
 
     /**
      * An object that maps the COSE algorithm ES256K to the JWA algorithm ES256K.
@@ -261,7 +263,7 @@ sealed class SignatureAlgorithm(
      * signatures in environments where both COSE (CBOR Object Signing and Encryption) and JWA
      * (JSON Web Algorithms) standards are supported.
      */
-    object ES256K : SignatureAlgorithm(CoseAlgorithm.ES256K, JwaAlgorithm.ES256K, cryptoAlgorithm = CryptoAlg.ECDSA, TODO("Curve"))
+    object ES256K : SignatureAlgorithm(CoseAlgorithm.ES256K, JwaAlgorithm.ES256K, cryptoAlgorithm = CryptoAlg.ECDSA, curve = Curve.Secp256k1)
 
     /**
      * This object represents the HS256 algorithm, which is a specific type of HMAC utilizing SHA-256.
@@ -270,13 +272,13 @@ sealed class SignatureAlgorithm(
      * to the JWA algorithm `JwaAlgorithm.HS256`. This class can be used to handle cryptographic
      * operations that require HMAC with SHA-256.
      */
-    object HMAC_SHA256 : SignatureAlgorithm(CoseAlgorithm.HS256, JwaAlgorithm.HS256, cryptoAlgorithm = CryptoAlg.HMAC)
+    object HMAC_SHA256 : SignatureAlgorithm(CoseAlgorithm.HS256, JwaAlgorithm.HS256, cryptoAlgorithm = CryptoAlg.HMAC, curve = null)
 
     /**
      * HS384 object represents the algorithm mapping configuration for the HMAC with SHA-384 signature algorithm.
      * It extends the AlgorithmMapping class and links the COSE and JWA algorithm identifiers for HS384.
      */
-    object HMAC_SHA384 : SignatureAlgorithm(CoseAlgorithm.HS384, JwaAlgorithm.HS384, cryptoAlgorithm = CryptoAlg.HMAC)
+    object HMAC_SHA384 : SignatureAlgorithm(CoseAlgorithm.HS384, JwaAlgorithm.HS384, cryptoAlgorithm = CryptoAlg.HMAC, curve = null)
 
     /**
      * An object that provides a mapping between COSE and JOSE algorithms for the HS512 (HMAC with SHA-512) algorithm.
@@ -284,7 +286,7 @@ sealed class SignatureAlgorithm(
      * This object is used to map the COSE algorithm identifier `CoseAlgorithm.HS512` to the
      * corresponding JOSE algorithm identifier `JwaAlgorithm.HS512`.
      */
-    object HMAC_SHA512 : SignatureAlgorithm(CoseAlgorithm.HS512, JwaAlgorithm.HS512, cryptoAlgorithm = CryptoAlg.HMAC)
+    object HMAC_SHA512 : SignatureAlgorithm(CoseAlgorithm.HS512, JwaAlgorithm.HS512, cryptoAlgorithm = CryptoAlg.HMAC, curve = null)
 
     /**
      * Object PS256 represents an algorithm mapping for the PS256 algorithm.
@@ -299,7 +301,7 @@ sealed class SignatureAlgorithm(
      * @property jwaAlgorithm
      * Identifier for the JWA algorithm.
      */
-    object RSA_SSA_PSS_SHA256_MGF1 : SignatureAlgorithm(CoseAlgorithm.PS256, JwaAlgorithm.PS256, cryptoAlgorithm = CryptoAlg.RSA, digestAlgorithm = DigestAlg.SHA256, maskGenFunction = MaskGenFunction.MGF1)
+    object RSA_SSA_PSS_SHA256_MGF1 : SignatureAlgorithm(CoseAlgorithm.PS256, JwaAlgorithm.PS256, cryptoAlgorithm = CryptoAlg.RSA, curve = Curve.P_256, digestAlgorithm = DigestAlg.SHA256, maskGenFunction = MaskGenFunction.MGF1)
 
     /**
      * PS384 object represents an algorithm mapping specifically for PS384 algorithm.
@@ -311,7 +313,7 @@ sealed class SignatureAlgorithm(
      * This class maps the PS384 algorithm supported by COSE (RFC 8152) to the PS384 algorithm
      * recognized by JOSE (RFC 7518).
      */
-    object RSA_SSA_PSS_SHA384_MGF1 : SignatureAlgorithm(CoseAlgorithm.PS384, JwaAlgorithm.PS384, cryptoAlgorithm = CryptoAlg.RSA, digestAlgorithm = DigestAlg.SHA384, maskGenFunction = MaskGenFunction.MGF1)
+    object RSA_SSA_PSS_SHA384_MGF1 : SignatureAlgorithm(CoseAlgorithm.PS384, JwaAlgorithm.PS384, cryptoAlgorithm = CryptoAlg.RSA, curve = Curve.P_384, digestAlgorithm = DigestAlg.SHA384, maskGenFunction = MaskGenFunction.MGF1)
 
     /**
      * Represents the RSASSA-PSS signature algorithm using SHA-512 hashing.
@@ -319,15 +321,15 @@ sealed class SignatureAlgorithm(
      * Maps the COSE algorithm identifier for RSASSA-PSS with SHA-512 to the corresponding JWA algorithm.
      * Primarily used in contexts requiring RSASSA-PSS signature with SHA-512 as specified by COSE and JOSE standards.
      */
-    object RSA_SSA_PSS_SHA512_MGF1 : SignatureAlgorithm(CoseAlgorithm.PS512, JwaAlgorithm.PS512, cryptoAlgorithm = CryptoAlg.RSA, digestAlgorithm = DigestAlg.SHA512, maskGenFunction = MaskGenFunction.MGF1)
+    object RSA_SSA_PSS_SHA512_MGF1 : SignatureAlgorithm(CoseAlgorithm.PS512, JwaAlgorithm.PS512, cryptoAlgorithm = CryptoAlg.RSA, curve = Curve.P_521, digestAlgorithm = DigestAlg.SHA512, maskGenFunction = MaskGenFunction.MGF1)
 
 
-    object RSA_RAW : SignatureAlgorithm(cryptoAlgorithm = CryptoAlg.RSA)
-    object RSA_SSA_PSS_RAW_MGF1: SignatureAlgorithm(cryptoAlgorithm = CryptoAlg.RSA, maskGenFunction= MaskGenFunction.MGF1)
+    object RSA_RAW : SignatureAlgorithm(cryptoAlgorithm = CryptoAlg.RSA, curve = null)
+    object RSA_SSA_PSS_RAW_MGF1: SignatureAlgorithm(cryptoAlgorithm = CryptoAlg.RSA, curve = null, maskGenFunction= MaskGenFunction.MGF1)
 
-    object RSA_SHA256: SignatureAlgorithm(coseAlgorithm = null /*TODO*/ , joseAlgorithm = JwaAlgorithm.RS256, cryptoAlgorithm = CryptoAlg.RSA, digestAlgorithm = DigestAlg.SHA256)
-    object RSA_SHA384: SignatureAlgorithm(coseAlgorithm = null /*TODO*/ , joseAlgorithm = JwaAlgorithm.RS384, cryptoAlgorithm = CryptoAlg.RSA, digestAlgorithm = DigestAlg.SHA384)
-    object RSA_SHA512: SignatureAlgorithm(coseAlgorithm = null /*TODO*/ , joseAlgorithm = JwaAlgorithm.RS512, cryptoAlgorithm = CryptoAlg.RSA, digestAlgorithm = DigestAlg.SHA512)
+    object RSA_SHA256: SignatureAlgorithm(coseAlgorithm = null /*TODO*/ , joseAlgorithm = JwaAlgorithm.RS256, cryptoAlgorithm = CryptoAlg.RSA, curve = null, digestAlgorithm = DigestAlg.SHA256)
+    object RSA_SHA384: SignatureAlgorithm(coseAlgorithm = null /*TODO*/ , joseAlgorithm = JwaAlgorithm.RS384, cryptoAlgorithm = CryptoAlg.RSA, curve = null, digestAlgorithm = DigestAlg.SHA384)
+    object RSA_SHA512: SignatureAlgorithm(coseAlgorithm = null /*TODO*/ , joseAlgorithm = JwaAlgorithm.RS512, cryptoAlgorithm = CryptoAlg.RSA, curve = null, digestAlgorithm = DigestAlg.SHA512)
 
 /*
     RSA_SHA3_256(CryptoAlg.RSA, DigestAlg.SHA3_256),
@@ -502,7 +504,8 @@ fun JwaAlgorithm.toCoseAlgorithm() = SignatureAlgorithm.Static.toCose(this)
  * @property joseCurve The JOSE curve associated with the mapping.
  */
 @JsExport
-sealed class CurveMapping(
+@Serializable
+sealed class Curve(
     private val coseCurve: CoseCurve,
     private val joseCurve: JwaCurve
 ) {
@@ -512,12 +515,12 @@ sealed class CurveMapping(
      * This object maps the P-256 elliptic curve to its corresponding COSE and JWA curve identifiers.
      * It extends the CurveMapping class using P-256 values from both COSE and JWA curve enumerations.
      */
-    object P_256 : CurveMapping(CoseCurve.P_256, JwaCurve.P_256)
+    object P_256 : Curve(CoseCurve.P_256, JwaCurve.P_256)
 
     /**
      * Represents the P-384 elliptic curve mapping between COSE (CBOR Object Signing and Encryption) and JOSE (JSON Object Signing and Encryption).
      */
-    object P_384 : CurveMapping(CoseCurve.P_384, JwaCurve.P_384)
+    object P_384 : Curve(CoseCurve.P_384, JwaCurve.P_384)
 
     /**
      * Object representing the P-521 elliptic curve.
@@ -526,11 +529,11 @@ sealed class CurveMapping(
      * the mapping for the P-521 curve corresponding to both COSE (CBOR Object Signing and
      * Encryption) and JWA (JSON Web Algorithms).
      *
-     * @see CurveMapping
+     * @see Curve
      * @see CoseCurve
      * @see JwaCurve
      */
-    object P_521 : CurveMapping(CoseCurve.P_521, JwaCurve.P_521)
+    object P_521 : Curve(CoseCurve.P_521, JwaCurve.P_521)
 
     /**
      * Represents the Secp256k1 elliptic curve mapping used in various cryptographic standards.
@@ -539,7 +542,7 @@ sealed class CurveMapping(
      *
      * The Secp256k1 curve is widely used in cryptocurrencies and decentralized applications.
      */
-    object Secp256k1 : CurveMapping(CoseCurve.secp256k1, JwaCurve.Secp256k1)
+    object Secp256k1 : Curve(CoseCurve.secp256k1, JwaCurve.Secp256k1)
 
     /**
      * The `Ed25519` object represents the Ed25519 elliptic curve mapping.
@@ -547,13 +550,13 @@ sealed class CurveMapping(
      * This object is part of the `CurveMapping` hierarchy and it specifically maps the COSE curve `Ed25519` to
      * the corresponding JWA curve `Ed25519`.
      */
-    object Ed25519 : CurveMapping(CoseCurve.Ed25519, JwaCurve.Ed25519)
+    object Ed25519 : Curve(CoseCurve.Ed25519, JwaCurve.Ed25519)
 
     /**
      * Represents the X25519 curve mapping for both COSE and JWA standards.
      * This object is used to map the X25519 curve within the `CurveMapping` sealed class.
      */
-    object X25519 : CurveMapping(CoseCurve.X25519, JwaCurve.X25519)
+    object X25519 : Curve(CoseCurve.X25519, JwaCurve.X25519)
 
     /**
      * Represents the JWA curve associated with the specific CurveMapping instance.
@@ -624,7 +627,7 @@ sealed class CurveMapping(
  * corresponding `JwaCurve`.
  */
 @JsExport
-fun CoseCurve.toJoseCurve() = CurveMapping.Static.toJose(this)
+fun CoseCurve.toJoseCurve() = Curve.Static.toJose(this)
 
 /**
  * Converts the JWA elliptic curve identifier to its corresponding COSE curve identifier.
@@ -636,7 +639,7 @@ fun CoseCurve.toJoseCurve() = CurveMapping.Static.toJose(this)
  * @throws IllegalArgumentException if the JWA curve identifier is not found in the mapping
  */
 @JsExport
-fun JwaCurve.toCoseCurve() = CurveMapping.Static.toCose(this)
+fun JwaCurve.toCoseCurve() = Curve.Static.toCose(this)
 
 
 /**
@@ -646,7 +649,7 @@ fun JwaCurve.toCoseCurve() = CurveMapping.Static.toCose(this)
  * @property joseKeyOperations The JOSE key operation associated with this mapping.
  */
 @JsExport
-sealed class KeyOperationsMapping(
+sealed class KeyOperations(
     private val coseKeyOperations: CoseKeyOperations,
     private val joseKeyOperations: JoseKeyOperations
 ) {
@@ -657,14 +660,14 @@ sealed class KeyOperationsMapping(
      * This singleton object maps the COSE key operation for wrapping keys (`CoseKeyOperations.WRAP_KEY`)
      * to the corresponding JOSE key operation (`JoseKeyOperations.WRAP_KEY`).
      */
-    object WRAP_KEY : KeyOperationsMapping(CoseKeyOperations.WRAP_KEY, JoseKeyOperations.WRAP_KEY)
+    object WRAP_KEY : KeyOperations(CoseKeyOperations.WRAP_KEY, JoseKeyOperations.WRAP_KEY)
 
     /**
      * Object `DERIVE_KEY` represents a key operation for deriving keys.
      * It is a mapping between COSE and JOSE key operations that indicate
      * the key is used for deriving other keys. Requires private key fields.
      */
-    object DERIVE_KEY : KeyOperationsMapping(CoseKeyOperations.DERIVE_KEY, JoseKeyOperations.DERIVE_KEY)
+    object DERIVE_KEY : KeyOperations(CoseKeyOperations.DERIVE_KEY, JoseKeyOperations.DERIVE_KEY)
 
     /**
      * Represents a specific key operation for unwrapping a key as defined in COSE and JOSE standards.
@@ -673,13 +676,13 @@ sealed class KeyOperationsMapping(
      *
      * The key is used for key wrap decryption and requires private key fields.
      */
-    object UNWRAP_KEY : KeyOperationsMapping(CoseKeyOperations.UNWRAP_KEY, JoseKeyOperations.UNWRAP_KEY)
+    object UNWRAP_KEY : KeyOperations(CoseKeyOperations.UNWRAP_KEY, JoseKeyOperations.UNWRAP_KEY)
 
     /**
      * Represents the mapping for the signing key operation.
      * This object associates the COSE and JOSE key operations used for signing.
      */
-    object SIGN : KeyOperationsMapping(CoseKeyOperations.SIGN, JoseKeyOperations.SIGN)
+    object SIGN : KeyOperations(CoseKeyOperations.SIGN, JoseKeyOperations.SIGN)
 
     /**
      * Represents a cryptographic operation for verification of signatures.
@@ -688,13 +691,13 @@ sealed class KeyOperationsMapping(
      * with the corresponding JOSE key operation VERIFY. It is used to specify that a key is intended
      * for verifying cryptographic signatures.
      */
-    object VERIFY : KeyOperationsMapping(CoseKeyOperations.VERIFY, JoseKeyOperations.VERIFY)
+    object VERIFY : KeyOperations(CoseKeyOperations.VERIFY, JoseKeyOperations.VERIFY)
 
     /**
      * This object represents the key operation for decryption.
      * It maps the DECRYPT operation defined in both COSE and JOSE standards.
      */
-    object DECRYPT : KeyOperationsMapping(CoseKeyOperations.DECRYPT, JoseKeyOperations.DECRYPT)
+    object DECRYPT : KeyOperations(CoseKeyOperations.DECRYPT, JoseKeyOperations.DECRYPT)
 
     /**
      * DERIVE_BITS is an object that maps the COSE key operation `DERIVE_BITS` to the equivalent JOSE key operation.
@@ -707,7 +710,7 @@ sealed class KeyOperationsMapping(
      * This object is a specific instance of the `KeyOperationsMapping` class, which is used to map COSE key operations to JOSE key operations.
      * By providing this mapping, it's easier to ensure compatibility between the two frameworks.
      */
-    object DERIVE_BITS : KeyOperationsMapping(CoseKeyOperations.DERIVE_BITS, JoseKeyOperations.DERIVE_BITS)
+    object DERIVE_BITS : KeyOperations(CoseKeyOperations.DERIVE_BITS, JoseKeyOperations.DERIVE_BITS)
 
     /**
      * Provides an object for the ENCRYPT key operation in both COSE and JOSE contexts.
@@ -718,7 +721,7 @@ sealed class KeyOperationsMapping(
      * In COSE, the usage is defined by the `CoseKeyOperations.ENCRYPT` enumeration value.
      * In JOSE, the usage is defined by the `JoseKeyOperations.ENCRYPT` enumeration value.
      */
-    object ENCRYPT : KeyOperationsMapping(CoseKeyOperations.ENCRYPT, JoseKeyOperations.ENCRYPT)
+    object ENCRYPT : KeyOperations(CoseKeyOperations.ENCRYPT, JoseKeyOperations.ENCRYPT)
 
     /**
      * The `MAC_CREATE` object represents a mapping for the MAC creation operation in both COSE and JOSE contexts.
@@ -727,13 +730,13 @@ sealed class KeyOperationsMapping(
      *
      * It maps the COSE key operation `CoseKeyOperations.MAC_CREATE` to the corresponding JOSE key operation `JoseKeyOperations.MAC_CREATE`.
      */
-    object MAC_CREATE : KeyOperationsMapping(CoseKeyOperations.MAC_CREATE, JoseKeyOperations.MAC_CREATE)
+    object MAC_CREATE : KeyOperations(CoseKeyOperations.MAC_CREATE, JoseKeyOperations.MAC_CREATE)
 
     /**
      * Represents the MAC verification key operation.
      * Maps the COSE key operation "MAC verify" to the JOSE key operation "MAC verify".
      */
-    object MAC_VERIFY : KeyOperationsMapping(CoseKeyOperations.MAC_VERIFY, JoseKeyOperations.MAC_VERIFY)
+    object MAC_VERIFY : KeyOperations(CoseKeyOperations.MAC_VERIFY, JoseKeyOperations.MAC_VERIFY)
 
     /**
      * jose represents the set of operations defined under the JSON Web Key (JWK) standard.
@@ -836,7 +839,7 @@ sealed class KeyOperationsMapping(
  * @throws IllegalArgumentException if the COSE key operation cannot be mapped to a JOSE key operation.
  */
 @JsExport
-fun CoseKeyOperations.toJoseKeyOperations() = KeyOperationsMapping.Static.toJose(this)
+fun CoseKeyOperations.toJoseKeyOperations() = KeyOperations.Static.toJose(this)
 
 /**
  * Converts a `JoseKeyOperations` enum instance to its corresponding `CoseKeyOperations` enum instance.
@@ -850,4 +853,4 @@ fun CoseKeyOperations.toJoseKeyOperations() = KeyOperationsMapping.Static.toJose
  * @throws IllegalArgumentException if the JOSE key operation cannot be mapped to a COSE key operation.
  */
 @JsExport
-fun JoseKeyOperations.toCoseKeyOperations() = KeyOperationsMapping.Static.toCose(this)
+fun JoseKeyOperations.toCoseKeyOperations() = KeyOperations.Static.toCose(this)

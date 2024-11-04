@@ -46,7 +46,7 @@ object CoseJoseKeyMappingService {
      * @param key An instance of IKey from which to obtain the x5c array.
      * @return An array of strings representing the x5c certificate chain, or null if not available.
      */
-    fun getJoseX5c(key: IKey): Array<String>? = key.getX5cArray()
+    fun getJoseX5c(key: IKey): Array<String>? = key.getX509CertificateChain()
 
     /**
      * Converts an array of mixed types to an array of base64-encoded strings.
@@ -98,7 +98,7 @@ object CoseJoseKeyMappingService {
 
     fun isResolvedKeyInfo(keyInfo: IKeyInfo<*>): Boolean = keyInfo.key != null
 
-    fun <KeyType : IKey> toResolvedKeyInfo(keyInfo: IKeyInfo<*>, key: KeyType?): ResolvedKeyInfo<KeyType> =
+    fun <KeyType : IKey> toResolvedKeyInfo(keyInfo: IKeyInfo<*>, key: KeyType? = null): ResolvedKeyInfo<KeyType> =
         ResolvedKeyInfo.Static.fromKeyInfo(keyInfo, key)
 
 

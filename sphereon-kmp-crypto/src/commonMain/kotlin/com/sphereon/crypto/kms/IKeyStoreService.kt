@@ -1,16 +1,16 @@
 package com.sphereon.crypto.kms
 
 import com.sphereon.crypto.IKeyInfo
+import com.sphereon.crypto.IManagedKeyInfo
 import com.sphereon.crypto.IResolvedKeyInfo
 import com.sphereon.crypto.PKIException
-import com.sphereon.crypto.sign.ISimpleSignatureService
 import kotlin.js.JsExport
 
 /**
  * The interface for the PKI service adds key functionality to the simple signature interface.
  */
 @JsExport
-interface IKeyProviderService : ISimpleSignatureService {
+interface IKeyStoreService {
 
     /**
      * The Key Provider Settings
@@ -25,7 +25,7 @@ interface IKeyProviderService : ISimpleSignatureService {
      * If there is any problem during the retrieval process
      */
     @Throws(PKIException::class)
-    fun getKeys(): Array<IResolvedKeyInfo<*>>
+    fun listKeys(): Array<IManagedKeyInfo<*>>
 
     /**
      * Retrieves a specific key by its kid.
@@ -36,6 +36,15 @@ interface IKeyProviderService : ISimpleSignatureService {
      * If there is any problem during the retrieval process
      */
     @Throws(PKIException::class)
-    fun getKey(keyInfo: IKeyInfo<*>): IResolvedKeyInfo<*>?
+    fun getKey(keyInfo: IKeyInfo<*>): IManagedKeyInfo<*>
+
+    /**
+     * Stores a key and return the kid
+     */
+    fun storeKey(keyInfo: IResolvedKeyInfo<*>, kms: String, kmsKeyRef: String): IManagedKeyInfo<*>
+
+
+    fun deleteKey(keyInfo: IKeyInfo<*>): Boolean
+
 
 }

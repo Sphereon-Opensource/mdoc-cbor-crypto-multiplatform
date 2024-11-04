@@ -18,7 +18,6 @@ import com.sphereon.crypto.cose.CoseKeyCbor
 import com.sphereon.crypto.cose.CoseSign1InputCbor
 import com.sphereon.crypto.cose.ICoseKeyCbor
 import com.sphereon.crypto.generic.SignatureAlgorithm
-import com.sphereon.crypto.generic.toJoseSignatureAlgorithm
 import com.sphereon.kmp.Encoding
 import com.sphereon.mdoc.MdocSignService.Static.getSuppliedOrMSODerivedCborKeyInfo
 import com.sphereon.mdoc.data.device.DeviceAuthCbor
@@ -83,7 +82,7 @@ class MdocSignService(val cryptoCallbackService: ICoseCryptoCallbackService = De
         val protected = CoseHeaderCbor.Static.copyOrInit(protectedHeader, alg = signatureAlgorithm?.cose)
         val kidVal = keyInfo.kid ?: keyInfo.key.kid
         val kid = if (kidVal is String) kidVal.toCborByteString(Encoding.BASE64URL) else if (kidVal is CborByteString) kidVal else null
-        val x5cStr = keyInfo.key.getX5cArray()
+        val x5cStr = keyInfo.key.getX509CertificateChain()
         if (protected.x5chain == null && x5cStr != null) {
             protected.x5chain = x5cStr.encodeToCborByteArray(Encoding.BASE64) // Base64 not base64url for x5c!
         }

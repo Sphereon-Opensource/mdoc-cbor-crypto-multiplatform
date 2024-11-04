@@ -58,4 +58,5 @@ actual external interface ICoseKeyCbor : IKey {
     @JsName("x5chain")
     actual val x5chain: CborArray<CborByteString>?
     actual override val additional: CborMap<NumberLabel, CborItem<*>>?
+    actual override fun toPublicKey(): CoseKeyCbor
 }

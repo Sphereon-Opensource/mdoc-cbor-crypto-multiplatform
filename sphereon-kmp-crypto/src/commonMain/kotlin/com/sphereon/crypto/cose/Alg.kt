@@ -156,7 +156,7 @@ enum class CoseAlgorithm(
      * @param algorithmName The display name for the algorithm.
      * @param algorithmType The type of cryptographic operation performed by the algorithm (e.g., SIGNATURE).
      */
-    EdDSA("EdDSA", -8, CoseKeyType.OKP, null, null, CoseCurve.P_521, "EdDSA", AlgorithmType.SIGNATURE),
+    EdDSA("EdDSA", -8, CoseKeyType.OKP, null, null, CoseCurve.Ed25519, "EdDSA", AlgorithmType.SIGNATURE),
 
     /**
      * The HS256_64 class represents an HMAC algorithm with SHA-256, truncated to 64 bits.

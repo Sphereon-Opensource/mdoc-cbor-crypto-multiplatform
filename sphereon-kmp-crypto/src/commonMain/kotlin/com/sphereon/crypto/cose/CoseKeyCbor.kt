@@ -13,10 +13,10 @@ import com.sphereon.cbor.NumberLabel
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.encodeToArray
 import com.sphereon.cbor.toCborByteString
-import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.crypto.IKey
-import com.sphereon.crypto.generic.KeyOperationsMapping
-import com.sphereon.crypto.generic.KeyTypeMapping
+import com.sphereon.crypto.generic.KeyOperations
+import com.sphereon.crypto.generic.KeyType
+import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.json.JsonView
 import com.sphereon.json.cryptoJsonSerializer
 import com.sphereon.kmp.Encoding
@@ -40,6 +40,7 @@ expect sealed interface ICoseKeyJson : IKey {
      * The COSE (CBOR Object Signing and Encryption) key type determines the algorithm and general structure of the key.
      */
     override val kty: CoseKeyType
+
     /**
      * A nullable string that represents the key ID (kid).
      * This identifier is used to indicate the specific key
@@ -47,6 +48,7 @@ expect sealed interface ICoseKeyJson : IKey {
      * ID is not specified.
      */
     override val kid: String?
+
     /**
      * This property holds an instance of `CoseAlgorithm`.
      * The `alg` variable is used to specify the cryptographic algorithm
@@ -83,29 +85,34 @@ expect sealed interface ICoseKeyJson : IKey {
      * @property crv The COSE curve object that defines the curve used for cryptographic operations.
      */
     override val crv: CoseCurve?
+
     /**
      * The optional string value that represents a certain configuration or data point
      * relevant to the class. This value can be null, indicating the absence of the
      * configuration or the specific data.
      */
     override val x: String?
+
     /**
      * Represents the y-coordinate or the second value which is of type String?.
      * This value can be used in calculations or representations where a nullable
      * String is appropriate.
      */
     override val y: String?
+
     /**
      * Represents a variable that can hold a string value or null.
      * The variable `d` is overridden in this context, potentially implying it is part of a class hierarchy.
      * This variable can be useful in scenarios where an optional string value is required.
      */
     override val d: String?
+
     /**
      * An optional array of strings named x5chain, which may contain a series of string elements or be null.
      * This variable could be used for storing and manipulating a collection of string data.
      */
     val x5chain: Array<String>?
+
     /**
      * An optional JSON object that provides additional details for this instance.
      * The contents of this JSON object are context-specific and may vary depending
@@ -120,7 +127,7 @@ expect sealed interface ICoseKeyJson : IKey {
  */
 @JsExport
 @Serializable
-class CoseKeyJson(
+data class CoseKeyJson(
     override val kty: CoseKeyType,
     override val kid: String? = null,
     override val alg: CoseAlgorithm? = null,
@@ -165,7 +172,7 @@ class CoseKeyJson(
      * @return the AlgorithmMapping corresponding to the current algorithm if it exists,
      *         or null if the algorithm is not defined.
      */
-    override fun getAlgMapping(): SignatureAlgorithm? {
+    override fun getSignatureAlgorithm(): SignatureAlgorithm? {
         return alg?.let { SignatureAlgorithm.Static.fromCose(it) }
     }
 
@@ -174,8 +181,8 @@ class CoseKeyJson(
      *
      * @return A KeyTypeMapping corresponding to the specified Key Type (kty).
      */
-    override fun getKtyMapping(): KeyTypeMapping {
-        return KeyTypeMapping.Static.fromCose(this.kty)
+    override fun getKty(): KeyType {
+        return KeyType.Static.fromCose(this.kty)
     }
 
     /**
@@ -187,8 +194,8 @@ class CoseKeyJson(
      *
      * @return An array of KeyOperationsMapping objects or null if key operations are not defined.
      */
-    override fun getKeyOperationsMapping(): Array<KeyOperationsMapping>? {
-        return key_ops?.map { KeyOperationsMapping.Static.fromCose(it) }?.toTypedArray()
+    override fun getKeyOperations(): Array<KeyOperations>? {
+        return key_ops?.map { KeyOperations.Static.fromCose(it) }?.toTypedArray()
     }
 
     /**
@@ -196,9 +203,11 @@ class CoseKeyJson(
      *
      * @return An array of strings representing the X.509 certificate chain, or null if not available.
      */
-    override fun getX5cArray(): Array<String>? {
-        return x5chain
-    }
+    override fun getX509CertificateChain() = x5chain
+    override fun getKidAsString(): String? = kid
+
+
+    override fun toPublicKey() = copy(d = null)
 
     /**
      * Serializes the current object to a JSON string using the provided cryptoJsonSerializer.
@@ -317,17 +326,20 @@ class CoseKeyJson(
          * It is verified to ensure compatibility with the algorithm processed.
          */
         private lateinit var kty: CoseKeyType
+
         /**
          * The variable `kid` represents the Key ID associated with a COSE key.
          * This optional field is used to provide a hint about which key to use.
          * It can be null if no Key ID is set.
          */
         var kid: String? = null
+
         /**
          * The algorithm identifier used in the COSE key to indicate the cryptographic algorithm
          * employed. This value can be null if no specific algorithm is set.
          */
         var alg: CoseAlgorithm? = null
+
         /**
          * Specifies the operations that are permissible with the key.
          * This variable is an array of `CoseKeyOperations` enums.
@@ -343,11 +355,13 @@ class CoseKeyJson(
          * This property is optional and can be null.
          */
         var key_ops: Array<CoseKeyOperations>? = null
+
         /**
          * The base Initialization Vector (IV) used for cryptographic operations.
          * It is an optional field represented as a nullable hexadecimal string.
          */
         var baseIV: String? = null
+
         /**
          * Specifies the elliptic curve used for key generation within the current `Builder` instance.
          *
@@ -355,18 +369,21 @@ class CoseKeyJson(
          * which defines a set of pre-determined elliptic curves that can be used in JWA cryptographic algorithms.
          */
         var crv: CoseCurve? = null
+
         /**
          * Represents the 'x' parameter in the COSE key structure which may hold a value
          * associated with the key's elliptic curve x-coordinate or other relevant data.
          * This field can be null if not applicable or not set.
          */
         var x: String? = null
+
         /**
          * The y-coordinate of an elliptic curve key.
          *
          * This variable may be null if the y-coordinate is not provided or required.
          */
         var y: String? = null
+
         /**
          * Represents the private key information for the key in the COSE key object.
          * It is an optional field and can be null. The private key is crucial for
@@ -374,6 +391,7 @@ class CoseKeyJson(
          * and decryption.
          */
         var d: String? = null
+
         /**
          * Represents the x5chain field in the Builder class.
          *
@@ -390,6 +408,7 @@ class CoseKeyJson(
          * process when building a `CoseKeyJson` object in the `build` method.
          */
         var x5chain: Array<String>? = null
+
         /**
          * Optional JsonObject to store additional parameters or metadata
          * related to the key. This can be used to specify custom properties
@@ -413,12 +432,14 @@ class CoseKeyJson(
          * @return the current builder instance.
          */
         fun withKid(kid: String?) = apply { this.kid = kid }
+
         /**
          * Sets the COSE algorithm for the builder.
          *
          * @param alg the COSE algorithm to be set, can be null
          */
         fun withAlg(alg: CoseAlgorithm?) = apply { this.alg = alg }
+
         /**
          * Sets the key operations parameter for the COSE key.
          *
@@ -435,18 +456,21 @@ class CoseKeyJson(
          * @param baseIVHex A hexadecimal string representing the base IV to be set.
          */
         fun withBaseIV(baseIVHex: String?) = apply { this.baseIV = baseIVHex }
+
         /**
          * Sets the COSE curve value for the key.
          *
          * @param crv The `CoseCurve` instance to set.
          */
         fun withCrv(crv: CoseCurve?) = apply { this.crv = crv }
+
         /**
          * Sets the 'x' parameter for the builder.
          *
          * @param x The value to be set to the 'x' parameter, which may be null.
          */
         fun withX(x: String?) = apply { this.x = x }
+
         /**
          * Sets the 'y' field of the Builder class with the provided value.
          *
@@ -454,12 +478,14 @@ class CoseKeyJson(
          * @return The Builder instance with the updated 'y' value.
          */
         fun withY(y: String?) = apply { this.y = y }
+
         /**
          * Sets the value of `d` and returns the current instance.
          *
          * @param d The string value to set for `d`. Can be null.
          */
         fun withD(d: String?) = apply { this.d = d }
+
         /**
          * Sets the X.509 certificate chain for the key.
          *
@@ -511,11 +537,13 @@ expect interface ICoseKeyCbor : IKey {
      * security frameworks and cryptographic operations.
      */
     override val kty: CborUInt
+
     /**
      * An optional identifier (key ID) for this object, represented as a CBOR byte string.
      * This identifier is used to uniquely identify the object.
      */
     override val kid: CborByteString?
+
     /**
      * Represents the algorithm associated with the COSE key.
      *
@@ -527,6 +555,7 @@ expect interface ICoseKeyCbor : IKey {
      * compatibility across different security frameworks and implementations.
      */
     override val alg: CborUInt?
+
     /**
      * Represents a list of key operations applicable to the cryptographic key.
      * The operations are enumerated in the CBOR array, where each item is
@@ -536,6 +565,7 @@ expect interface ICoseKeyCbor : IKey {
      * any specific operations associated with it.
      */
     override val key_ops: CborArray<CborUInt>?
+
     /**
      * Represents the base IV (Initialization Vector) of a cryptographic key in CBOR encoding.
      *
@@ -545,6 +575,7 @@ expect interface ICoseKeyCbor : IKey {
      * It can be null if the base IV is not applicable or not specified for the given cryptographic key.
      */
     val baseIV: CborByteString?
+
     /**
      * Represents the `crv` (Curve) parameter in a cryptographic key.
      *
@@ -553,6 +584,7 @@ expect interface ICoseKeyCbor : IKey {
      * or not specified.
      */
     override val crv: CborUInt?
+
     /**
      * Represents the 'x' coordinate parameter for an elliptic curve key or a similar cryptographic key component.
      *
@@ -562,6 +594,7 @@ expect interface ICoseKeyCbor : IKey {
      * The value may be null if the 'x' coordinate is not applicable or not set.
      */
     override val x: CborByteString?
+
     /**
      * Represents the y-coordinate of an elliptic curve point in cryptographic operations.
      *
@@ -570,22 +603,28 @@ expect interface ICoseKeyCbor : IKey {
      * The value can be null, indicating that the coordinate is not set or not applicable.
      */
     override val y: CborByteString?
+
     /**
      * Represents the private key or secret key material of the key.
      * This is typically a critical component in encryption and decryption
      * operations, and should be kept confidential and not exposed.
      */
     override val d: CborByteString?
+
     /**
      * Represents a CBOR (Concise Binary Object Representation) array containing CBOR byte strings.
      * This variable can be null, indicating that there may not be any data available in the array.
      */
     val x5chain: CborArray<CborByteString>?
+
     /**
      * A map that holds additional information where the keys are of type `NumberLabel`
      * and the values are `CborItem` objects of any type. This map can be nullable.
      */
     override val additional: CborMap<NumberLabel, CborItem<*>>?
+
+
+    override fun toPublicKey(): CoseKeyCbor
 }
 
 /**
@@ -683,7 +722,7 @@ data class CoseKeyCbor(
      * @return An instance of AlgorithmMapping if the algorithm value is successfully mapped;
      *         otherwise, returns null.
      */
-    override fun getAlgMapping(): SignatureAlgorithm? {
+    override fun getSignatureAlgorithm(): SignatureAlgorithm? {
         return alg?.let { CoseAlgorithm.Static.fromValue(it.value.toInt())?.let { coseAlg -> SignatureAlgorithm.Static.fromCose(coseAlg) } }
     }
 
@@ -692,8 +731,8 @@ data class CoseKeyCbor(
      *
      * @return An instance of KeyTypeMapping that represents the mapping derived from the current key type.
      */
-    override fun getKtyMapping(): KeyTypeMapping {
-        return KeyTypeMapping.Static.fromCose(CoseKeyType.Static.fromValue(this.kty.value.toInt()))
+    override fun getKty(): KeyType {
+        return KeyType.Static.fromCose(CoseKeyType.Static.fromValue(this.kty.value.toInt()))
     }
 
     /**
@@ -703,8 +742,8 @@ data class CoseKeyCbor(
      *
      * @return An array of KeyOperationsMapping objects or null if no key operations are defined.
      */
-    override fun getKeyOperationsMapping(): Array<KeyOperationsMapping>? {
-        return key_ops?.value?.map { KeyOperationsMapping.Static.fromCose(CoseKeyOperations.Static.fromValue(it.value.toInt())) }?.toTypedArray()
+    override fun getKeyOperations(): Array<KeyOperations>? {
+        return key_ops?.value?.map { KeyOperations.Static.fromCose(CoseKeyOperations.Static.fromValue(it.value.toInt())) }?.toTypedArray()
     }
 
     /**
@@ -712,10 +751,14 @@ data class CoseKeyCbor(
      *
      * @return an array of Base64 encoded strings representing the x5c value, or null if the x5c value is not present.
      */
-    override fun getX5cArray(): Array<String>? {
+    override fun getX509CertificateChain(): Array<String>? {
         // x5c is base64 not base64url! (see above)
         return x5chain?.value?.map { it.encodeTo(Encoding.BASE64) }?.toTypedArray()
     }
+
+    override fun getKidAsString() = kid?.value?.decodeToString()
+
+    override fun toPublicKey() = copy(d = null)
 
     /**
      * Checks if this object is equal to the specified object.
@@ -785,6 +828,7 @@ data class CoseKeyCbor(
          * encoding, specifically to handle unsigned integers.
          */
         private lateinit var kty: CborUInt
+
         /**
          * A variable representing a potentially null CborByteString instance.
          *
@@ -793,6 +837,7 @@ data class CoseKeyCbor(
          * a CborByteString instance or be set to null if no value is present.
          */
         var kid: CborByteString? = null
+
         /**
          * Represents an optional CBOR (Concise Binary Object Representation) unsigned integer.
          *
@@ -801,6 +846,7 @@ data class CoseKeyCbor(
          * Initially set to null, it can be assigned a valid `CborUInt` object as needed in the program.
          */
         var alg: CborUInt? = null
+
         /**
          * Represents the key operations for a cryptographic key.
          *
@@ -809,22 +855,26 @@ data class CoseKeyCbor(
          *           This variable can be null if no key operations are defined.
          */
         var key_ops: CborArray<CborUInt>? = null
+
         /**
          * `baseIV` is an optional CborByteString variable that can be used to store
          * the base Initialization Vector (IV) for cryptographic operations.
          * It is initialized to null, indicating that it may not always have a value.
          */
         var baseIV: CborByteString? = null
+
         /**
          * A nullable variable representing a CBOR (Concise Binary Object Representation) unsigned integer.
          * This variable may hold a value of type `CborUInt` or be null.
          */
         var crv: CborUInt? = null
+
         /**
          * Represents an optional CBOR (Concise Binary Object Representation) byte string.
          * The value can be null, indicating absence of a byte string.
          */
         var x: CborByteString? = null
+
         /**
          * Represents an optional CBOR encoded byte string.
          *
@@ -834,6 +884,7 @@ data class CoseKeyCbor(
          * ideal for use in constrained environments.
          */
         var y: CborByteString? = null
+
         /**
          * A nullable variable representing a CBOR (Concise Binary Object Representation) byte string.
          * The default value is null.
@@ -841,11 +892,13 @@ data class CoseKeyCbor(
          * @property d The CBOR byte string.
          */
         var d: CborByteString? = null
+
         /**
          * A variable that holds an optional sequence of binary data items encoded as CBOR byte strings.
          * It is initialized to null and, when assigned, contains a CBOR array of CBOR byte strings.
          */
         var x5chain: CborArray<CborByteString>? = null
+
         /**
          * Represents an optional CBOR (Concise Binary Object Representation) map that holds additional
          * key-value pairs. The keys are of type `NumberLabel` and values can be any CBOR item.
@@ -1000,10 +1053,12 @@ data class CoseKeyCbor(
          * to map to a specific type of COSE key.
          */
         val KTY = NumberLabel(1)
+
         /**
          * KID is a predefined NumberLabel with a value of 2. It is used to identify key ID fields within the COSE key structure.
          */
         val KID = NumberLabel(2)
+
         /**
          * Represents the algorithm (alg) label in the COSE Key structure.
          * This label is associated with a numeric value that specifies the algorithm used.
@@ -1011,11 +1066,13 @@ data class CoseKeyCbor(
          * In this case, the numeric identifier is set to 3.
          */
         val ALG = NumberLabel(3)
+
         /**
          * Represents a numeric label used specifically for key operations in COSE (CBOR Object Signing and Encryption).
          * The value of `KEY_OPS` is set to 4, which corresponds to the specific operation type in the COSE key operation registry.
          */
         val KEY_OPS = NumberLabel(4)
+
         /**
          * A constant representing the initial value of a number label, typically used for cryptographic purposes.
          *
@@ -1026,6 +1083,7 @@ data class CoseKeyCbor(
          * and provides functionality for JSON serialization and CBOR encoding.
          */
         val BASE_IV = NumberLabel(5)
+
         /**
          * Represents the COSE (CBOR Object Signing and Encryption) label for the X.509 certificate chain.
          * This label is used to identify and encode the X5Chain field within COSE keys.
@@ -1045,6 +1103,7 @@ data class CoseKeyCbor(
          */
 // EC (kty 2) + OKP (kty 1)
         val CRV = NumberLabel(-1)
+
         /**
          * A constant instance of `NumberLabel` initialized with the value -2.
          * This instance represents a numbered label with a negative integer value,
@@ -1055,6 +1114,7 @@ data class CoseKeyCbor(
          * in cryptographic contexts and data serialization.
          */
         val X = NumberLabel(-2)
+
         /**
          * Y is a constant variable of type NumberLabel.
          *
@@ -1066,6 +1126,7 @@ data class CoseKeyCbor(
          * are necessary, aiding in categorization or labeling processes in the code base.
          */
         val Y = NumberLabel(-3)
+
         /**
          * Represents the negative integer label `D` used in COSE (CBOR Object Signing and Encryption).
          * This label is set to -4 which typically indicates a specific parameter in a COSE key structure.
@@ -1084,6 +1145,7 @@ data class CoseKeyCbor(
          */
 // RSA, kty 3, TODO
         val N = NumberLabel(-1)
+
         /**
          * Label representing a specific numeric identifier with the value of -2.
          * Typically used as a constant in contexts where differentiating or specifying
@@ -1092,11 +1154,13 @@ data class CoseKeyCbor(
          * @property E the constant representing the numeric label with a value of -2.
          */
         val E = NumberLabel(-2)
+
         /**
          * D_RSA is a constant used to label a specific number associated with RSA encryption.
          * It is used in the context of NumberLabel to represent the number -3.
          */
         val D_RSA = NumberLabel(-3)
+
         /**
          * Constant representing a specific instance of NumberLabel initialized with the value -4.
          *
@@ -1105,6 +1169,7 @@ data class CoseKeyCbor(
          * a NumberLabel object to provide context or categorization in various computations.
          */
         val P = NumberLabel(-4)
+
         /**
          * Constant variable representing a NumberLabel with a value of -5.
          *
@@ -1113,6 +1178,7 @@ data class CoseKeyCbor(
          * a NumberLabel with this specific value is needed.
          */
         val Q = NumberLabel(-5)
+
         /**
          * DP is a constant representing a negative number label with a value of -6.
          *
@@ -1121,23 +1187,27 @@ data class CoseKeyCbor(
          * object, which may provide additional functionality or encapsulation benefits.
          */
         val DP = NumberLabel(-6)
+
         /**
          * DQ is an instance of the NumberLabel class initialized with -7.
          *
          * Used for representing a specific constant value with an associated label in the application.
          */
         val DQ = NumberLabel(-7)
+
         /**
          * QINV is a constant instance of NumberLabel initialized with the value -8.
          * The purpose and usage of QINV depend on the context within the encompassing application.
          * NumberLabel generally denotes a label associated with a numeric value.
          */
         val QINV = NumberLabel(-8)
+
         /**
          * A predefined instance of `NumberLabel` initialized with the value `-9`.
          * This constant can be used where a `NumberLabel` with this specific value is required.
          */
         val OTHER = NumberLabel(-9)
+
         /**
          * Represents a constant number label with a value of -10.
          *
@@ -1146,6 +1216,7 @@ data class CoseKeyCbor(
          * in the context of its use.
          */
         val R_I = NumberLabel(-10)
+
         /**
          * A constant representing the label with a numerical value of -11.
          *
@@ -1157,6 +1228,7 @@ data class CoseKeyCbor(
          * based on the overall application logic and domain requirements.
          */
         val D_I = NumberLabel(-11)
+
         /**
          * A constant representing a `NumberLabel` with a value of -12.
          *

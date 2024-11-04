@@ -2,30 +2,38 @@
 
 package com.sphereon.crypto.providers
 
-import com.sphereon.cbor.CborUInt
-import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.crypto.CoseJoseKeyMappingService
-import com.sphereon.crypto.generic.CurveMapping
-import com.sphereon.crypto.generic.DigestAlg
 import com.sphereon.crypto.ICoseCryptoCallbackService
 import com.sphereon.crypto.IKey
 import com.sphereon.crypto.IKeyInfo
-import com.sphereon.crypto.generic.IVerifySignatureResult
+import com.sphereon.crypto.IResolvedKeyInfo
 import com.sphereon.crypto.KeyInfo
-import com.sphereon.crypto.generic.KeyOperationsMapping
-import com.sphereon.crypto.generic.KeyTypeMapping
-import com.sphereon.crypto.generic.VerifySignatureResult
-import com.sphereon.crypto.cose.CoseAlgorithm
+import com.sphereon.crypto.PKIException
 import com.sphereon.crypto.cose.CoseKeyCbor
-import com.sphereon.crypto.cose.CoseKeyType
 import com.sphereon.crypto.cose.CoseSign1Cbor
 import com.sphereon.crypto.cose.ICoseKeyCbor
 import com.sphereon.crypto.cose.ToBeSignedCbor
+import com.sphereon.crypto.generic.Curve
+import com.sphereon.crypto.generic.DigestAlg
+import com.sphereon.crypto.generic.IVerifySignatureResult
+import com.sphereon.crypto.generic.KeyOperations
+import com.sphereon.crypto.generic.KeyType
+import com.sphereon.crypto.generic.SignatureAlgorithm
+import com.sphereon.crypto.generic.VerifySignatureResult
 import com.sphereon.crypto.jose.JwaAlgorithm
 import com.sphereon.crypto.jose.JwaCurve
 import com.sphereon.crypto.jose.JwaKeyType
 import com.sphereon.crypto.jose.Jwk
 import com.sphereon.crypto.jose.JwkUse
+import com.sphereon.crypto.kms.IKeyManagementSystem
+import com.sphereon.crypto.kms.IKeyManagerService
+import com.sphereon.crypto.kms.IKeyResolverService
+import com.sphereon.crypto.kms.IKeyStoreService
+import com.sphereon.crypto.sign.IRawSignatureService
+import com.sphereon.crypto.sign.ISimpleSignatureService
+import com.sphereon.crypto.sign.model.SignInput
+import com.sphereon.crypto.sign.model.SignOutput
+import com.sphereon.crypto.sign.model.Signature
 import com.sphereon.kmp.Encoding
 import com.sphereon.kmp.decodeFromBase64Url
 import com.sphereon.kmp.encodeTo
@@ -47,9 +55,9 @@ import kotlin.js.JsExport
  * @property jose The JOSE key pair which contains the private and public keys used for JOSE operations.
  */
 @JsExport
-data class CryptoProviderKeyPair(
-    val cose: CryptoProviderCoseKeyPair,
-    val jose: CryptoProviderJoseKeyPair
+data class ManagedKeyPair(
+    val cose: CoseKeyPair,
+    val jose: JoseKeyPair
 )
 
 /**
@@ -59,7 +67,7 @@ data class CryptoProviderKeyPair(
  * @property publicJwk The public key in JWK (JSON Web Key) format.
  */
 @JsExport
-data class CryptoProviderJoseKeyPair(
+data class JoseKeyPair(
     val privateJwk: Jwk?,
     val publicJwk: Jwk
 )
@@ -72,7 +80,7 @@ data class CryptoProviderJoseKeyPair(
  * @property publicCoseKey The public COSE key in CBOR format. This is mandatory.
  */
 @JsExport
-data class CryptoProviderCoseKeyPair(
+data class CoseKeyPair(
     val privateCoseKey: CoseKeyCbor?,
     val publicCoseKey: CoseKeyCbor
 )
@@ -80,111 +88,14 @@ data class CryptoProviderCoseKeyPair(
 @JsExport
 interface GenerateKeyParams {
     val use: JwkUse?
-    val keyOperations: Array<out KeyOperationsMapping>?
-    val curve: CurveMapping?
+    val keyOperations: Array<out KeyOperations>?
+    val curve: Curve?
     val alg: SignatureAlgorithm?
 }
 
-/**
- * An interface representing a provider for cryptographic operations.
- */
-@JsExport
-interface ICryptoProvider {
-    /**
-     * Retrieves an array of supported key type mappings.
-     *
-     * The supported key types represent the mappings between COSE (CBOR Object Signing and Encryption)
-     * key types and their corresponding JWA (JSON Web Algorithms) key types. This method provides the
-     * available key type mappings for cryptographic operations.
-     *
-     * @return An array of supported `KeyTypeMapping` objects.
-     */
-    fun supportedKeyTypes(): Array<KeyTypeMapping>
-
-    /**
-     * Provides a list of supported algorithms by the crypto provider.
-     *
-     * @return An array of AlgorithmMapping objects representing the supported algorithms.
-     */
-    fun supportedSignatureAlgorithms(): Array<SignatureAlgorithm>
-
-    fun supportedDigests(): Array<DigestAlg> // convenience, derived from signature algos above
-
-    /**
-     * Retrieves an array of supported elliptic curve mappings.
-     *
-     * @return An array of `CurveMapping` instances representing the supported elliptic curves
-     *         for cryptographic operations.
-     */
-    fun supportedCurves(): Array<CurveMapping>
-
-    /**
-     * Checks if the provided elliptic curve mapping is supported by the crypto provider.
-     *
-     * @param curve The curve mapping to be checked for support.
-     * @return true if the curve is supported, false otherwise.
-     */
-    fun isSupportedCurve(curve: CurveMapping): Boolean
-
-
-    /**
-     * Asynchronously generates a cryptographic key pair based on the specified elliptic curve mapping.
-     *
-     * @param curve The elliptic curve mapping used to generate the key pair. This parameter defines the types of curves supported
-     *              for cryptographic operations and includes mappings for both COSE and JOSE curves.
-     * @return A `CryptoProviderKeyPair` containing both COSE and JOSE key pairs.
-     */
-    @JsExport.Ignore
-    suspend fun generateKeyAsync(
-        use: JwkUse? = null,
-        keyOperations: Array<out KeyOperationsMapping>? = null,
-        curve: CurveMapping? = null,
-        alg: SignatureAlgorithm? = null
-    ): CryptoProviderKeyPair
-
-
-    /**
-     * Generates a digital signature for the given input data using the specified key information.
-     *
-     * @param keyInfo Information about the key to be used for generating the signature.
-     * @param input The input data to be signed.
-     * @return A byte array containing the generated digital signature.
-     */
-
-    @JsExport.Ignore
-    suspend fun generateSignatureAsync(keyInfo: IKeyInfo<*>, input: ByteArray): ByteArray
-
-    /**
-     * Verifies the digital signature of the provided input data using the given key information.
-     *
-     * @param keyInfo The key information required for signature verification.
-     * @param input The data whose signature needs to be verified.
-     * @param signature The digital signature that needs to be verified against the input data.
-     * @return true if the signature is valid, false otherwise.
-     */
-
-    @JsExport.Ignore
-    suspend fun verifySignatureAsync(keyInfo: IKeyInfo<*>, input: ByteArray, signature: ByteArray): Boolean
-
-    /**
-     * Asynchronously resolves and retrieves a public key based on the provided key information.
-     *
-     * @param keyInfo The information about the key for which the public key needs to be resolved.
-     * @return The public key corresponding to the provided key information.
-     */
-    @JsExport.Ignore
-    suspend fun resolvePublicKeyAsync(keyInfo: IKeyInfo<*>): IKey
-
-    /**
-     * Resolves the public key from the provided key information.
-     *
-     * @param keyInfo The key information from which to resolve the public key.
-     * @return The resolved public key.
-     */
-    fun resolvePublicKey(keyInfo: IKeyInfo<*>): IKey
-}
-
 private const val ECDSA_PROVIDER = "EcdsaProvider"
+
+interface ICryptoProvider : IKeyStoreService, IKeyResolverService, IRawSignatureService, ISimpleSignatureService
 
 /**
  * EcDSACryptoProvider provides Elliptic Curve Digital Signature Algorithm (ECDSA) cryptographic operations
@@ -193,7 +104,8 @@ private const val ECDSA_PROVIDER = "EcdsaProvider"
  * @param provider An instance of CryptographyProvider to use for cryptographic operations. Default is CryptographyProvider.Default.
  */
 @JsExport
-class EcDSACryptoProvider(provider: CryptographyProvider = CryptographyProvider.Default) : ICryptoProvider {
+class EcDSACryptoProvider(private val id: String = "ecdsa", provider: CryptographyProvider = CryptographyProvider.Default) : IKeyManagementSystem,
+    IRawSignatureService, ISimpleSignatureService {
     /**
      * Provides ECDSA (Elliptic Curve Digital Signature Algorithm) cryptographic functions.
      * This variable holds an instance of the provider which is used to perform various cryptographic operations such as
@@ -206,7 +118,7 @@ class EcDSACryptoProvider(provider: CryptographyProvider = CryptographyProvider.
      *
      * @return An array of CurveMapping objects representing the supported elliptic curves.
      */
-    override fun supportedCurves(): Array<CurveMapping> = arrayOf(CurveMapping.P_256, CurveMapping.P_384, CurveMapping.P_521)
+    override fun supportedCurves(): Array<Curve> = arrayOf(Curve.P_256, Curve.P_384, Curve.P_521)
 
     /**
      * Checks if the provided elliptic curve is supported by the EcDSACryptoProvider.
@@ -214,7 +126,7 @@ class EcDSACryptoProvider(provider: CryptographyProvider = CryptographyProvider.
      * @param curve The elliptic curve to be checked.
      * @return True if the curve is supported, false otherwise.
      */
-    override fun isSupportedCurve(curve: CurveMapping): Boolean = supportedCurves().contains(curve)
+    override fun isSupportedCurve(curve: Curve): Boolean = supportedCurves().contains(curve)
 
     /**
      * Returns an array of supported hash algorithms.
@@ -223,7 +135,6 @@ class EcDSACryptoProvider(provider: CryptographyProvider = CryptographyProvider.
      */
     override fun supportedDigests(): Array<DigestAlg> =
         supportedSignatureAlgorithms().filter { it.digestAlgorithm !== null }.map { it.digestAlgorithm!! }.toSet().toTypedArray()
-
 
     /**
      * Generates a cryptographic key pair based on the provided elliptic curve.
@@ -235,18 +146,18 @@ class EcDSACryptoProvider(provider: CryptographyProvider = CryptographyProvider.
     @JsExport.Ignore
     override suspend fun generateKeyAsync(
         use: JwkUse?,
-        keyOperations: Array<out KeyOperationsMapping>?,
-        curve: CurveMapping?,
+        keyOperations: Array<out KeyOperations>?,
         alg: SignatureAlgorithm?
-    ): CryptoProviderKeyPair {
-        val cuveMapping = curve ?: CurveMapping.P_256
+
+    ): ManagedKeyPair {
         val keyUse = use ?: JwkUse.sig
         val algMapping = alg ?: SignatureAlgorithm.ECDSA_SHA256
-        val curveMapping = curve ?: CurveMapping.P_256
-        val keyOpsMapping = keyOperations ?: arrayOf(KeyOperationsMapping.SIGN)
-        checkSupportedCurve(cuveMapping)
+        val curve = alg?.curve ?: Curve.P_256
 
-        val curveImpl = resolveCurve(cuveMapping)
+        val keyOpsMapping = keyOperations ?: arrayOf(KeyOperations.SIGN)
+        checkSupportedCurve(curve)
+
+        val curveImpl = resolveCurve(curve)
         val keyPairGenerator = ecdsa.keyPairGenerator(curveImpl)
         val keyPair = keyPairGenerator.generateKey()
 
@@ -258,16 +169,16 @@ class EcDSACryptoProvider(provider: CryptographyProvider = CryptographyProvider.
             publicKeyBytes = publicKeyRaw,
             use = keyUse,
             alg = algMapping,
-            curve = curveMapping,
+            curve = curve,
             keyOperations = keyOpsMapping
         )
-        val publicJwk = privateJwk.copy(d = null)
+        val publicJwk = privateJwk.copy(d = null) // let's make sure we do not leak the private key component
         val privateCoseKey = CoseJoseKeyMappingService.toCoseKey(privateJwk)
         val publicCoseKey = CoseJoseKeyMappingService.toCoseKey(publicJwk)
 
-        return CryptoProviderKeyPair(
-            jose = CryptoProviderJoseKeyPair(privateJwk, publicJwk),
-            cose = CryptoProviderCoseKeyPair(privateCoseKey, publicCoseKey)
+        return ManagedKeyPair(
+            jose = JoseKeyPair(privateJwk, publicJwk),
+            cose = CoseKeyPair(privateCoseKey, publicCoseKey)
         )
     }
 
@@ -280,7 +191,7 @@ class EcDSACryptoProvider(provider: CryptographyProvider = CryptographyProvider.
      * @throws IllegalArgumentException If the private key is not provided or not supported.
      */
     @JsExport.Ignore
-    override suspend fun generateSignatureAsync(keyInfo: IKeyInfo<*>, input: ByteArray): ByteArray {
+    override suspend fun createRawSignatureAsync(keyInfo: IKeyInfo<*>, input: ByteArray): ByteArray {
         val (key, _, privateKeyBytes, curveImpl, algImpl) = prepareKeyInfo(keyInfo)
 
         if (key.d != null && privateKeyBytes !== null) {
@@ -301,7 +212,7 @@ class EcDSACryptoProvider(provider: CryptographyProvider = CryptographyProvider.
      * @throws IllegalArgumentException if a private key is used to verify the signature.
      */
     @JsExport.Ignore
-    override suspend fun verifySignatureAsync(keyInfo: IKeyInfo<*>, input: ByteArray, signature: ByteArray): Boolean {
+    override suspend fun isValidRawSignatureAsync(keyInfo: IKeyInfo<*>, input: ByteArray, signature: ByteArray): Boolean {
         val (key, publicKeyBytes, _, curveImpl, algImpl) = prepareKeyInfo(keyInfo)
 
         if (key.d != null) {
@@ -313,12 +224,19 @@ class EcDSACryptoProvider(provider: CryptographyProvider = CryptographyProvider.
         return publicKey.signatureVerifier(digest = algImpl, format = ECDSA.SignatureFormat.RAW).tryVerifySignatureBlocking(input, signature)
     }
 
-    /**
-     * Provides an array of supported key types for this cryptographic provider.
-     *
-     * @return An array containing supported key types, specifically KeyTypeMapping.EC2.
-     */
-    override fun supportedKeyTypes(): Array<KeyTypeMapping> = arrayOf(KeyTypeMapping.EC)
+    @JsExport.Ignore
+    override suspend fun createSignature(signInput: SignInput, keyInfo: IKeyInfo<*>?, signatureAlgorithm: SignatureAlgorithm?): SignOutput {
+        TODO("Not yet implemented")
+    }
+
+    @JsExport.Ignore
+    override suspend fun isValidSignature(signInput: SignInput, signature: Signature): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override fun getId() = id
+
+    override fun supportedKeyTypes(): Array<KeyType> = arrayOf(KeyType.EC)
 
     /**
      * Returns an array of supported ECDSA algorithm mappings.
@@ -328,24 +246,6 @@ class EcDSACryptoProvider(provider: CryptographyProvider = CryptographyProvider.
     override fun supportedSignatureAlgorithms(): Array<SignatureAlgorithm> =
         arrayOf(SignatureAlgorithm.ECDSA_SHA256, SignatureAlgorithm.ECDSA_SHA384, SignatureAlgorithm.ECDSA_SHA512)
 
-    /**
-     * Resolves the public key asynchronously based on the given key information.
-     *
-     * @param keyInfo An instance of IKeyInfo containing details about the key to be resolved.
-     */
-    @JsExport.Ignore
-    override suspend fun resolvePublicKeyAsync(keyInfo: IKeyInfo<*>) = resolvePublicKey(keyInfo)
-
-    /**
-     * Resolves and returns the public key from the given key information.
-     *
-     * @param keyInfo An instance of IKeyInfo containing information about the key.
-     * @return The resolved public key as an instance of IKey.
-     * @throws IllegalArgumentException If the public key is not present in the provided key information.
-     */
-    override fun resolvePublicKey(keyInfo: IKeyInfo<*>): IKey {
-        return keyInfo.key ?: throw IllegalArgumentException("Key needs to be present in current version. Cannot resolve by kid")
-    }
 
     /**
      * Prepares key information context by converting the provided `IKeyInfo` to a JWK format
@@ -365,7 +265,7 @@ class EcDSACryptoProvider(provider: CryptographyProvider = CryptographyProvider.
             key.y.decodeFromBase64Url().encodeTo(Encoding.HEX)
         }".hexToByteArray()
         val privateKeyBytes = key.d?.decodeFromBase64Url()
-        val curveImpl = resolveCurve(CurveMapping.Static.fromJose(key.crv))
+        val curveImpl = resolveCurve(Curve.Static.fromJose(key.crv))
         val algImpl = resolveDigest(SignatureAlgorithm.Static.fromJose(key.alg))
 
         return KeyInfoContext(key, publicKeyBytes, privateKeyBytes, curveImpl, algImpl)
@@ -422,8 +322,8 @@ class EcDSACryptoProvider(provider: CryptographyProvider = CryptographyProvider.
         publicKeyBytes: ByteArray,
         privateKeyBytes: ByteArray?,
         use: JwkUse = JwkUse.sig,
-        keyOperations: Array<out KeyOperationsMapping> = arrayOf(KeyOperationsMapping.SIGN),
-        curve: CurveMapping = CurveMapping.P_256,
+        keyOperations: Array<out KeyOperations> = arrayOf(KeyOperations.SIGN),
+        curve: Curve = Curve.P_256,
         alg: SignatureAlgorithm = SignatureAlgorithm.ECDSA_SHA256
     ): Jwk {
 
@@ -448,7 +348,7 @@ class EcDSACryptoProvider(provider: CryptographyProvider = CryptographyProvider.
      *
      * @param curve The curve to be checked for support.
      */
-    private fun checkSupportedCurve(curve: CurveMapping) {
+    private fun checkSupportedCurve(curve: Curve) {
         if (!isSupportedCurve(curve)) {
             throw IllegalArgumentException("Curve ${curve} not supported for EcDSA")
         }
@@ -461,11 +361,11 @@ class EcDSACryptoProvider(provider: CryptographyProvider = CryptographyProvider.
      * @return The corresponding elliptic curve.
      * @throws IllegalArgumentException If the provided curve is not supported.
      */
-    private fun resolveCurve(curve: CurveMapping): EC.Curve {
+    private fun resolveCurve(curve: Curve): EC.Curve {
         return when (curve) {
-            is CurveMapping.P_256 -> EC.Curve.P256
-            is CurveMapping.P_384 -> EC.Curve.P384
-            is CurveMapping.P_521 -> EC.Curve.P521
+            is Curve.P_256 -> EC.Curve.P256
+            is Curve.P_384 -> EC.Curve.P384
+            is Curve.P_521 -> EC.Curve.P521
             else -> throw IllegalArgumentException("Curve $curve not supported")
         }
     }
@@ -510,20 +410,27 @@ class EcDSACryptoProvider(provider: CryptographyProvider = CryptographyProvider.
  *
  * @param providers Array of cryptographic providers implementing `ICryptoProvider`.
  */
-class CoseCryptoProviderToCallbackAdapter(private val providers: Array<ICryptoProvider>) : ICoseCryptoCallbackService {
-    /**
-     * Retrieves a cryptographic provider based on the given algorithm and key type.
-     *
-     * @param alg the COSE algorithm to be used.
-     * @param kty the COSE key type to be used.
-     * @return the cryptographic provider that supports the given algorithm and key type.
-     * @throws IllegalArgumentException if no suitable crypto provider is found.
-     */
-    private fun getProvider(alg: CoseAlgorithm, kty: CoseKeyType): ICryptoProvider {
-        return providers.find {
-            it.supportedKeyTypes().contains(KeyTypeMapping.Static.fromCose(kty)) && it.supportedSignatureAlgorithms()
-                .contains(SignatureAlgorithm.Static.fromCose(alg))
-        } ?: throw IllegalArgumentException("Crypto Provider for kty $kty and alg ${alg} not found")
+class CoseCryptoProviderToCallbackAdapter(
+    private val keyManagerService: IKeyManagerService? = null,
+    private val rawSignatureService: IRawSignatureService? = null,
+    private val publicKeyResolverService: IKeyResolverService? = null
+) : ICoseCryptoCallbackService {
+    init {
+        require(keyManagerService !== null || rawSignatureService !== null) { "Either a keyManager or rawSignature service needs to be provided" }
+        require(
+            keyManagerService?.getResolverIds()?.isNotEmpty() ?: false || publicKeyResolverService !== null
+        ) { "Either a keyManager or public key resolver service needs to be provided" }
+    }
+
+    private fun assertedSignatureProvider(alg: SignatureAlgorithm? = null, kms: String? = null): IRawSignatureService {
+        return (keyManagerService?.getKms(kms = kms, alg = alg) ?: rawSignatureService)!! // already asserted during construction
+    }
+
+    private fun assertedPublicKeyProvider(keyInfo: IKeyInfo<*>): IKeyResolverService {
+        return keyManagerService?.getResolverByKeyTypeOrIdentifier(
+            keyType = keyInfo.keyType,
+            resolverId = keyInfo.kms ?: keyManagerService.defaultResolverId()
+        ) ?: publicKeyResolverService ?: throw PKIException("Could not deduce key resolver from key info, default resolver, or provided resolver")
     }
 
     /**
@@ -533,15 +440,10 @@ class CoseCryptoProviderToCallbackAdapter(private val providers: Array<ICryptoPr
      * @return The generated signature as a ByteArray.
      */
     override suspend fun sign(input: ToBeSignedCbor): ByteArray {
-        val alg = input.key.getAlgMapping()?.cose ?: input.alg
-        val kty = input.key.getKtyMapping().cose
-        val key = CoseKeyCbor.Static.fromDTO(input.key).copy(alg = CborUInt(alg.value))
-        return getProvider(alg = alg, kty = kty).generateSignatureAsync(
-            keyInfo = KeyInfo(
-                key = input.key,
-                kid = key.kid?.value?.encodeTo(Encoding.BASE64URL)
-            ), input = input.value
-        )
+        val keyInfo = input.keyInfo
+        val alg = keyInfo.signatureAlgorithm ?: input.alg
+        return assertedSignatureProvider(alg = alg, kms = keyInfo.kms).createRawSignatureAsync(keyInfo, input.value)
+
     }
 
     /**
@@ -551,23 +453,24 @@ class CoseCryptoProviderToCallbackAdapter(private val providers: Array<ICryptoPr
      * @param keyInfo The key information used for verification.
      * @return The result of the signature verification.
      */
-    override suspend fun verify1(input: CoseSign1Cbor<*>, keyInfo: IKeyInfo<ICoseKeyCbor>): IVerifySignatureResult<ICoseKeyCbor> {
-        var cborKeyInfo = CoseJoseKeyMappingService.toCoseKeyInfo(keyInfo)
-        val key = CoseJoseKeyMappingService.toCoseKey(keyInfo.key ?: resolvePublicKey(keyInfo))
-        val alg = key.getAlgMapping()?.cose ?: throw IllegalArgumentException("No alg was supplied for key")
-        val kty = key.getKtyMapping().cose
+    override suspend fun verify1(input: CoseSign1Cbor<*>, keyInfo: IKeyInfo<*>): IVerifySignatureResult<ICoseKeyCbor> {
+        val resolvedKeyInfo = this.resolvePublicKeyAsync(keyInfo)
+        val key = resolvedKeyInfo.key
+        val alg = resolvedKeyInfo.signatureAlgorithm ?: key.getSignatureAlgorithm() ?: throw IllegalArgumentException("No alg was supplied for key")
         if (input.payload?.value === null) {
             throw IllegalArgumentException("Null payload supplied to verify signature")
         }
 
-        val resultKeyInfo = cborKeyInfo.copy(key = key)
-        val success =
-            getProvider(alg = alg, kty = kty).verifySignatureAsync(resultKeyInfo, input = input.payload.value, signature = input.signature.value)
+        val validSig = assertedSignatureProvider(alg = alg, kms = resolvedKeyInfo.kms).isValidRawSignatureAsync(
+            resolvedKeyInfo,
+            input = input.payload.value,
+            signature = input.signature.value
+        )
         return VerifySignatureResult(
-            keyInfo = resultKeyInfo,
-            error = !success,
-            critical = !success,
-            message = if (success) "Signature valid" else "Signature invalid",
+            keyInfo = CoseJoseKeyMappingService.toCoseKeyInfo(resolvedKeyInfo),
+            error = !validSig,
+            critical = !validSig,
+            message = if (validSig) "Signature valid" else "Signature invalid",
             name = "Cose verify1"
         )
     }
@@ -578,9 +481,9 @@ class CoseCryptoProviderToCallbackAdapter(private val providers: Array<ICryptoPr
      * @param keyInfo Contains information about the key to be resolved, possibly including the key identifier (kid), key type, and other optional parameters.
      * @return The resolved public key as an instance of IKey.
      */
-    override suspend fun resolvePublicKey(keyInfo: IKeyInfo<*>): IKey {
+    override suspend fun <KeyType : IKey> resolvePublicKeyAsync(keyInfo: IKeyInfo<KeyType>): IResolvedKeyInfo<KeyType> {
         // fixme: How do we determine which provider if only a kid was supplied? (that is a valid use case)
-        return providers[0].resolvePublicKeyAsync(keyInfo = keyInfo)
+        return assertedPublicKeyProvider(keyInfo = keyInfo).resolvePublicKeyAsync(keyInfo = keyInfo)
     }
 
 }

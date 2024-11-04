@@ -27,6 +27,7 @@ actual interface IJwk: IKey {
     @SerialName("x5t#S256")
     actual val x5t_S256: String?
     actual override val y: String?
+    actual override fun toPublicKey(): IJwk
 
 }
 

@@ -12,6 +12,8 @@ import com.sphereon.cbor.CborView
 import com.sphereon.cbor.NumberLabel
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.toCborByteString
+import com.sphereon.crypto.IKeyInfo
+import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.json.JsonView
 import com.sphereon.json.cryptoJsonSerializer
 import com.sphereon.kmp.Encoding
@@ -116,12 +118,12 @@ data class CoseSign1InputCbor(
     )
 
     @JsName("toBeSignedCbor")
-    fun toBeSignedCbor(key: ICoseKeyCbor, alg: CoseAlgorithm) =
-        ToBeSignedCbor(value = toSignature1Structure().cborEncode(), key = key, alg = alg)
+    fun toBeSignedCbor(keyInfo: IKeyInfo<*>, alg: SignatureAlgorithm = keyInfo.signatureAlgorithm ?: SignatureAlgorithm.ECDSA_SHA256) =
+        ToBeSignedCbor(value = toSignature1Structure().cborEncode(), keyInfo = keyInfo, alg = alg)
 
     @JsName("toBeSignedJson")
-    fun toBeSignedJson(key: ICoseKeyJson, alg: CoseAlgorithm) =
-        ToBeSignedJson(base64UrlValue = toSignature1Structure().cborEncode().encodeTo(Encoding.BASE64URL), key = key, alg = alg)
+    fun toBeSignedJson(keyInfo: IKeyInfo<*>, alg: SignatureAlgorithm = keyInfo.signatureAlgorithm ?: SignatureAlgorithm.ECDSA_SHA256) =
+        ToBeSignedJson(base64UrlValue = toSignature1Structure().cborEncode().encodeTo(Encoding.BASE64URL), keyInfo = keyInfo, alg = alg)
 
     class Builder(
         private var protectedHeader: CoseHeaderCbor? = CoseHeaderCbor(),
@@ -190,12 +192,12 @@ data class CoseSign1Cbor<CborType>(
     )
 
     @JsName("toBeSignedCbor")
-    fun toBeSignedCbor(key: ICoseKeyCbor, alg: CoseAlgorithm) =
-        ToBeSignedCbor(value = toSignature1Structure().cborEncode(), key = key, alg = alg)
+    fun toBeSignedCbor(keyInfo: IKeyInfo<*>, alg: SignatureAlgorithm = keyInfo.signatureAlgorithm ?: SignatureAlgorithm.ECDSA_SHA256) =
+        ToBeSignedCbor(value = toSignature1Structure().cborEncode(), keyInfo = keyInfo, alg = alg)
 
     @JsName("toBeSignedJson")
-    fun toBeSignedJson(key: ICoseKeyJson, alg: CoseAlgorithm) =
-        ToBeSignedJson(base64UrlValue = toSignature1Structure().cborEncode().encodeTo(Encoding.BASE64URL), key = key, alg = alg)
+    fun toBeSignedJson(keyInfo: IKeyInfo<*>, alg: SignatureAlgorithm = keyInfo.signatureAlgorithm ?: SignatureAlgorithm.ECDSA_SHA256) =
+        ToBeSignedJson(base64UrlValue = toSignature1Structure().cborEncode().encodeTo(Encoding.BASE64URL), keyInfo = keyInfo, alg = alg)
 
     fun detachedPayloadCopy(): CoseSign1Cbor<CborType> {
         return this.copy(payload = null)
@@ -295,11 +297,11 @@ data class CoseSignatureStructureCbor(
             .end()
 
     @JsName("toBeSigned")
-    fun toBeSigned(key: ICoseKeyCbor, alg: CoseAlgorithm) = ToBeSignedCbor(value = toCbor().cborEncode(), key = key, alg = alg)
+    fun toBeSigned(keyInfo: IKeyInfo<*>, alg: SignatureAlgorithm = keyInfo.signatureAlgorithm ?: SignatureAlgorithm.ECDSA_SHA256) = ToBeSignedCbor(value = toCbor().cborEncode(), keyInfo = keyInfo, alg = alg)
 
     @JsName("toBeSignedJson")
-    fun toBeSignedJson(key: ICoseKeyJson, alg: CoseAlgorithm) =
-        ToBeSignedJson(base64UrlValue = toCbor().cborEncode().encodeTo(Encoding.HEX), key = key, alg = alg)
+    fun toBeSignedJson(keyInfo: IKeyInfo<*>, alg: SignatureAlgorithm = keyInfo.signatureAlgorithm ?: SignatureAlgorithm.ECDSA_SHA256) =
+        ToBeSignedJson(base64UrlValue = toCbor().cborEncode().encodeTo(Encoding.HEX), keyInfo = keyInfo, alg = alg)
 
     override fun toJson(): CoseSignatureStructureJson = CoseSignatureStructureJson(
         structure = SigStructure.Static.fromValue(structure.value),
@@ -336,20 +338,28 @@ data class CoseSignatureStructureCbor(
 }
 
 @JsExport
-data class ToBeSignedJson(val base64UrlValue: String, val key: ICoseKeyJson, val alg: CoseAlgorithm) : JsonView() {
+data class ToBeSignedJson(
+    val base64UrlValue: String,
+    val keyInfo: IKeyInfo<*>,
+    val alg: SignatureAlgorithm = keyInfo.signatureAlgorithm ?: SignatureAlgorithm.ECDSA_SHA256
+) : JsonView() {
     override fun toJsonString() = cryptoJsonSerializer.encodeToString(this)
     override fun toCbor() =
-        ToBeSignedCbor(base64UrlValue.decodeFromBase64Url(), key = CoseKeyJson.Static.fromDTO(key).toCbor(), alg = alg)
+        ToBeSignedCbor(base64UrlValue.decodeFromBase64Url(), keyInfo = keyInfo, alg = alg)
 
 }
 
 @JsExport
-data class ToBeSignedCbor(val value: ByteArray, val key: ICoseKeyCbor, val alg: CoseAlgorithm) :
+data class ToBeSignedCbor(
+    val value: ByteArray,
+    val keyInfo: IKeyInfo<*>,
+    val alg: SignatureAlgorithm = keyInfo.signatureAlgorithm ?: SignatureAlgorithm.ECDSA_SHA256
+) :
     CborView<ToBeSignedCbor, ToBeSignedJson, CborByteString>(CDDL.bstr) {
     override fun cborBuilder(): CborBuilder<ToBeSignedCbor> = CborBuilder(CborByteString(value), this)
 
 
     override fun toJson() =
-        ToBeSignedJson(base64UrlValue = value.encodeTo(Encoding.BASE64URL), key = CoseKeyCbor.Static.fromDTO(key).toJson(), alg = alg)
+        ToBeSignedJson(base64UrlValue = value.encodeTo(Encoding.BASE64URL), keyInfo = keyInfo, alg = alg)
 
 }

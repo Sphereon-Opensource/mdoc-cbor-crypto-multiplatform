@@ -2,35 +2,43 @@ package com.sphereon.crypto.sign
 
 import com.sphereon.crypto.IKeyInfo
 import com.sphereon.crypto.SigningException
-import com.sphereon.crypto.generic.MaskGenFunction
 import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.crypto.sign.model.SignInput
+import com.sphereon.crypto.sign.model.SignOutput
 import com.sphereon.crypto.sign.model.Signature
 import kotlin.js.JsExport
 
-@JsExport
+/**
+ * Interface for a simple signature service.
+ *
+ * Provides methods to create and validate digital signatures.
+ */
+@JsExport.Ignore
 interface ISimpleSignatureService {
+
     /**
-     * This method signs the `signInput` data with the digest `digestAlg`, the mask `mgf` and
-     * the given `keyEntry`.
+     * Creates a digital signature based on the provided input and key information.
      *
-     * @param signInput
-     * The data that need to be signed
-     * @param mgf
-     * the mask generation function
-     * @param keyInfo
-     * The key to use
-     * @return the signature value representation with the used algorithm and the binary value
-     * @throws SigningException
-     * If there is any problem during the signature process
+     * @param signInput The input data and metadata required for creating the signature.
+     * @param keyInfo Optional key information required for the signing operation.
+     * @param mgf Optional mask generation function to use during signature creation.
+     * @param signatureAlgorithm Optional signature algorithm to be used; defaults to the algorithm in keyInfo.
+     * @return The generated signature output.
+     * @throws SigningException If any error occurs during the signing process.
      */
     @Throws(SigningException::class)
-    fun createSignature(
+    suspend fun createSignature(
         signInput: SignInput,
-        keyInfo: IKeyInfo<*>? = null,
-        mgf: MaskGenFunction? = null,
+        keyInfo: IKeyInfo<*>? = null, // Be aware that the SignInput mostly depends on the ConfigKeyBinding. You can use this value to already provide a key for instance
         signatureAlgorithm: SignatureAlgorithm? = keyInfo?.signatureAlgorithm,
-    ): Signature
+    ): SignOutput
 
-    fun isValidSignature(signInput: SignInput, signature: Signature, keyInfo: IKeyInfo<*>? = null): Boolean
+    /**
+     * Validates a given cryptographic signature against the provided signing input.
+     *
+     * @param signInput The input required for signing operations, including the data to be signed, signing mode, and other relevant metadata.
+     * @param signature The cryptographic signature to be validated, including the signature value, algorithm, and related key information.
+     * @return `true` if the signature is valid for the given signing input; `false` otherwise.
+     */
+    suspend fun isValidSignature(signInput: SignInput, signature: Signature): Boolean
 }

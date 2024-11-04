@@ -50,4 +50,5 @@ actual interface ICoseKeyCbor : IKey {
     actual abstract override val d: CborByteString?
     actual abstract val x5chain: CborArray<CborByteString>?
     actual abstract override val additional: CborMap<NumberLabel, CborItem<*>>?
+    actual abstract override fun toPublicKey(): CoseKeyCbor
 }

@@ -6,7 +6,7 @@ import com.sphereon.crypto.generic.MaskGenFunction
 import com.sphereon.crypto.sign.model.SigningMode
 import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.crypto.sign.client.model.*
-import com.sphereon.crypto.kms.IKeyProviderService
+import com.sphereon.crypto.kms.IKeyStoreService
 import com.sphereon.crypto.sign.model.OrigData
 import com.sphereon.crypto.sign.model.SignInput
 import com.sphereon.crypto.sign.model.SignOutput
@@ -14,7 +14,7 @@ import com.sphereon.crypto.sign.model.Signature
 
 interface IKidSignatureService {
 
-    val keyProvider: IKeyProviderService
+    val keyProvider: IKeyStoreService
 
     /**
      * Determines the bytes that will serve as input for the digest or signature.

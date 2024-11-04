@@ -1,11 +1,11 @@
 package com.sphereon.crypto
 
+import com.sphereon.crypto.generic.KeyOperations
+import com.sphereon.crypto.generic.KeyType
+
 import com.sphereon.crypto.generic.SignatureAlgorithm
-import com.sphereon.crypto.generic.KeyOperationsMapping
-import com.sphereon.crypto.generic.KeyTypeMapping
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import kotlinx.serialization.internal.throwMissingFieldException
 import kotlin.js.JsExport
 
 
@@ -107,14 +107,14 @@ expect interface IKey {
      *
      * @return A KeyTypeMapping object containing the mappings for key types.
      */
-    fun getKtyMapping(): KeyTypeMapping
+    fun getKty(): KeyType
 
     /**
      * Retrieves the algorithm mapping for the key.
      *
      * @return the corresponding AlgorithmMapping instance, or null if not available
      */
-    fun getAlgMapping(): SignatureAlgorithm?
+    fun getSignatureAlgorithm(): SignatureAlgorithm?
 
     /**
      * Retrieves an array of key operations mappings for the current key.
@@ -122,14 +122,24 @@ expect interface IKey {
      * @return An array of KeyOperationsMapping objects representing the key operations,
      *         or null if there are no operations available.
      */
-    fun getKeyOperationsMapping(): Array<KeyOperationsMapping>?
+    fun getKeyOperations(): Array<KeyOperations>?
 
     /**
      * Retrieves the X.509 certificate chain (x5c) from the key.
      *
      * @return An array of strings representing the x5c certificate chain, or null if not available.
      */
-    fun getX5cArray(): Array<String>?
+    fun getX509CertificateChain(): Array<String>?
+
+    fun getKidAsString(): String?
+
+    fun toPublicKey(): IKey
+}
+
+@JsExport
+enum class KeyVisibility {
+    PUBLIC,
+    PRIVATE
 }
 
 
@@ -139,15 +149,17 @@ expect interface IKey {
  * Provides a structure to hold key-related metadata and configuration details
  * necessary for cryptographic operations.
  *
- * @param KeyType The specific type of key implementing the IKey interface.
+ * @param KT The specific type of key implementing the IKey interface.
  */
-expect interface IKeyInfo<out KeyType : IKey> {
+expect interface IKeyInfo<out KT : IKey> {
+
     /**
      * A nullable String variable representing the name or identifier of a kid.
      *
      * Can be `null` when the kid's name or identifier is not provided.
      */
     val kid: String?
+
     /**
      * Represents the algorithm used for generating and verifying digital signatures.
      * This variable may hold a specific algorithm or be null if an algorithm is not set.
@@ -161,7 +173,25 @@ expect interface IKeyInfo<out KeyType : IKey> {
      * This key may be optional and can be null. The actual implementation of the key is determined by the KeyType.
      */
     /*val jwk: JWK,*/
-    val key: KeyType?
+    val key: KT?
+
+    val x5c: Array<String>?
+
+    /**
+     * Indicates the visibility status of a cryptographic key.
+     *
+     * This property can take a value from the `KeyVisibility` enum, representing
+     * whether the key is public or private. It is used to determine the access level
+     * and usability of the key within cryptographic operations.
+     *
+     * The possible values are:
+     * - `PUBLIC`: Indicates that the key is publicly accessible.
+     * - `PRIVATE`: Indicates that the key is privately held and should be restricted in its usage.
+     *
+     * Can be `null` if the visibility status is not specified. Public will be assumed then
+     */
+    val keyVisibility: KeyVisibility?
+
     /**
      * A map containing configuration options.
      *
@@ -170,6 +200,14 @@ expect interface IKeyInfo<out KeyType : IKey> {
      * throughout the application. A null value indicates that there are no configuration options specified.
      */
     val opts: Map<*, *>?
+
+    val kms: String?
+
+    val kmsKeyRef: String?
+
+    val keyType: KeyType?
+
+    fun toPublicKeyInfo(): IKeyInfo<KT>
 }
 
 
@@ -178,26 +216,47 @@ expect interface IKeyInfo<out KeyType : IKey> {
  *
  * This interface guarantees that the key is present and resolved, providing concrete access to the key.
  *
- * @param KeyType Generic type that extends IKey, representing the cryptographic key type.
+ * @param KT Generic type that extends IKey, representing the cryptographic key type.
  */
-expect interface IResolvedKeyInfo<out KeyType : IKey> : IKeyInfo<KeyType> {
+expect interface IResolvedKeyInfo<out KT : IKey> : IKeyInfo<KT> {
     /**
      * A unique identifier that is guaranteed to be present (resolved) for the object.
      */
 // Same as the above, but now wit a key guaranteed to be present (resolved)
-    override val key: KeyType
+    override val key: KT
+
+    val x509VerificationResult: IX509VerificationResult<KT>?
+
+    fun toResolvedPublicKeyInfo(): IResolvedKeyInfo<KT>
 }
 
 
+/**
+ * Represents a managed cryptographic key information interface.
+ *
+ * This interface guarantees that the key is present and resolved, part of a KMS providing concrete access to the key.
+ *
+ * @param KT Generic type that extends IKey, representing the cryptographic key type.
+ */
+expect interface IManagedKeyInfo<out KT : IKey> : IResolvedKeyInfo<KT> {
+    override val kmsKeyRef: String
+    override val kms: String
+}
+
 @JsExport
 @Serializable
-data class KeyInfo<out KeyType : IKey>(
+data class KeyInfo<out KT : IKey>(
     override val kid: String? = null, /*val jwk: JWK,*/
-    override val key: KeyType? = null,
+    override val key: KT? = null,
     @Transient // fixme:
     override val opts: Map<*, *>? = null,
+    override val keyVisibility: KeyVisibility? = KeyVisibility.PUBLIC,
     override val signatureAlgorithm: SignatureAlgorithm? = null,
-) : IKeyInfo<KeyType> {
+    override val x5c: Array<String>? = key?.getX509CertificateChain(),
+    override val kmsKeyRef: String? = null,
+    override val kms: String? = null,
+    override val keyType: KeyType? = null,
+) : IKeyInfo<KT> {
 
     override fun hashCode(): Int {
         var result = kid?.hashCode() ?: 0
@@ -221,38 +280,112 @@ data class KeyInfo<out KeyType : IKey>(
         return true
     }
 
-    fun resolve(resolver: ((keyInfo: IKeyInfo<out KeyType>) -> IResolvedKeyInfo<@UnsafeVariance KeyType>)) = resolver(this)
+    fun resolve(resolver: ((keyInfo: IKeyInfo<out KT>) -> IResolvedKeyInfo<@UnsafeVariance KT>)) = resolver(this)
+
+
+    override fun toPublicKeyInfo(): IKeyInfo<out KT> = this.copy(key = key?.toPublicKey() as KT?, keyVisibility = KeyVisibility.PUBLIC)
 
     object Static {
         fun <KeyType : IKey> fromDTO(dto: IKeyInfo<out KeyType>) =
-            with(dto) { KeyInfo(kid = kid, key = key, opts = opts, signatureAlgorithm = signatureAlgorithm) }
+            with(dto) {
+                KeyInfo(
+                    kid = kid,
+                    key = key,
+                    opts = opts,
+                    x5c = x5c,
+                    kms = kms,
+                    kmsKeyRef = kmsKeyRef,
+                    keyVisibility = keyVisibility ?: KeyVisibility.PUBLIC,
+                    signatureAlgorithm = signatureAlgorithm
+                )
+            }
     }
 }
 
 @JsExport
 @Serializable
-data class ResolvedKeyInfo<KeyType : IKey>(
+data class ResolvedKeyInfo<out KT : IKey>(
     override val kid: String? = null, /*val jwk: JWK,*/
-    override val key: KeyType,
+    override val key: KT,
     @Transient // fixme:
     override val opts: Map<*, *>? = null,
-    override val signatureAlgorithm: SignatureAlgorithm? = null
-) : IResolvedKeyInfo<KeyType> {
-    fun toKeyInfo() = KeyInfo(kid = kid, key = key, opts = opts, signatureAlgorithm = signatureAlgorithm)
+    override val keyVisibility: KeyVisibility? = KeyVisibility.PUBLIC,
+    override val signatureAlgorithm: SignatureAlgorithm? = null,
+    override val kmsKeyRef: String? = null,
+    override val x5c: Array<String>? = null,
+    override val x509VerificationResult: IX509VerificationResult<KT>? = null,
+    override val kms: String? = null,
+    override val keyType: KeyType? = null,
+) : IResolvedKeyInfo<KT> {
+
+
+    fun toKeyInfo() =
+        KeyInfo(
+            kid = kid,
+            key = key,
+            opts = opts,
+            x5c = x5c,
+            kmsKeyRef = kmsKeyRef,
+            keyVisibility = keyVisibility ?: KeyVisibility.PUBLIC,
+            signatureAlgorithm = signatureAlgorithm,
+            kms = kms,
+            keyType = keyType,
+        )
+
+    override fun toResolvedPublicKeyInfo(): ResolvedKeyInfo<KT> = this.copy(key = key.toPublicKey() as KT, keyVisibility = KeyVisibility.PUBLIC)
+
+    override fun toPublicKeyInfo() = toKeyInfo().toPublicKeyInfo()
 
     object Static {
         fun <KeyType : IKey> fromDTO(dto: IResolvedKeyInfo<out KeyType>) =
-            with(dto) { ResolvedKeyInfo(kid = kid, key = key, opts = opts, signatureAlgorithm = signatureAlgorithm) }
+            with(dto) {
+                ResolvedKeyInfo(
+                    kid = kid,
+                    key = key,
+                    opts = opts,
+                    x5c = x5c,
+                    kms = kms,
+                    kmsKeyRef = kmsKeyRef,
+                    x509VerificationResult = x509VerificationResult,
+                    keyVisibility = keyVisibility ?: KeyVisibility.PUBLIC,
+                    signatureAlgorithm = signatureAlgorithm,
+                    keyType = keyType
+                )
+            }
 
-        fun <KeyType : IKey> fromKeyInfo(dto: IKeyInfo<*>, key: KeyType?): ResolvedKeyInfo<KeyType> =
+        fun <KeyType : IKey> fromKeyInfo(dto: IKeyInfo<*>, key: KeyType? = null): ResolvedKeyInfo<KeyType> =
             with(dto) {
                 ResolvedKeyInfo(
                     kid = kid,
                     key = key ?: dto.key?.let { it as KeyType } ?: throw IllegalArgumentException("No key passed in and key info also had no key"),
                     opts = opts,
-                    signatureAlgorithm = signatureAlgorithm
+                    x5c = x5c,
+                    kmsKeyRef = kmsKeyRef,
+                    keyVisibility = keyVisibility ?: KeyVisibility.PUBLIC,
+                    signatureAlgorithm = signatureAlgorithm,
+                    x509VerificationResult = null
                 )
             }
     }
+}
+
+class ManagedKeyInfo<KT : IKey>(
+    override val kmsKeyRef: String,
+    override val kms: String,
+    private val resolvedKeyInfo: IResolvedKeyInfo<KT>
+) : IManagedKeyInfo<KT> {
+    override val key = resolvedKeyInfo.key
+
+    override fun toResolvedPublicKeyInfo() = resolvedKeyInfo
+
+    override val kid = resolvedKeyInfo.kid
+    override val signatureAlgorithm = resolvedKeyInfo.signatureAlgorithm
+    override val keyVisibility = resolvedKeyInfo.keyVisibility
+    override val opts = resolvedKeyInfo.opts
+    override fun toPublicKeyInfo() = resolvedKeyInfo.toPublicKeyInfo()
+
+    override val x509VerificationResult = resolvedKeyInfo.x509VerificationResult
+    override val x5c = resolvedKeyInfo.x5c
+    override val keyType = resolvedKeyInfo.keyType
 }
 

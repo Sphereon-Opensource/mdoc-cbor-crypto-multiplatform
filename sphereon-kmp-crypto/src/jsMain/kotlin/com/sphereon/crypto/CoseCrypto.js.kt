@@ -15,7 +15,7 @@ import kotlin.js.Promise
 
 
 @JsExport
-external interface ICoseCryptoCallbackJS: ICoseCryptoCallbackMarkerType {
+external interface ICoseCryptoCallbackJS : ICoseCryptoCallbackMarkerType {
     @JsName("sign")
     fun sign(
         input: ToBeSignedCbor,
@@ -27,7 +27,7 @@ external interface ICoseCryptoCallbackJS: ICoseCryptoCallbackMarkerType {
         keyInfo: IKeyInfo<ICoseKeyCbor>
     ): Promise<IVerifySignatureResult<ICoseKeyCbor>>
 
-    fun resolvePublicKey(keyInfo: IKeyInfo<*>): Promise<IKey>
+    fun <KT : IKey> resolvePublicKeyAsync(keyInfo: IKeyInfo<KT>): Promise<IResolvedKeyInfo<KT>>
 }
 
 
@@ -47,7 +47,7 @@ external interface ICoseCryptoServiceJS {
         requireX5Chain: Boolean
     ): Promise<IVerifySignatureResult<ICoseKeyCbor>>
 
-    fun resolvePublicKey(keyInfo: IKeyInfo<*>): Promise<IKey>
+    fun <KT : IKey> resolvePublicKeyAsync(keyInfo: IKeyInfo<KT>): Promise<IResolvedKeyInfo<KT>>
 }
 
 private const val COSE_CRYPTO_SERVICE_JS_SCOPE = "CoseCryptoServiceJS"
@@ -64,18 +64,16 @@ private const val COSE_CRYPTO_SERVICE_JS_SCOPE = "CoseCryptoServiceJS"
  * We do provide some defaults and examples
  */
 @JsExport
-class CoseCryptoServiceJS(override val platformCallback: ICoseCryptoCallbackJS = DefaultCallbacks.coseCrypto()) : AbstractCoseCryptoService<ICoseCryptoCallbackJS>(platformCallback),
+class CoseCryptoServiceJS(override val platformCallback: ICoseCryptoCallbackJS = DefaultCallbacks.coseCrypto()) :
+    AbstractCoseCryptoService<ICoseCryptoCallbackJS>(platformCallback),
     ICoseCryptoServiceJS {
 
 
     @JsExport.Ignore
-    override suspend fun resolvePublicCborKey(keyInfo: IKeyInfo<*>): ICoseKeyCbor {
-        var key = keyInfo.key
-        if (key === null) {
-            key = resolvePublicKey(keyInfo).await()
-        }
-        return CoseJoseKeyMappingService.toCoseKey(key)
-    }
+    override suspend fun resolvePublicCborKey(keyInfo: IKeyInfo<*>): IResolvedKeyInfo<ICoseKeyCbor> {
+        val resolvedKeyInfo = resolvePublicKeyAsync(keyInfo).await()
+        return CoseJoseKeyMappingService.toResolvedCoseKeyInfo(resolvedKeyInfo)
+     }
 
     override fun platform(): ICoseCryptoCallbackJS {
         return this.platformCallback
@@ -119,7 +117,7 @@ class CoseCryptoServiceJS(override val platformCallback: ICoseCryptoCallbackJS =
             }
 
             val sigAlg = input.protectedHeader.alg ?: input.unprotectedHeader?.alg
-            val keyType = sigAlg?.keyType ?: info.key?.getKtyMapping()?.cose
+            val keyType = sigAlg?.keyType ?: info.key?.getKty()?.cose
             if (keyType == null) {
                 return@async VerifySignatureResult(
                     keyInfo = info,
@@ -133,7 +131,8 @@ class CoseCryptoServiceJS(override val platformCallback: ICoseCryptoCallbackJS =
         }.asPromise()
     }
 
-    override fun resolvePublicKey(keyInfo: IKeyInfo<*>): Promise<IKey> = this.platformCallback.resolvePublicKey(keyInfo)
+    override fun <KT : IKey> resolvePublicKeyAsync(keyInfo: IKeyInfo<KT>): Promise<IResolvedKeyInfo<KT>> =
+        this.platformCallback.resolvePublicKeyAsync(keyInfo)
 }
 
 
@@ -165,14 +164,12 @@ class CoseCryptoServiceJSAdapter(val coseCallbackJS: CoseCryptoServiceJS = CoseC
         requireX5Chain: Boolean
     ): IVerifySignatureResult<ICoseKeyCbor> = coseCallbackJS.verify1(input = input, keyInfo = keyInfo, requireX5Chain = true).await()
 
-    override suspend fun resolvePublicKey(keyInfo: IKeyInfo<*>): IKey = coseCallbackJS.resolvePublicKey(keyInfo).await()
+    override suspend fun <KeyType : IKey> resolvePublicKey(keyInfo: IKeyInfo<KeyType>): IResolvedKeyInfo<KeyType> = coseCallbackJS.resolvePublicKeyAsync(keyInfo).await()
 
-    override suspend fun resolvePublicCborKey(keyInfo: IKeyInfo<*>): ICoseKeyCbor {
-        var key = keyInfo.key
-        if (key === null) {
-            key = resolvePublicKey(keyInfo)
-        }
-        return CoseJoseKeyMappingService.toCoseKey(key)
+
+    override suspend fun resolvePublicCborKey(keyInfo: IKeyInfo<*>): IResolvedKeyInfo<ICoseKeyCbor> {
+        val resolvedKeyInfo = resolvePublicKey(keyInfo)
+        return CoseJoseKeyMappingService.toResolvedCoseKeyInfo(resolvedKeyInfo)
     }
 
     override fun platform(): ICoseCryptoCallbackJS {

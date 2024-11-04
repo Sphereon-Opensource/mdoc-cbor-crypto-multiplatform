@@ -7,5 +7,5 @@ import kotlin.js.JsExport
  */
 @JsExport
 enum class KeyProviderType {
-    PKCS11, PKCS12, REST, JKS, AZURE_KEYVAULT, DIGIDENTITY
+    PKCS11, PKCS12, REST, JKS, AZURE_KEYVAULT, DIGIDENTITY, MEMORY
 }

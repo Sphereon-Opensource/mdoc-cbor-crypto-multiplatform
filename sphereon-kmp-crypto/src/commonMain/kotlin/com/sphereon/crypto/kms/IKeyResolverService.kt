@@ -1,0 +1,224 @@
+package com.sphereon.crypto.kms
+
+import com.sphereon.crypto.IKey
+import com.sphereon.crypto.IKeyInfo
+import com.sphereon.crypto.IResolvedKeyInfo
+import com.sphereon.crypto.IX509ServiceMarkerType
+import com.sphereon.crypto.KeyInfo
+import com.sphereon.crypto.PKIException
+import com.sphereon.crypto.ResolvedKeyInfo
+import com.sphereon.crypto.generic.KeyType
+import com.sphereon.crypto.jose.IJwk
+import com.sphereon.crypto.x509Service
+import com.sphereon.kmp.Encoding
+import com.sphereon.kmp.Uuid
+import com.sphereon.kmp.decodeFrom
+import kotlin.js.JsExport
+
+// TODO: DidResolverService
+
+/**
+ * Service for resolving public keys from X.509 certificate chains.
+ *
+ * This service is used to resolve and verify the leaf public key contained within
+ * X.509 certificate chains.
+ *
+ * @param X509PlatformCallback A platform-specific callback type for X.509 services.
+ * @param id The identifier for the service, defaults to "x5c".
+ * @param supported A map of supported identifier methods and their respective key types, defaults to predefined values.
+ */
+@JsExport
+class X509CertificateChainKeyResolverService<X509PlatformCallback : IX509ServiceMarkerType>(
+    id: String = "x5c",
+    supported: Map<IdentifierMethod, Array<KeyType>> = mapOf(
+        Pair(IdentifierMethod.x5c, arrayOf(KeyType.EC, KeyType.RSA)),
+        Pair(IdentifierMethod.jwk, arrayOf(KeyType.EC, KeyType.RSA)),
+        Pair(IdentifierMethod.cose_key, arrayOf(KeyType.EC, KeyType.RSA)),
+    )
+) : AbstractKeyResolverService(id = id, supported = supported), IKeyResolverService {
+    @JsExport.Ignore
+    override suspend fun <KeyType : IKey> resolvePublicKeyAsync(
+        keyInfo: IKeyInfo<KeyType>,
+        identifierMethod: IdentifierMethod?,
+        trustedCerts: Array<String>?,
+        verifyX509CertificateChain: Boolean?
+    ): IResolvedKeyInfo<KeyType> {
+        val x509 = keyInfo.x5c ?: keyInfo.key?.getX509CertificateChain() ?: throw IllegalArgumentException("X509 chain not present")
+        val x509Result = x509Service<X509PlatformCallback>().verifyCertificateChainAsync<KeyType>(
+            chainDER = x509.map { it.decodeFrom(Encoding.BASE64) }.toTypedArray()
+        )
+        val leafKey = x509Result.publicKey ?: throw PKIException("No public key could be extracted from the provided certification chain")
+        val updateKeyInfo = KeyInfo.Static.fromDTO(keyInfo).copy(kid = keyInfo.kid ?: leafKey.getKidAsString(), key = leafKey)
+        return ResolvedKeyInfo.Static.fromKeyInfo(updateKeyInfo, leafKey)
+    }
+}
+
+
+/**
+ * A service for resolving provided keys specifically for JOSE (JSON Object Signing and Encryption)
+ * and COSE (CBOR Object Signing and Encryption).
+ *
+ * @param x509PlatformCallback A marker type for the platform-specific X509 service.
+ * @param id The identifier for the resolver service, default is "jose_cose_resolver".
+ * @param supported A map of identifier methods to the associated key types supported by this resolver.
+ */
+@JsExport
+class CoseJoseProvidedKeyResolverService<x509PlatformCallback : IX509ServiceMarkerType>(
+    id: String = "jose_cose_resolver",
+    supported: Map<IdentifierMethod, Array<KeyType>> = mapOf(
+        Pair(IdentifierMethod.jwk, KeyType.Static.asList.toTypedArray()),
+        Pair(IdentifierMethod.cose_key, KeyType.Static.asList.toTypedArray())
+    )
+) : AbstractKeyResolverService(id = id, supported = supported), IKeyResolverService {
+    @JsExport.Ignore
+    override suspend fun <KeyType : IKey> resolvePublicKeyAsync(
+        keyInfo: IKeyInfo<KeyType>,
+        identifierMethod: IdentifierMethod?,
+        trustedCerts: Array<String>?,
+        verifyX509CertificateChain: Boolean?
+    ): IResolvedKeyInfo<KeyType> {
+        require(keyInfo.key is IJwk) { "Jose-cose key resolver only accepts Jwk or cose keys in the key info object" }
+        require(identifierMethod === null || identifierMethod == IdentifierMethod.jwk || identifierMethod == IdentifierMethod.cose_key) { "Cannot use an identifier method other than jwk for the jwk key resolver" }
+        val resolvedKeyInfo = ResolvedKeyInfo.Static.fromKeyInfo<KeyType>(keyInfo).toResolvedPublicKeyInfo()
+        if (verifyX509CertificateChain == true && !trustedCerts.isNullOrEmpty() && !resolvedKeyInfo.key.getX509CertificateChain().isNullOrEmpty()) {
+            val x509Result = x509Service<x509PlatformCallback>().verifyCertificateChainAsync<KeyType>(
+                trustedCerts = trustedCerts,
+                chainDER = keyInfo.key?.getX509CertificateChain()?.map { it.decodeFrom(Encoding.BASE64) }?.toTypedArray()
+                    ?: throw IllegalArgumentException("X509 chain not present")
+            )
+            return resolvedKeyInfo.copy(x509VerificationResult = x509Result)
+        }
+        return resolvedKeyInfo
+    }
+}
+
+
+/**
+ * Abstract base class for key resolver services.
+ *
+ * This class provides common functionality for resolving cryptographic keys.
+ *
+ * @property id Unique identifier for the service instance, generated by default.
+ * @property supported A map that associates identifier methods with arrays of supported key types.
+ */
+abstract class AbstractKeyResolverService(
+    private val id: String = Uuid.v4String(),
+    private val supported: Map<IdentifierMethod, Array<KeyType>>
+) : IKeyResolverService {
+
+    override fun getId() = id
+    override fun allSupportedIdentifierMethods(): Array<IdentifierMethod> = supported.keys.toTypedArray()
+    override fun allSupportedKeyTypes(): Array<KeyType> = supported.flatMap { it.value.toSet() }.toSet().toTypedArray()
+    override fun supportedKeyTypesAndIdentifierMethods(): Map<IdentifierMethod, Array<KeyType>> = supported
+
+    override fun getSupportedKeyTypes(identifierMethod: IdentifierMethod): Array<KeyType> = supported[identifierMethod] ?: emptyArray()
+
+    override fun getSupportedIdentifierMethods(keyType: KeyType): Array<IdentifierMethod> =
+        supported.filter { it.value.contains(keyType) }.keys.toTypedArray()
+
+}
+
+/**
+ * IdentifierMethod represents the various methods used for identifying cryptographic keys.
+ */
+@JsExport
+enum class IdentifierMethod {
+    /**
+     * The JWK (JSON Web Key) class represents a cryptographic key used for signing, encrypting,
+     * and validating tokens standardized in the JSON Web Key (JWK) specification.
+     */
+    jwk,
+
+    /**
+     * The Kid class represents a young individual with basic attributes and behaviors.
+     *
+     */
+    kid,
+
+    /**
+     * The `cose_key` class represents a COSE (CBOR Object Signing and Encryption) key object.
+     *
+     * COSE keys are used in various cryptographic operations including signing, encryption,
+     * key agreement, and message authentication codes. This class provides methods to
+     * initialize, manage, and utilize COSE keys in compliance with the COSE specification.
+     *
+     */
+    cose_key,
+
+    /**
+     * The x5c class represents a concept or entity related to the larger system or application.
+     */
+    x5c
+}
+
+interface IPublicKeyResolver {
+    /**
+     * Resolves the public key asynchronously given the key information and additional optional parameters.
+     *
+     * @param keyInfo The key information containing metadata and the cryptographic key to be resolved.
+     * @param identifierMethod An optional parameter to specify the method used to identify the key (e.g., jwk, kid, cose_key, x5c).
+     * @param trustedCerts An optional array of trusted certificates that may be used in the resolution process.
+     * @param verifyX509CertificateChain An optional boolean indicating whether the X.509 certificate chain should be verified.
+     * @return An `IResolvedKeyInfo` object containing the resolved key information.
+     */
+    @JsExport.Ignore
+    suspend fun <KeyType : IKey> resolvePublicKeyAsync(
+        keyInfo: IKeyInfo<KeyType>,
+        identifierMethod: IdentifierMethod? = null,
+        trustedCerts: Array<String>? = null,
+        verifyX509CertificateChain: Boolean? = null
+    ): IResolvedKeyInfo<KeyType>
+}
+
+/**
+ * Interface for a service that resolves keys based on identifier methods and key types.
+ */
+@JsExport
+interface IKeyResolverService : IPublicKeyResolver {
+
+    /**
+     * Retrieves the unique identifier.
+     *
+     * @return The unique identifier as a String.
+     */
+    fun getId(): String
+
+    /**
+     * Retrieves all supported identifier methods.
+     *
+     * @return An array of supported identifier methods.
+     */
+    fun allSupportedIdentifierMethods(): Array<IdentifierMethod>
+
+    /**
+     * Retrieves an array of all supported KeyType values.
+     *
+     * @return An array containing all the supported KeyType enums.
+     */
+    fun allSupportedKeyTypes(): Array<KeyType>
+
+    /**
+     * Provides a mapping of supported identifier methods to their corresponding array of key types.
+     *
+     * @return A Map where the key is an IdentifierMethod and the value is an array of KeyType instances supported by that method.
+     */
+    fun supportedKeyTypesAndIdentifierMethods(): Map<IdentifierMethod, Array<KeyType>>
+
+    /**
+     * Retrieves the supported key types for a given identifier method.
+     *
+     * @param identifierMethod The identifier method for which to retrieve supported key types.
+     * @return An array of supported key types corresponding to the provided identifier method.
+     */
+    fun getSupportedKeyTypes(identifierMethod: IdentifierMethod): Array<KeyType>
+
+    /**
+     * Retrieves a list of supported identifier methods for the specified key type.
+     *
+     * @param keyType the type of key for which to get the supported identifier methods
+     * @return an array of IdentifierMethod representing the supported methods for the provided key type
+     */
+    fun getSupportedIdentifierMethods(keyType: KeyType): Array<IdentifierMethod>
+
+
+}

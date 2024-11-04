@@ -2,6 +2,12 @@ package com.sphereon.crypto.sign.model
 
 import kotlin.js.JsExport
 
+/**
+ * Enum class representing various forms of digital signatures.
+ *
+ * @JsExport
+ * @kotlinx.serialization.Serializable
+ */
 @JsExport
 @kotlinx.serialization.Serializable
 enum class SignatureForm {
@@ -22,4 +28,8 @@ enum class SignatureForm {
 
     /** Simply sign a digest or raw bytearray using the key */
     RAW,
+
+    JWS,
+
+    COSE
 }

@@ -64,7 +64,7 @@ object IssuerAuthValidation {
                 message = "No X.509 Chain present in the issuerAuth headers"
             )
         }
-        return CryptoServices.x509(x509PlatformCallbacks).verifyCertificateChain(chainDER = x5chain.value.map { it.value }
+        return CryptoServices.x509(x509PlatformCallbacks).verifyCertificateChainAsync(chainDER = x5chain.value.map { it.value }
             .toTypedArray(), trustedCerts = trustedCerts, verificationProfile = X509VerificationProfile.ISO_18013_5)
     }
 

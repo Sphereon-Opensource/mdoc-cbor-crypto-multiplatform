@@ -8,9 +8,9 @@ import kotlin.js.Promise
  * A version that resembles the internal X509Callbacks interface, but then using promises instead of coroutines to make it fit the JS world
  */
 @JsExport
-external interface IX509ServiceJS: IX509ServiceMarkerType {
+external interface IX509ServiceJS : IX509ServiceMarkerType {
     @JsName("verifyCertificateChainJS")
-    fun <KeyType : IKey> verifyCertificateChain(
+    fun <KeyType : IKey> verifyCertificateChainAsync(
         chainDER: Array<ByteArray>?,
         chainPEM: Array<String>?,
         trustedCerts: Array<String>?,
@@ -29,7 +29,8 @@ interface IX509ServiceWithCallbacksJS : ICallbackServiceJS<IX509ServiceJS>, IX50
  * You can register your own X.509 JS implementation with this class
  */
 @JsExport
-class X509ServiceJS(val platformCallback: IX509ServiceJS  = DefaultCallbacks.x509(), private var trustedCerts: Set<String>? = null) : IX509ServiceWithCallbacksJS {
+class X509ServiceJS(val platformCallback: IX509ServiceJS = DefaultCallbacks.x509(), private var trustedCerts: Set<String>? = null) :
+    IX509ServiceWithCallbacksJS {
     init {
         if (platformCallback === this) {
             throw IllegalArgumentException("Platform callback cannot be myself. Platform callbacks share the same interface is the main x509Service class, but really should implement their own logic and be passed to the X509Service class")
@@ -59,7 +60,7 @@ class X509ServiceJS(val platformCallback: IX509ServiceJS  = DefaultCallbacks.x50
     }
 
 
-    override fun <KeyType : IKey> verifyCertificateChain(
+    override fun <KeyType : IKey> verifyCertificateChainAsync(
         chainDER: Array<ByteArray>?,
         chainPEM: Array<String>?,
         trustedCerts: Array<String>?,
@@ -77,7 +78,7 @@ class X509ServiceJS(val platformCallback: IX509ServiceJS  = DefaultCallbacks.x50
             )
         }
 
-        return this.platformCallback.verifyCertificateChain(
+        return this.platformCallback.verifyCertificateChainAsync(
             chainDER,
             chainPEM,
             trustedCerts = trustedCerts ?: this.getTrustedCerts(),
@@ -100,7 +101,8 @@ class X509ServiceJS(val platformCallback: IX509ServiceJS  = DefaultCallbacks.x50
  * also the coroutines would not export nicely anyway.
  *
  */
-internal class X509ServiceJSAdapter(private val x509ServiceJS: X509ServiceJS = X509ServiceJS(), trustedCerts: Array<String>? = null) : IX509ServiceUsingCallbacks<IX509ServiceJS> {
+internal class X509ServiceJSAdapter(private val x509ServiceJS: X509ServiceJS = X509ServiceJS(), trustedCerts: Array<String>? = null) :
+    IX509ServiceUsingCallbacks<IX509ServiceJS> {
 
     init {
         if (trustedCerts != null) {
@@ -127,7 +129,8 @@ internal class X509ServiceJSAdapter(private val x509ServiceJS: X509ServiceJS = X
         return x509ServiceJS.getTrustedCerts()
     }
 
-    override suspend fun <KeyType : IKey> verifyCertificateChain(
+
+    override suspend fun <KeyType : IKey> verifyCertificateChainAsync(
         chainDER: Array<ByteArray>?,
         chainPEM: Array<String>?,
         trustedCerts: Array<String>?,
@@ -153,7 +156,7 @@ internal class X509ServiceJSAdapter(private val x509ServiceJS: X509ServiceJS = X
         }
 
         return try {
-            x509ServiceJS.verifyCertificateChain<KeyType>(chainDER, chainPEM, assertedCerts, verificationProfile)
+            x509ServiceJS.verifyCertificateChainAsync<KeyType>(chainDER, chainPEM, assertedCerts, verificationProfile)
                 .await()
         } catch (e: Exception) {
             CryptoConst.LOG.error(e.message ?: "X509 validation failed", e)
@@ -171,7 +174,10 @@ internal class X509ServiceJSAdapter(private val x509ServiceJS: X509ServiceJS = X
 
 }
 
-actual fun <PlatformCallback: IX509ServiceMarkerType> x509Service(platformCallback: PlatformCallback, trustedCerts: Set<String>?): IX509ServiceUsingCallbacks<PlatformCallback> {
+actual fun <PlatformCallback : IX509ServiceMarkerType> x509Service(
+    platformCallback: PlatformCallback,
+    trustedCerts: Set<String>?
+): IX509ServiceUsingCallbacks<PlatformCallback> {
     val jsPlatformCallback = platformCallback.unsafeCast<IX509ServiceJS>()
     if (jsPlatformCallback === undefined) {
         throw IllegalArgumentException("Invalid platform callback supplied: Needs to be of type IX509ServiceJS, but is of type ${platformCallback.toString()} instead")

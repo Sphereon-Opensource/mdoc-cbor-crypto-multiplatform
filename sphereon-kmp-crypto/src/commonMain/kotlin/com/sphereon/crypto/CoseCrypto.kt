@@ -23,17 +23,17 @@ interface ICoseCryptoMarkerType
  * Not exported to JS as it has a similar interface exported using Promises instead of coroutines
  */
 @JsExport.Ignore
-interface ICoseCryptoCallbackService: ICoseCryptoCallbackMarkerType {
+interface ICoseCryptoCallbackService : ICoseCryptoCallbackMarkerType {
     suspend fun sign(
         input: ToBeSignedCbor
     ): ByteArray
 
     suspend fun verify1(
         input: CoseSign1Cbor<*>,
-        keyInfo: IKeyInfo<ICoseKeyCbor>
+        keyInfo: IKeyInfo<*>
     ): IVerifySignatureResult<ICoseKeyCbor>
 
-    suspend fun resolvePublicKey(keyInfo: IKeyInfo<*>): IKey
+    suspend fun <KeyType : IKey> resolvePublicKeyAsync(keyInfo: IKeyInfo<KeyType>): IResolvedKeyInfo<KeyType>
 }
 
 
@@ -43,7 +43,7 @@ interface ICoseCryptoCallbackService: ICoseCryptoCallbackMarkerType {
  * Not exported to JS as it has a similar interface exported using Promises instead of coroutines
  */
 @JsExport.Ignore
-interface ICoseCryptoService: ICoseCryptoMarkerType {
+interface ICoseCryptoService : ICoseCryptoMarkerType {
     suspend fun <CborType> sign1(
         input: CoseSign1InputCbor,
         keyInfo: IKeyInfo<*>? = null,
@@ -56,7 +56,7 @@ interface ICoseCryptoService: ICoseCryptoMarkerType {
         requireX5Chain: Boolean
     ): IVerifySignatureResult<ICoseKeyCbor>
 
-    suspend fun resolvePublicKey(keyInfo: IKeyInfo<*>): IKey
+    suspend fun <KeyType : IKey> resolvePublicKey(keyInfo: IKeyInfo<KeyType>): IResolvedKeyInfo<KeyType>
 }
 
 /**
@@ -96,7 +96,11 @@ abstract class AbstractCoseCryptoService<CallbackServiceType>(open val platformC
         }
     }
 
-    protected suspend fun preSign1(input: CoseSign1InputCbor, keyInfo: IKeyInfo<*>?, requireX5Chain: Boolean): Triple<CoseSign1InputCbor, ToBeSignedCbor, IKeyInfo<ICoseKeyCbor>> {
+    protected suspend fun preSign1(
+        input: CoseSign1InputCbor,
+        keyInfo: IKeyInfo<*>?,
+        requireX5Chain: Boolean
+    ): Triple<CoseSign1InputCbor, ToBeSignedCbor, IKeyInfo<ICoseKeyCbor>> {
         assertEnabled()
         val (protectedHeader, cborKeyInfo) = verifyAndAmendKeyInfo(
             protectedHeader = input.protectedHeader,
@@ -106,7 +110,10 @@ abstract class AbstractCoseCryptoService<CallbackServiceType>(open val platformC
         )
         val key = cborKeyInfo.key ?: throw IllegalStateException("No key supplied")
         val coseSign1 = input.copy(protectedHeader = protectedHeader)
-        val toSign = coseSign1.toBeSignedCbor(key = key, alg = key.getAlgMapping()?.cose ?: throw IllegalStateException("No alg supplied. ${key}"))
+        val toSign = coseSign1.toBeSignedCbor(
+            keyInfo = cborKeyInfo,
+            alg = cborKeyInfo.signatureAlgorithm ?: cborKeyInfo.key?.getSignatureAlgorithm() ?: throw IllegalStateException("No alg supplied. ${key}")
+        )
         return Triple(coseSign1, toSign, cborKeyInfo)
     }
 
@@ -149,7 +156,7 @@ abstract class AbstractCoseCryptoService<CallbackServiceType>(open val platformC
         if (keyInfoWithKey === null) {
             throw IllegalStateException("No protected header or key info passed in")
         }
-        val key = CoseJoseKeyMappingService.toCoseKey(keyInfoWithKey.key ?: this.resolvePublicCborKey(keyInfoWithKey))
+        val key = CoseJoseKeyMappingService.toCoseKey(keyInfoWithKey.key ?: this.resolvePublicCborKey(keyInfoWithKey).key)
         if (x5chain === null) {
             x5chain = key.x5chain
         }
@@ -163,14 +170,14 @@ abstract class AbstractCoseCryptoService<CallbackServiceType>(open val platformC
 
 
         val protectedHeaderWithX5chain = protectedHeader?.copy(x5chain = x5chain) ?: CoseHeaderCbor(x5chain = x5chain)
-        val keyType = sigAlg?.keyType ?: key.getKtyMapping().cose
+        val keyType = sigAlg?.keyType ?: key.getKty().cose
         if (keyType == null) {
             throw IllegalStateException("No Key type found or provided")
         }
         return Pair(protectedHeaderWithX5chain, CoseJoseKeyMappingService.toCoseKeyInfo(keyInfoWithKey))
     }
 
-    protected abstract suspend fun resolvePublicCborKey(keyInfo: IKeyInfo<*>): ICoseKeyCbor
+    protected abstract suspend fun resolvePublicCborKey(keyInfo: IKeyInfo<*>): IResolvedKeyInfo<ICoseKeyCbor>
 }
 
 class CoseCryptoService(override val platformCallback: ICoseCryptoCallbackService = DefaultCallbacks.coseCrypto()) :
@@ -178,12 +185,9 @@ class CoseCryptoService(override val platformCallback: ICoseCryptoCallbackServic
     ICoseCryptoService {
 
 
-    override suspend fun resolvePublicCborKey(keyInfo: IKeyInfo<*>): ICoseKeyCbor {
-        var key = keyInfo.key
-        if (key === null) {
-            key = resolvePublicKey(keyInfo)
-        }
-        return CoseJoseKeyMappingService.toCoseKey(key)
+    override suspend fun resolvePublicCborKey(keyInfo: IKeyInfo<*>): IResolvedKeyInfo<ICoseKeyCbor> {
+        val info = resolvePublicKey(keyInfo)
+        return CoseJoseKeyMappingService.toResolvedCoseKeyInfo(info)
     }
 
     override fun platform(): ICoseCryptoCallbackService {
@@ -226,7 +230,7 @@ class CoseCryptoService(override val platformCallback: ICoseCryptoCallbackServic
         }
 
         val sigAlg = input.protectedHeader.alg ?: input.unprotectedHeader?.alg
-        val keyType = sigAlg?.keyType ?: info.key?.getKtyMapping()?.cose
+        val keyType = sigAlg?.keyType ?: info.key?.getKty()?.cose
         if (keyType == null) {
             return VerifySignatureResult(
                 keyInfo = info,
@@ -239,7 +243,7 @@ class CoseCryptoService(override val platformCallback: ICoseCryptoCallbackServic
         return platformCallback.verify1(input = input, keyInfo = info)
     }
 
-    override suspend fun resolvePublicKey(keyInfo: IKeyInfo<*>) = this.platformCallback.resolvePublicKey(keyInfo)
+    override suspend fun <KeyType : IKey> resolvePublicKey(keyInfo: IKeyInfo<KeyType>) = this.platformCallback.resolvePublicKeyAsync(keyInfo)
 
 }
 

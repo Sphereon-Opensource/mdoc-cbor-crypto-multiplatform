@@ -2,6 +2,9 @@ package com.sphereon.mdoc.oid4vp
 
 
 import com.sphereon.crypto.DefaultCallbacks
+import com.sphereon.crypto.X509Service
+import com.sphereon.crypto.kms.CoseJoseProvidedKeyResolverService
+import com.sphereon.crypto.kms.KeyManagerService
 import com.sphereon.crypto.providers.CoseCryptoProviderToCallbackAdapter
 import com.sphereon.crypto.providers.EcDSACryptoProvider
 import com.sphereon.json.oid4vpJsonSerializer
@@ -10,12 +13,11 @@ import com.sphereon.kmp.Uuid
 import com.sphereon.kmp.decodeFrom
 import com.sphereon.kmp.decodeFromHex
 import com.sphereon.kmp.encodeTo
-import com.sphereon.mdoc.MdocSignService
 import com.sphereon.mdoc.TestVectors.iso18013_7_pd
 import com.sphereon.mdoc.TestVectors.iso18013_7_submission
 import com.sphereon.mdoc.TestVectors.pid_docrequest_json_result
-import com.sphereon.mdoc.TestVectors.sprind_funke_pid_pd
 import com.sphereon.mdoc.TestVectors.sprindFunkeTestVector
+import com.sphereon.mdoc.TestVectors.sprind_funke_pid_pd
 import com.sphereon.mdoc.data.device.DeviceResponseCbor
 import com.sphereon.mdoc.data.device.IssuerSignedCbor
 import kotlinx.coroutines.test.runTest
@@ -112,7 +114,12 @@ class Oid4vpTest {
         val pd = oid4vpJsonSerializer.decodeFromString<Oid4VPPresentationDefinition>(sprind_funke_pid_pd)
         val issuerSigned = IssuerSignedCbor.Static.cborDecode(sprindFunkeTestVector.decodeFromHex())
 
-        DefaultCallbacks.setCoseCryptoDefault(CoseCryptoProviderToCallbackAdapter(arrayOf(EcDSACryptoProvider())))
+        val keyManagerService = KeyManagerService<X509Service>(
+            keyManagementSystems = arrayOf(EcDSACryptoProvider()),
+            keyResolvers = arrayOf(CoseJoseProvidedKeyResolverService<X509Service>())
+        )
+
+        DefaultCallbacks.setCoseCryptoDefault(CoseCryptoProviderToCallbackAdapter(keyManagerService = keyManagerService))
 
         val mdocOid4vpService = MdocOid4vpService()
         assertNotNull(issuerSigned)
