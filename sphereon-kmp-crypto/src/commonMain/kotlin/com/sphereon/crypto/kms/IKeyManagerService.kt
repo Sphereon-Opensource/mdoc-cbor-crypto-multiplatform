@@ -7,26 +7,98 @@ import com.sphereon.crypto.generic.KeyType
 import com.sphereon.crypto.generic.ManagedKeyPair
 import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.crypto.jose.JwkUse
+import com.sphereon.crypto.kms.model.IdentifierMethod
 import com.sphereon.crypto.sign.IRawSignatureService
 import kotlin.js.JsExport
 
+/**
+ * IKeyManagerService provides an interface for managing key management systems (KMS) and key resolver services.
+ * It extends the IRawSignatureService and IPublicKeyResolver interfaces.
+ */
 @JsExport
 interface IKeyManagerService : IRawSignatureService, IPublicKeyResolver {
+    /**
+     * Retrieves the default Key Management System (KMS) identifier.
+     *
+     * This function returns the identifier associated with the default KMS,
+     * which is used for cryptographic operations such as key generation and signature management.
+     *
+     * @return The identifier of the default KMS as a string.
+     */
     fun defaultKmsId(): String
+
+    /**
+     * Provides the default resolver identifier.
+     *
+     * @return The default resolver ID as a String.
+     */
     fun defaultResolverId(): String
+
+    /**
+     * Registers a new Key Management System (KMS) with the Key Manager Service.
+     *
+     * @param kms The `IKeyManagementSystem` instance to be registered.
+     * @param makeDefaultKms Optional parameter to make the registered KMS the default KMS.
+     *                       Defaults to false if not provided.
+     */
     fun registerKms(kms: IKeyManagementSystem, makeDefaultKms: Boolean? = false)
+
+    /**
+     * Retrieves an array of Key Management System (KMS) IDs.
+     *
+     * @return An array of strings representing the IDs of the registered KMSs.
+     */
     fun getKmsIds(): Array<String>
+
+    /**
+     * Retrieves an instance of `IKeyManagementSystem` for the specified key management system (KMS) identifier.
+     *
+     * @param id The identifier of the key management system. Defaults to the result of `defaultKmsId()`.
+     * @return An instance of `IKeyManagementSystem` corresponding to the specified KMS identifier.
+     */
     fun getKmsById(id: String = defaultKmsId()): IKeyManagementSystem
+
+    /**
+     * Retrieves the Key Management System (KMS) that supports the specified signature algorithm.
+     *
+     * @param signatureAlgorithm the signature algorithm for which the corresponding KMS is being requested.
+     * @return the KMS that supports the specified signature algorithm.
+     */
     fun getKmsBySignatureAlgorithm(signatureAlgorithm: SignatureAlgorithm): IKeyManagementSystem
+
+    /**
+     * Retrieves an instance of IKeyResolverService by its identifier.
+     *
+     * @param id The identifier of the desired key resolver service. Defaults to 'defaultResolverId()' if not specified.
+     * @return An instance of IKeyResolverService associated with the given identifier.
+     */
     fun getResolverById(id: String = defaultResolverId()): IKeyResolverService
+
+    /**
+     * Retrieves an instance of `IKeyResolverService` based on the given identifier method, key type, or resolver ID.
+     *
+     * This function facilitates the resolution of key management or cryptographic operations by using a specified
+     * identifier method, key type, or a unique resolver identifier.
+     *
+     * @param identifierMethod The method used to identify cryptographic keys, can be `null`. When provided, it restricts the resolvers to those which support the specified identifier
+     *  method.
+     * @param keyType The type of key to be resolved, can be `null`. When provided, it restricts the resolvers to those which support the specified key type.
+     * @param resolverId The unique identifier of the resolver, can be `null`. When provided, it directly selects the resolver with the specified ID.
+     * @return An instance of `IKeyResolverService` that matches the provided criteria.
+     */
     fun getResolverByKeyTypeOrIdentifier(
         identifierMethod: IdentifierMethod? = null,
         keyType: KeyType? = null,
         resolverId: String? = null
     ): IKeyResolverService
 
+    /**
+     * Registers a key resolver service with the key manager service.
+     *
+     * @param resolver The IKeyResolverService instance to be registered.
+     * @param makeDefaultResolver A Boolean indicating whether the provided resolver should be set as the default resolver. Default is false.
+     */
     fun registerResolver(resolver: IKeyResolverService, makeDefaultResolver: Boolean? = false)
-
 
 
     /**
@@ -49,6 +121,11 @@ interface IKeyManagerService : IRawSignatureService, IPublicKeyResolver {
     fun getKms(kms: String?, alg: SignatureAlgorithm?): IKeyManagementSystem
 }
 
+/**
+ * Interface `IKeyManagementSystem` provides a blueprint for managing cryptographic keys, including their generation,
+ * supported types, and cryptographic curves. Extends the `IRawSignatureService` to offer functionalities for
+ * generating and verifying cryptographic signatures.
+ */
 @JsExport
 interface IKeyManagementSystem : IRawSignatureService {
 

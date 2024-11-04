@@ -9,9 +9,7 @@ import com.sphereon.crypto.sign.model.Signature
 import kotlin.js.JsExport
 
 /**
- * Interface for a simple signature service.
- *
- * Provides methods to create and validate digital signatures.
+ * Provides functionalities for creating and validating digital signatures.
  */
 @JsExport.Ignore
 interface ISimpleSignatureService {

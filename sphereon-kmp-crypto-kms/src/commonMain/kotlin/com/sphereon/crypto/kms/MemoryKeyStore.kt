@@ -8,17 +8,14 @@ import com.sphereon.crypto.ManagedKeyInfo
 import com.sphereon.crypto.PKIException
 import com.sphereon.crypto.generic.KeyType
 import com.sphereon.crypto.generic.SignatureAlgorithm
+import com.sphereon.crypto.kms.model.KeyProviderConfig
+import com.sphereon.crypto.kms.model.KeyProviderSettings
+import com.sphereon.crypto.kms.model.KeyProviderType
 import com.sphereon.kmp.Uuid
 
 
-enum class KeyStoreType {
-    PKCS11, PKCS12, JKS, AZURE_KEYVAULT, DIGIDENTITY, MEMORY
-}
 
 
-/**
- *
- */
 class MemoryKeyStoreService(
     override val settings: KeyProviderSettings = KeyProviderSettings(
         id = Uuid.v4String(), config = KeyProviderConfig(

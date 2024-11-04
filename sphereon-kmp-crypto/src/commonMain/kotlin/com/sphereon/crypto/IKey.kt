@@ -201,12 +201,41 @@ expect interface IKeyInfo<out KT : IKey> {
      */
     val opts: Map<*, *>?
 
+    /**
+     * Represents the Key Management System (KMS) identifier associated with the key.
+     * This property might be used to specify which KMS should be utilized for operations involving the key.
+     */
     val kms: String?
 
+    /**
+     * A reference to a Key Management Service (KMS) key.
+     *
+     * This variable holds an optional string that serves as an identifier or
+     * link to a key stored in a Key Management Service. It is used to refer
+     * to a specific key within the KMS without directly storing the key's value
+     * in the system.
+     */
     val kmsKeyRef: String?
 
+    /**
+     * Represents the type of the cryptographic key.
+     *
+     * It associates the key with a specific cryptographic algorithm used for operations
+     * such as signing and encryption. The `KeyType` can define key types like RSA, EC (Elliptic Curve),
+     * and OKP (Octet Key Pair) which are used to specify the algorithmic properties and
+     * ensure interoperability between different cryptographic standards.
+     *
+     * This variable determines how the key can be used and identifies the mapping
+     * between COSE (CBOR Object Signing and Encryption) key types and JWA (JSON Web Algorithms)
+     * key types.
+     */
     val keyType: KeyType?
 
+    /**
+     * Converts and returns the current key information to a public key information structure.
+     *
+     * @return An instance of IKeyInfo containing the public key information derived from the current key.
+     */
     fun toPublicKeyInfo(): IKeyInfo<KT>
 }
 

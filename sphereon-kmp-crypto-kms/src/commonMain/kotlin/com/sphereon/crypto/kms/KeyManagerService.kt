@@ -12,9 +12,23 @@ import com.sphereon.crypto.generic.KeyType
 import com.sphereon.crypto.generic.ManagedKeyPair
 import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.crypto.jose.JwkUse
+import com.sphereon.crypto.kms.model.IdentifierMethod
 import com.sphereon.kmp.Uuid
 import kotlin.js.JsExport
 
+/**
+ * KeyManagerService is an open class responsible for managing key management systems and key resolver services.
+ * It provides functionality to register and retrieve key management systems (KMS) and key resolvers, as well as
+ * generate and resolve public keys.
+ *
+ * @param X509PlatformCallback Specifies the type of X509 platform callback, which should implement IX509ServiceMarkerType.
+ * @param keyManagementSystems An array of instances implementing IKeyManagementSystem, representing different key management systems.
+ * @param keyResolvers An optional array of instances implementing IKeyResolverService, representing different key resolvers. Defaults to X509CertificateChainKeyResolverService and
+ *  CoseJoseProvidedKeyResolverService.
+ * @param publicKeyStore An optional instance of IKeyStoreService for storing public keys. Defaults to MemoryKeyStoreService.
+ * @param defaultKeyManagementSystem A string representing the ID of the default key management system. Defaults to the first in keyManagementSystems.
+ * @param defaultResolver A string representing the ID of the default key resolver. Defaults to the first in keyResolvers.
+ */
 @JsExport
 open class KeyManagerService<X509PlatformCallback : IX509ServiceMarkerType>(
     keyManagementSystems: Array<IKeyManagementSystem>,

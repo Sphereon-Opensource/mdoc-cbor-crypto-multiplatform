@@ -3,6 +3,9 @@ package com.sphereon.crypto.sign
 import com.sphereon.crypto.IKeyInfo
 import kotlin.js.JsExport
 
+/**
+ * Service interface for creating and verifying raw digital signatures.
+ */
 interface IRawSignatureService {
     /**
      * Generates a signature for the given input data using the provided key information.

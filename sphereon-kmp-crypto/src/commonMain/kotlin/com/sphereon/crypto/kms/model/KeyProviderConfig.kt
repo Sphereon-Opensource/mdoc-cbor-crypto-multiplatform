@@ -1,4 +1,4 @@
-package com.sphereon.crypto.kms
+package com.sphereon.crypto.kms.model
 
 import com.sphereon.kmp.Base64UrlSerializer
 import kotlin.js.JsExport
