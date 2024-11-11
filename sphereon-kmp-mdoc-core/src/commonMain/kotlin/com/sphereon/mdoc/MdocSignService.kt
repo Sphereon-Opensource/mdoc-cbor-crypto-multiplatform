@@ -2,15 +2,19 @@ package com.sphereon.mdoc
 
 
 import com.sphereon.cbor.CborByteString
+import com.sphereon.cbor.CborEncodedItem
 import com.sphereon.cbor.encodeToCborByteArray
 import com.sphereon.cbor.toCborByteString
 import com.sphereon.crypto.CoseJoseKeyMappingService.toResolvedCoseKeyInfo
 import com.sphereon.crypto.CoseJoseKeyMappingService.toResolvedKeyInfo
+import com.sphereon.crypto.CoseSign1Result
 import com.sphereon.crypto.CryptoServices
 import com.sphereon.crypto.DefaultCallbacks
 import com.sphereon.crypto.ICoseCryptoCallbackService
 import com.sphereon.crypto.IKeyInfo
+import com.sphereon.crypto.IManagedKeyInfo
 import com.sphereon.crypto.IResolvedKeyInfo
+import com.sphereon.crypto.ManagedKeyInfo
 import com.sphereon.crypto.ResolvedKeyInfo
 import com.sphereon.crypto.cose.CoseAlgorithm
 import com.sphereon.crypto.cose.CoseHeaderCbor
@@ -25,13 +29,15 @@ import com.sphereon.mdoc.data.device.DeviceAuthenticationCbor
 import com.sphereon.mdoc.data.device.DeviceSignedCbor
 import com.sphereon.mdoc.data.device.DocRequestCbor
 import com.sphereon.mdoc.data.device.DocumentCbor
+import com.sphereon.mdoc.data.device.IssuerSignedCbor
+import com.sphereon.mdoc.data.device.IssuerSignedNamesSpacesCbor
 import com.sphereon.mdoc.data.mso.MobileSecurityObjectCbor
 
 class MdocSignService(val cryptoCallbackService: ICoseCryptoCallbackService = DefaultCallbacks.coseCrypto()) {
 
     object Static {
 
-        fun getSuppliedOrMSODerivedCborKeyInfo(keyInfo: IKeyInfo<*>? = null, mso: MobileSecurityObjectCbor? = null): IResolvedKeyInfo<ICoseKeyCbor> {
+        fun getSuppliedOrMSODerivedCborKeyInfo(keyInfo: IKeyInfo<*>? = null, mso: MobileSecurityObjectCbor? = null, lookupManaged: Boolean = false): IResolvedKeyInfo<ICoseKeyCbor> {
 
             val msoInfo: ResolvedKeyInfo<CoseKeyCbor>? = mso?.deviceKeyInfo?.deviceKey?.let {
                 ResolvedKeyInfo(
@@ -54,11 +60,102 @@ class MdocSignService(val cryptoCallbackService: ICoseCryptoCallbackService = De
             } else if (msoInfo == null) {
                 throw IllegalArgumentException("No key information provided and it could not be derived from the Mobile Security Object")
             }
+            if (lookupManaged && msoInfo.kmsKeyRef === null) {
+
+            }
             return msoInfo
         }
     }
 
-    suspend fun signDocument(
+    suspend fun issuerSignMso(
+        mso: MobileSecurityObjectCbor,
+        issuerKeyInfo: IManagedKeyInfo<*>,
+        signatureAlgorithm: SignatureAlgorithm? = issuerKeyInfo.signatureAlgorithm,
+        unprotectedHeader: CoseHeaderCbor? = null,
+        protectedHeader: CoseHeaderCbor? = null,
+        requireDeviceX5Chain: Boolean = false,
+    ): CoseSign1Result<MobileSecurityObjectCbor> {
+
+        // Just an assertion it is present
+        getSuppliedOrMSODerivedCborKeyInfo(mso = mso)
+
+        val cborIssuerSignKeyInfo: ManagedKeyInfo<CoseKeyCbor> = ManagedKeyInfo(
+            kmsKeyRef = issuerKeyInfo.kmsKeyRef,
+            kms = issuerKeyInfo.kms,
+            resolvedKeyInfo = toResolvedCoseKeyInfo(issuerKeyInfo)
+        )
+
+        val alg = (signatureAlgorithm ?: issuerKeyInfo.signatureAlgorithm ?: cborIssuerSignKeyInfo.key.alg?.let {
+            SignatureAlgorithm.Static.fromCose(CoseAlgorithm.Static.fromValue(it.value.toInt()))
+        })
+
+
+        val protected = CoseHeaderCbor.Static.copyOrInit(protectedHeader, alg = alg?.cose)
+        val kidVal = cborIssuerSignKeyInfo.kid ?: cborIssuerSignKeyInfo.key.kid
+        val kid = if (kidVal is String) kidVal.toCborByteString(Encoding.BASE64URL) else if (kidVal is CborByteString) kidVal else null
+        val x5cStr = cborIssuerSignKeyInfo.key.getX509CertificateChain()
+        if (protected.x5chain == null && x5cStr != null) {
+            protected.x5chain = x5cStr.encodeToCborByteArray(Encoding.BASE64) // Base64 not base64url for x5c!
+        }
+        if (kid !== null) {
+            if (protected.kid != null && kid !== protected.kid) {
+                throw IllegalArgumentException("Mismatch between key info kid ${cborIssuerSignKeyInfo.kid} and key kid $kid")
+            }
+            protected.kid = kid
+        }
+
+        val input = CoseSign1InputCbor.Builder()
+            .withPayload(mso)
+//            .encodePayload(true)
+            .withProtectedHeader(protected)
+            .withUnprotectedHeader(unprotectedHeader)
+            .build()
+        val signResult = CryptoServices.cose(cryptoCallbackService).sign1<MobileSecurityObjectCbor>(
+            input = input,
+            keyInfo = cborIssuerSignKeyInfo,
+            requireX5Chain = requireDeviceX5Chain
+        )
+        return signResult
+    }
+
+    suspend fun issuerSignIssuerSigned(
+        mso: MobileSecurityObjectCbor,
+        issuerSignedNameSpaces: IssuerSignedNamesSpacesCbor,
+        issuerKeyInfo: IManagedKeyInfo<*>,
+        signatureAlgorithm: SignatureAlgorithm? = issuerKeyInfo.signatureAlgorithm,
+        unprotectedHeader: CoseHeaderCbor? = null,
+        protectedHeader: CoseHeaderCbor? = null,
+        requireDeviceX5Chain: Boolean = false,
+    ): IssuerSignedCbor {
+        val signResult = issuerSignMso(mso, issuerKeyInfo, signatureAlgorithm, unprotectedHeader, protectedHeader, requireDeviceX5Chain)
+        return IssuerSignedCbor(nameSpaces = issuerSignedNameSpaces, issuerAuth = signResult.coseSign1)
+    }
+
+    suspend fun issuerSignDocument(
+        mso: MobileSecurityObjectCbor,
+        issuerSignedNameSpaces: IssuerSignedNamesSpacesCbor,
+        issuerKeyInfo: IManagedKeyInfo<*>,
+        signatureAlgorithm: SignatureAlgorithm? = issuerKeyInfo.signatureAlgorithm,
+        unprotectedHeader: CoseHeaderCbor? = null,
+        protectedHeader: CoseHeaderCbor? = null,
+        requireDeviceX5Chain: Boolean = false,
+    ): DocumentCbor {
+        return DocumentCbor(
+            docType = mso.docType,
+            issuerSigned = issuerSignIssuerSigned(
+                mso,
+                issuerSignedNameSpaces,
+                issuerKeyInfo,
+                signatureAlgorithm,
+                unprotectedHeader,
+                protectedHeader,
+                requireDeviceX5Chain
+            ),
+            deviceSigned = null
+        )
+    }
+
+    suspend fun deviceSignDocument(
         request: DocRequestCbor,
         document: DocumentCbor,
         deviceAuthentication: DeviceAuthenticationCbor,

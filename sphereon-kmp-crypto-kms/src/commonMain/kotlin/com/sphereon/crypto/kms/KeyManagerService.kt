@@ -13,7 +13,6 @@ import com.sphereon.crypto.generic.ManagedKeyPair
 import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.crypto.jose.JwkUse
 import com.sphereon.crypto.kms.model.IdentifierMethod
-import com.sphereon.kmp.Uuid
 import kotlin.js.JsExport
 
 /**
@@ -36,7 +35,7 @@ open class KeyManagerService<X509PlatformCallback : IX509ServiceMarkerType>(
         X509CertificateChainKeyResolverService<X509PlatformCallback>(),
         CoseJoseProvidedKeyResolverService<X509PlatformCallback>()
     ),
-    private val publicKeyStore: IKeyStoreService = MemoryKeyStoreService(),
+    private val publicKeyStore: IKeyStoreService = MemoryKeyStoreService(keyVisibility = KeyVisibility.PUBLIC),
     private var defaultKeyManagementSystem: String = keyManagementSystems[0].getId(), // Default to the first one
     private var defaultResolver: String = keyResolvers[0].getId() // Defaults to the first one
 ) : IKeyManagerService {
@@ -101,12 +100,12 @@ open class KeyManagerService<X509PlatformCallback : IX509ServiceMarkerType>(
 
     @JsExport.Ignore
 
-    override suspend fun <KeyType : IKey> resolvePublicKeyAsync(
-        keyInfo: IKeyInfo<KeyType>,
+    override suspend fun <KT : IKey> resolvePublicKeyAsync(
+        keyInfo: IKeyInfo<KT>,
         identifierMethod: IdentifierMethod?,
         trustedCerts: Array<String>?,
         verifyX509CertificateChain: Boolean?
-    ): IResolvedKeyInfo<KeyType> =
+    ): IResolvedKeyInfo<KT> =
         getResolverByKeyTypeOrIdentifier(keyType = keyInfo.keyType, identifierId = keyInfo.kms).resolvePublicKeyAsync(
             keyInfo,
             identifierMethod,
@@ -124,9 +123,9 @@ open class KeyManagerService<X509PlatformCallback : IX509ServiceMarkerType>(
         alg: SignatureAlgorithm?
     ): ManagedKeyPair {
         val kmsService = getKms(kms, alg)
-        val keyPair = kmsService.generateKeyAsync(use, keyOperations, alg)
+        val keyPair = kmsService.generateKeyAsync(kms, use, keyOperations, alg)
         val pubKey = keyPair.jose.publicJwk
-        val resultKeyRef = kmsKeyRef ?: pubKey.kid ?: Uuid.v4String()
+        val resultKeyRef = keyPair.kmsKeyRef
         val keyInfo = ResolvedKeyInfo(
             key = pubKey,
             keyType = pubKey.getKty(),

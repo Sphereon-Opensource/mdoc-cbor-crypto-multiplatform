@@ -176,6 +176,7 @@ interface IKeyManagementSystem : IRawSignatureService {
      */
     @JsExport.Ignore
     suspend fun generateKeyAsync(
+        kmsKeyRef: String? = null,
         use: JwkUse? = null,
         keyOperations: Array<out KeyOperations>? = null,
         alg: SignatureAlgorithm? = null

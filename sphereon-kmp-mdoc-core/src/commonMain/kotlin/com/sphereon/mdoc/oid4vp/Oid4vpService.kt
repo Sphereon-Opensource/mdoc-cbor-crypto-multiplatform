@@ -4,7 +4,10 @@ import com.sphereon.cbor.CborInt
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.toCborString
 import com.sphereon.crypto.IKeyInfo
+import com.sphereon.crypto.ResolvedKeyInfo
+import com.sphereon.crypto.SigningException
 import com.sphereon.crypto.cose.ICoseKeyCbor
+import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.kmp.DefaultLogger
 import com.sphereon.kmp.LongKMP
 import com.sphereon.kmp.Uuid
@@ -29,12 +32,12 @@ class MdocOid4vpService(val signService: MdocSignService = MdocSignService()) {
         responseUri: String,
         authorizationRequestNonce: String,
     ): DeviceResponseCbor {
-        val documentErrors = arrayOf<DeviceResponseDocumentErrorCbor>()
-        val documents = arrayOf<DocumentCbor>()
+        var documentErrors = arrayOf<DeviceResponseDocumentErrorCbor>()
+        var documents = arrayOf<DocumentCbor>()
         matchingDocuments.forEach { doc ->
             val docType = doc.inputDescriptor.id.toCborString() // 18013-7 matches doc types to the id of the input descriptor
             var error = doc.documentError
-            if (doc.document !== null && error == null) {
+            if (doc.document !== null && error === null) {
                 val signed = signDocument(
                     presentationDefinition = presentationDefinition,
                     clientId = clientId,
@@ -42,7 +45,8 @@ class MdocOid4vpService(val signService: MdocSignService = MdocSignService()) {
                     authorizationRequestNonce = authorizationRequestNonce,
                     mdocNonce = doc.mdocNonce,
                     document = doc.document,
-                    docType = doc.inputDescriptor.id.toCborString(),
+                    inputDescriptor = doc.inputDescriptor,
+
                     deviceKeyInfo = doc.deviceKeyInfo,
                     deviceNamespaces = doc.deviceNamespaces ?: CborMap()
                 )
@@ -52,11 +56,11 @@ class MdocOid4vpService(val signService: MdocSignService = MdocSignService()) {
                     error = mapOf(Pair(docType, CborInt(LongKMP(0))))
                 }
                 if (error === null && mdoc !== null) {
-                    documents.plus(mdoc)
+                    documents = documents.plus(mdoc)
                 }
             }
-            if (error != null) {
-                documentErrors.plus(error)
+            if (error !== null) {
+                documentErrors = documentErrors.plus(error)
 
             }
         }
@@ -74,7 +78,9 @@ class MdocOid4vpService(val signService: MdocSignService = MdocSignService()) {
         authorizationRequestNonce: String,
         deviceNamespaces: DeviceNameSpacesCbor = CborMap(),
         document: DocumentCbor? = null,
-        docType: DocType, // required since we could also call this method without a document to generate an error
+        inputDescriptor: IOid4VPInputDescriptor? = null,
+        docType: DocType = inputDescriptor?.id?.toCborString()
+            ?: throw IllegalArgumentException("Please provide a docType"), // required since we could also call this method without a document to generate an error
         deviceKeyInfo: IKeyInfo<*>? = null,
         presentationDefinition: IOid4VPPresentationDefinition,
     ): Oid4vpSignResult {
@@ -82,14 +88,31 @@ class MdocOid4vpService(val signService: MdocSignService = MdocSignService()) {
         val deviceAuthentication =
             DeviceAuthenticationCbor.Static.fromOid4vp(clientId, responseUri, mdocNonce, authorizationRequestNonce, docType.value, deviceNamespaces)
         val sessionTranscript = deviceAuthentication.sessionTranscript
-        val keyInfo = getSuppliedOrMSODerivedCborKeyInfo(keyInfo = deviceKeyInfo, mso = document?.MSO)
+        var resolvedKeyInfo = getSuppliedOrMSODerivedCborKeyInfo(keyInfo = deviceKeyInfo, mso = document?.MSO)
+        val inputDescriptorAlg = inputDescriptor?.format?.mso_mdoc?.alg
+        if (resolvedKeyInfo.signatureAlgorithm == null) {
+            // if we do not have the signature algorithm on the key info, let's have a look
+            if (inputDescriptorAlg.isNullOrEmpty()) {
+                throw SigningException("Device key info, MSO and input descriptor mso_mdoc alg did not indicate their supported algorithms. Cannot sign mdoc")
+            }
+            val supportedSigAlgs = inputDescriptorAlg.flatMap { descAlg ->
+                SignatureAlgorithm.Static.asList.map { enumValue ->
+                    if (enumValue.cose?.id == descAlg) {
+                        return@map enumValue
+                    } else return@map null
+                }.filterNotNull()
+                    .filter { enumValue -> (enumValue.cose?.keyType == resolvedKeyInfo.keyType) || (enumValue.cose?.keyType?.toCbor() == resolvedKeyInfo.key.kty) }
+            }
+            if (supportedSigAlgs.isEmpty()) {
+                throw SigningException("Device key info, MSO and input descriptor mso_mdoc could not provide their their supported algorithms properly. Cannot sign mdoc")
+            }
+            resolvedKeyInfo = ResolvedKeyInfo.Static.fromDTO(resolvedKeyInfo).copy(signatureAlgorithm = supportedSigAlgs[0])
+        }
+
 
         val mdoc = document?.let {
-            signService.signDocument(
-                request = request,
-                document = it,
-                deviceAuthentication = deviceAuthentication,
-                deviceKeyInfo = keyInfo
+            signService.deviceSignDocument(
+                request = request, document = it, deviceAuthentication = deviceAuthentication, deviceKeyInfo = resolvedKeyInfo
             )
         }
         val documentError: DeviceResponseDocumentErrorCbor? = if (document != null) null else mapOf(Pair(docType, CborInt(LongKMP(0))))
@@ -98,13 +121,12 @@ class MdocOid4vpService(val signService: MdocSignService = MdocSignService()) {
             document = mdoc,
             presentationDefinition = presentationDefinition,
             documentError = documentError,
-            deviceKeyInfo = keyInfo
+            deviceKeyInfo = resolvedKeyInfo
         )
     }
 
     fun filterApplicableDocumentsPerInputDescriptor(
-        allDocument: Array<DocumentCbor> = arrayOf(),
-        inputDescriptor: IOid4VPInputDescriptor
+        allDocument: Array<DocumentCbor> = arrayOf(), inputDescriptor: IOid4VPInputDescriptor
     ): Array<DocumentCbor> {
         /**
          * From 18013-7:
@@ -117,8 +139,7 @@ class MdocOid4vpService(val signService: MdocSignService = MdocSignService()) {
 
     fun matchDocumentsAndDescriptors(
         mdocNonce: String = Uuid.v4String(), // mdoc nonce will be set on all document results
-        applicableDocuments: Array<DocumentCbor>,
-        presentationDefinition: IOid4VPPresentationDefinition
+        applicableDocuments: Array<DocumentCbor>, presentationDefinition: IOid4VPPresentationDefinition
     ): Array<DocumentDescriptorMatchResult> {
         return presentationDefinition.input_descriptors.map { inputDescriptor ->
             val matchingDocuments = filterApplicableDocumentsPerInputDescriptor(applicableDocuments, inputDescriptor)
@@ -144,11 +165,7 @@ class MdocOid4vpService(val signService: MdocSignService = MdocSignService()) {
                 val document = matchingDocuments[0]
                 val deviceKeyInfo = getSuppliedOrMSODerivedCborKeyInfo(mso = document.MSO)
                 DocumentDescriptorMatchResult(
-                    inputDescriptor = inputDescriptor,
-                    document = document,
-                    mdocNonce = mdocNonce,
-                    documentError = null,
-                    deviceKeyInfo = deviceKeyInfo
+                    inputDescriptor = inputDescriptor, document = document, mdocNonce = mdocNonce, documentError = null, deviceKeyInfo = deviceKeyInfo
                 )
 
             }

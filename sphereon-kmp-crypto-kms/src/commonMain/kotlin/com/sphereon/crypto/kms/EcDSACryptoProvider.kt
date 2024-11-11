@@ -3,6 +3,8 @@ package com.sphereon.crypto.kms
 import com.sphereon.crypto.CoseJoseKeyMappingService
 import com.sphereon.crypto.IKeyInfo
 import com.sphereon.crypto.KeyInfo
+import com.sphereon.crypto.KeyVisibility
+import com.sphereon.crypto.ResolvedKeyInfo
 import com.sphereon.crypto.generic.CoseKeyPair
 import com.sphereon.crypto.generic.Curve
 import com.sphereon.crypto.generic.DigestAlg
@@ -22,6 +24,7 @@ import com.sphereon.crypto.sign.model.SignInput
 import com.sphereon.crypto.sign.model.SignOutput
 import com.sphereon.crypto.sign.model.Signature
 import com.sphereon.kmp.Encoding
+import com.sphereon.kmp.Uuid
 import com.sphereon.kmp.decodeFromBase64Url
 import com.sphereon.kmp.encodeTo
 import dev.whyoleg.cryptography.CryptographyAlgorithmId
@@ -41,7 +44,11 @@ import kotlin.js.JsExport
  * @param provider An instance of CryptographyProvider to use for cryptographic operations. Default is CryptographyProvider.Default.
  */
 @JsExport
-class EcDSACryptoProvider(private val id: String = "ecdsa", provider: CryptographyProvider = CryptographyProvider.Default) : IKeyManagementSystem,
+class EcDSACryptoProvider(
+    private val id: String = "ecdsa",
+    provider: CryptographyProvider = CryptographyProvider.Default,
+    private val privateKeyStore: IKeyStoreService? = MemoryKeyStoreService(keyVisibility = KeyVisibility.PRIVATE)
+) : IKeyManagementSystem,
     IRawSignatureService, ISimpleSignatureService {
     /**
      * Provides ECDSA (Elliptic Curve Digital Signature Algorithm) cryptographic functions.
@@ -82,11 +89,12 @@ class EcDSACryptoProvider(private val id: String = "ecdsa", provider: Cryptograp
      */
     @JsExport.Ignore
     override suspend fun generateKeyAsync(
+        kmsKeyRef: String?,
         use: JwkUse?,
         keyOperations: Array<out KeyOperations>?,
-        alg: SignatureAlgorithm?
+        alg: SignatureAlgorithm?,
 
-    ): ManagedKeyPair {
+        ): ManagedKeyPair {
         val keyUse = use ?: JwkUse.sig
         val algMapping = alg ?: SignatureAlgorithm.ECDSA_SHA256
         val curve = alg?.curve ?: Curve.P_256
@@ -113,10 +121,30 @@ class EcDSACryptoProvider(private val id: String = "ecdsa", provider: Cryptograp
         val privateCoseKey = CoseJoseKeyMappingService.toCoseKey(privateJwk)
         val publicCoseKey = CoseJoseKeyMappingService.toCoseKey(publicJwk)
 
-        return ManagedKeyPair(
+
+        val managedKeyPair = ManagedKeyPair(
+            kms = getId(),
+            kmsKeyRef = kmsKeyRef ?: Uuid.v4String(), // TODO: Generate kid and use that as fallback instead of uuid
             jose = JoseKeyPair(privateJwk, publicJwk),
             cose = CoseKeyPair(privateCoseKey, publicCoseKey)
         )
+        val keyInfo: IKeyInfo<Jwk> = KeyInfo(
+            key = privateJwk,
+            keyVisibility = KeyVisibility.PRIVATE,
+            keyType = KeyType.EC,
+            kmsKeyRef = managedKeyPair.kmsKeyRef,
+            kms = managedKeyPair.kms,
+            kid = privateJwk.kid,
+            x5c = privateJwk.x5c,
+            signatureAlgorithm = privateJwk.getSignatureAlgorithm() ?: alg
+        )
+        privateKeyStore?.storeKey(
+            ResolvedKeyInfo.Static.fromKeyInfo(keyInfo, privateJwk),
+            kmsKeyRef = managedKeyPair.kmsKeyRef,
+            kms = managedKeyPair.kms
+        )
+
+        return managedKeyPair
     }
 
     /**
@@ -132,7 +160,7 @@ class EcDSACryptoProvider(private val id: String = "ecdsa", provider: Cryptograp
         val (key, _, privateKeyBytes, curveImpl, algImpl) = prepareKeyInfo(keyInfo)
 
         if (key.d != null && privateKeyBytes !== null) {
-            val privateKey = ecdsa.privateKeyDecoder(curveImpl).decodeFromByteArrayBlocking(EC.PrivateKey.Format.JWK, privateKeyBytes)
+            val privateKey = ecdsa.privateKeyDecoder(curveImpl).decodeFromByteArrayBlocking(EC.PrivateKey.Format.RAW, privateKeyBytes)
             return privateKey.signatureGenerator(digest = algImpl, format = ECDSA.SignatureFormat.RAW).generateSignatureBlocking(input)
         }
         throw IllegalArgumentException("Private key resolution or HSMs not supported yet. Please provide a private key")
@@ -150,13 +178,7 @@ class EcDSACryptoProvider(private val id: String = "ecdsa", provider: Cryptograp
      */
     @JsExport.Ignore
     override suspend fun isValidRawSignatureAsync(keyInfo: IKeyInfo<*>, input: ByteArray, signature: ByteArray): Boolean {
-        val (key, publicKeyBytes, _, curveImpl, algImpl) = prepareKeyInfo(keyInfo)
-
-        if (key.d != null) {
-            throw IllegalArgumentException("Do not use private keys to verify a signature")
-        }
-
-//        val rawKey = "04${key.x}${key.y}".hexToByteArray()
+        val (_, publicKeyBytes, _, curveImpl, algImpl) = prepareKeyInfo(keyInfo)
         val publicKey = ecdsa.publicKeyDecoder(curveImpl).decodeFromByteArrayBlocking(EC.PublicKey.Format.RAW, publicKeyBytes)
         return publicKey.signatureVerifier(digest = algImpl, format = ECDSA.SignatureFormat.RAW).tryVerifySignatureBlocking(input, signature)
     }
@@ -193,8 +215,12 @@ class EcDSACryptoProvider(private val id: String = "ecdsa", provider: Cryptograp
      */
     @OptIn(ExperimentalStdlibApi::class)
     private fun prepareKeyInfo(keyInfo: IKeyInfo<*>): KeyInfoContext {
-        val keyInfoJwk = toKeyInfoJwk(keyInfo)
-        val key = keyInfoJwk.key!!
+        val keyInfoJwk = toKeyInfoJwk(
+            if (keyInfo.keyVisibility === KeyVisibility.PRIVATE && keyInfo.key !== null) keyInfo else privateKeyStore?.getKey(keyInfo) ?: keyInfo
+        )
+
+        val key = keyInfoJwk.key
+            ?: throw IllegalArgumentException("Either we need to get the private key from a private key store or it needs to be passed in for this provider")
         if (key.x == null || key.y == null) {
             throw IllegalArgumentException("EC JWK needs an x and y coordinate as a public key")
         }
@@ -287,7 +313,7 @@ class EcDSACryptoProvider(private val id: String = "ecdsa", provider: Cryptograp
      */
     private fun checkSupportedCurve(curve: Curve) {
         if (!isSupportedCurve(curve)) {
-            throw IllegalArgumentException("Curve ${curve} not supported for EcDSA")
+            throw IllegalArgumentException("Curve $curve not supported for EcDSA")
         }
     }
 

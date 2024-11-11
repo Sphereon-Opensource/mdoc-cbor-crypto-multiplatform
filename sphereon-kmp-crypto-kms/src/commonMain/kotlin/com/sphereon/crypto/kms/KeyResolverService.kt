@@ -34,14 +34,14 @@ class X509CertificateChainKeyResolverService<X509PlatformCallback : IX509Service
     )
 ) : AbstractKeyResolverService(id = id, supported = supported), IKeyResolverService {
     @JsExport.Ignore
-    override suspend fun <KeyType : IKey> resolvePublicKeyAsync(
-        keyInfo: IKeyInfo<KeyType>,
+    override suspend fun <KT : IKey> resolvePublicKeyAsync(
+        keyInfo: IKeyInfo<KT>,
         identifierMethod: IdentifierMethod?,
         trustedCerts: Array<String>?,
         verifyX509CertificateChain: Boolean?
-    ): IResolvedKeyInfo<KeyType> {
+    ): IResolvedKeyInfo<KT> {
         val x509 = keyInfo.x5c ?: keyInfo.key?.getX509CertificateChain() ?: throw IllegalArgumentException("X509 chain not present")
-        val x509Result = x509Service<X509PlatformCallback>().verifyCertificateChainAsync<KeyType>(
+        val x509Result = x509Service<X509PlatformCallback>().verifyCertificateChainAsync<KT>(
             chainDER = x509.map { it.decodeFrom(Encoding.BASE64) }.toTypedArray()
         )
         val leafKey = x509Result.publicKey ?: throw PKIException("No public key could be extracted from the provided certification chain")

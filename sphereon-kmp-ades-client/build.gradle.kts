@@ -67,7 +67,7 @@ kotlin {
           }
       }*/
     js(IR) {
-        moduleName = "@sphereon/kmp-crypto"
+        moduleName = "@sphereon/kmp-ades-client"
         nodejs {
 //            useEsModules() // Enables ES2015 modules
 

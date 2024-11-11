@@ -6,12 +6,18 @@ import com.sphereon.cbor.CborBuilder
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborString
 import com.sphereon.cbor.CborTDate
+import com.sphereon.cbor.CborTagged
 import com.sphereon.cbor.CborView
-import com.sphereon.json.JsonView
 import com.sphereon.cbor.StringLabel
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.cddl_tdate
+import com.sphereon.cbor.localDateToDateStringISO
+import com.sphereon.json.JsonView
 import com.sphereon.json.mdocJsonSerializer
+import com.sphereon.kmp.DateTimeUtils
+import com.sphereon.kmp.LocalDateTimeKMP
+import com.sphereon.kmp.Logger
+import com.sphereon.mdoc.MdocConst
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlin.js.JsExport
@@ -61,8 +67,9 @@ data class ValidityInfoCbor(
     }
 
     override fun cborBuilder(): CborBuilder<ValidityInfoCbor> =
-        CborMap.Static.builder(this).put(Static.SIGNED, signed).put(Static.VALID_FROM, validFrom).put(Static.VALID_UNTIL, validUntil)
-            .put(Static.EXPECTED_UPDATE, expectedUpdate, true).end()
+        CborMap.Static.builder(this).put(Static.SIGNED, signed.asTagged).put(Static.VALID_FROM, validFrom.asTagged)
+            .put(Static.VALID_UNTIL, validUntil.asTagged)
+            .put(Static.EXPECTED_UPDATE, expectedUpdate?.asTagged, true).end()
 
 
     override fun toJson() = ValidityInfoJson(signed.value, validFrom.value, validUntil.value, expectedUpdate?.value)
@@ -74,11 +81,60 @@ data class ValidityInfoCbor(
         val EXPECTED_UPDATE = StringLabel("expectedUpdate")
 
         fun fromCborItem(m: CborMap<StringLabel, AnyCborItem>) = ValidityInfoCbor(
-            CborTDate(SIGNED.required<CborString>(m).value),
-            CborTDate(VALID_FROM.required<CborString>(m).value),
-            CborTDate(VALID_UNTIL.required<CborString>(m).value),
-            EXPECTED_UPDATE.optional<CborString?>(m)?.let { CborTDate(it.value) }
+            SIGNED.required<AnyCborItem>(m).let {
+                when (it) {
+                    is CborTDate -> it
+                    is CborString -> CborTDate(it.value).also { MdocConst.LOG.warn("Validity info needs to have tagged dates, but a string was encountered. Issuer is not issuing valid mdocs!") }
+                    is CborTagged<*> -> CborTDate(it.value as String)
+                    else -> throw IllegalArgumentException(
+                        "tdate object expected. Got ${it.cddl}"
+                    )
+                }
+            },
+            VALID_FROM.required<AnyCborItem>(m).let {
+                when (it) {
+                    is CborTDate -> it
+                    is CborString -> CborTDate(it.value).also { MdocConst.LOG.warn("Validity info needs to have tagged dates, but a string was encountered. Issuer is not issuing valid mdocs!") }
+                    is CborTagged<*> -> CborTDate(it.value as String)
+                    else -> throw IllegalArgumentException(
+                        "tdate object expected. Got ${it.cddl}"
+                    )
+                }
+            },
+            VALID_UNTIL.required<AnyCborItem>(m).let {
+                when (it) {
+                    is CborTDate -> it
+                    is CborString -> CborTDate(it.value).also { MdocConst.LOG.warn("Validity info needs to have tagged dates, but a string was encountered. Issuer is not issuing valid mdocs!") }
+                    is CborTagged<*> -> CborTDate(it.value as String)
+                    else -> throw IllegalArgumentException(
+                        "tdate object expected. Got ${it.cddl}"
+                    )
+                }
+            },
+            EXPECTED_UPDATE.optional<AnyCborItem?>(m)
+                ?.let {
+                    when (it) {
+                        is CborTDate -> it
+                        is CborString -> CborTDate(it.value).also { MdocConst.LOG.warn("Validity info needs to have tagged dates, but a string was encountered. Issuer is not issuing valid mdocs!") }
+                        is CborTagged<*> -> CborTDate(it.value as String)
+                        else -> throw IllegalArgumentException("tdate object expected. Got ${it.cddl}")
+                    }
+                }
         )
+
+        fun fromDates(
+            signed: LocalDateTimeKMP = DateTimeUtils.Static.DEFAULT.dateTimeLocal(),
+            validFrom: LocalDateTimeKMP = DateTimeUtils.Static.DEFAULT.dateTimeLocal(),
+            validUntil: LocalDateTimeKMP,
+            expectedUpdate: LocalDateTimeKMP? = null,
+            utils: DateTimeUtils = DateTimeUtils.Static.DEFAULT,
+            timeZoneId: String? = null
+        ) = ValidityInfoCbor(
+            signed = CborTDate(signed.localDateToDateStringISO(utils, timeZoneId)),
+            validFrom = CborTDate(validFrom.localDateToDateStringISO(utils, timeZoneId)),
+            validUntil = CborTDate(validUntil.localDateToDateStringISO(utils, timeZoneId)),
+            expectedUpdate = expectedUpdate?.let { CborTDate(it.localDateToDateStringISO(utils, timeZoneId)) })
+
 
         fun cborDecode(encoded: ByteArray): ValidityInfoCbor = fromCborItem(cborSerializer.decode(encoded))
     }

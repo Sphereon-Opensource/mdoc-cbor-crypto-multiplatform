@@ -8,6 +8,9 @@ import com.sphereon.cbor.CborView
 import com.sphereon.json.JsonView
 import com.sphereon.cbor.StringLabel
 import com.sphereon.cbor.cborSerializer
+import com.sphereon.crypto.CoseJoseKeyMappingService
+import com.sphereon.crypto.IResolvedKeyInfo
+import com.sphereon.crypto.KeyInfo
 import com.sphereon.crypto.cose.COSE_Key
 import com.sphereon.crypto.cose.CoseKeyCbor
 import com.sphereon.crypto.cose.CoseKeyJson
@@ -53,6 +56,11 @@ data class DeviceKeyInfoCbor(
         val KEY_AUTHORIZATIONS = StringLabel("keyAuthorizations")
         val KEY_INFO = StringLabel("keyInfo")
 
+        fun fromKeyInfo(keyInfo: IResolvedKeyInfo<*>): DeviceKeyInfoCbor {
+            val cborInfo = CoseJoseKeyMappingService.toResolvedCoseKeyInfo(keyInfo)
+
+            return DeviceKeyInfoCbor(deviceKey = cborInfo.key, )
+        }
         fun fromCborItem(m: CborMap<StringLabel, AnyCborItem>) = DeviceKeyInfoCbor(
             CoseKeyCbor.Static.fromCborItem(DEVICE_KEY.required(m)),
             KEY_AUTHORIZATIONS.optional<CborMap<StringLabel, AnyCborItem>?>(m)?.let {

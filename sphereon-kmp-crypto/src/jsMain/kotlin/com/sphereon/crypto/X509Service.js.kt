@@ -1,8 +1,16 @@
 package com.sphereon.crypto
 
+import com.sphereon.crypto.generic.IVerifyResult
 import kotlinx.coroutines.await
 import kotlin.js.Promise
 
+
+@JsExport
+actual external interface IX509VerificationResult<out KeyType : IKey> : IVerifyResult {
+    actual val publicKey: KeyType?
+    actual val publicKeyAlgorithm: String?
+    actual val publicKeyParams: Any?
+}
 
 /**
  * A version that resembles the internal X509Callbacks interface, but then using promises instead of coroutines to make it fit the JS world

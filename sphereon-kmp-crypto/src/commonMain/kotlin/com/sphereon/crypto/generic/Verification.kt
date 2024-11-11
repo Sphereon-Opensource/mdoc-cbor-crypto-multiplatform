@@ -85,7 +85,7 @@ expect interface IVerifyResults<out KeyType : IKey> {
 @Suppress("NON_EXPORTABLE_TYPE") // We are really exporting them because of the expect/actual
 @Serializable
 @JsExport
-data class VerifyResults<out KeyType : IKey>(
+data class VerifyResults<KeyType : IKey>(
 
     override val error: Boolean,
     override val verifications: Array<VerifyResult>,

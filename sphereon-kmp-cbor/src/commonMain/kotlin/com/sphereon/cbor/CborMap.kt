@@ -1,13 +1,11 @@
 package com.sphereon.cbor
 
-import com.sphereon.cbor.CborArray
 import com.sphereon.cbor.CborConst.CDDL_LITERAL
 import com.sphereon.cbor.CborConst.VALUE_LITERAL
 import kotlinx.io.bytestring.ByteStringBuilder
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlin.js.JsExport
@@ -24,13 +22,13 @@ open class CborMap<K : AnyCborItem, V : AnyCborItem?>(
 
 
     override fun toJsonSimple(): JsonObject {
-        println("jsonSimple Map:")
+//        println("jsonSimple Map:")
         return JsonObject(value.entries.map {
             val key = it.key.toJsonSimple().jsonPrimitive.content
-            println(" =simple= key: ${key}")
+//            println(" =simple= key: ${key}")
             val value =
                 if (it.value is CborItem<*>) (it.value as CborItem<Any>).toJsonSimple() else throw IllegalArgumentException("Map must contain cbor values")
-            println("      =simple= key: ${key}, value: ${value}")
+//            println("      =simple= key: ${key}, value: ${value}")
             Pair(
                 key,
                 value
@@ -40,7 +38,7 @@ open class CborMap<K : AnyCborItem, V : AnyCborItem?>(
 
 
     override fun toJsonWithCDDL(): JsonArray {
-        println("==Array:")
+//        println("==Array:")
         return JsonArray(
             value.entries.map {
                 val json =
@@ -57,18 +55,12 @@ open class CborMap<K : AnyCborItem, V : AnyCborItem?>(
                 ) else json.jsonObject[CDDL_LITERAL]!!
 
                 val value = primitiveElement ?: arrayElement ?: json.jsonObject[VALUE_LITERAL]!!
-                println("   ==Object {cddl(${cddl}), value($value)}")
+//                println("   ==Object {cddl(${cddl}), value($value)}")
                 JsonObject(
                     mapOf(
-                        Pair(
-                            "key",
-                            key
-                        ),
-                        Pair(
-                            CDDL_LITERAL,
-                            cddl
-                        ),
-                        Pair(VALUE_LITERAL, value),
+                        "key" to key,
+                        CDDL_LITERAL to cddl,
+                        VALUE_LITERAL to value,
                     )
                 )
 
@@ -77,7 +69,7 @@ open class CborMap<K : AnyCborItem, V : AnyCborItem?>(
     }
 
     fun toJsonWithCDDLObject(): JsonObject {
-        println("==Object:")
+//        println("==Object:")
         return JsonObject(
             mapOf(*value.entries.map {
                 val json =
@@ -96,17 +88,15 @@ open class CborMap<K : AnyCborItem, V : AnyCborItem?>(
                 ) else json.jsonObject[CDDL_LITERAL]!!
 
                 val value = primitiveElement ?: arrayElement ?: json.jsonObject[VALUE_LITERAL]!!
-                println("key: ${it.key.toJsonSimple().jsonPrimitive.content}\r\n           => OBJECT {cddl(${cddl}), value($value)}")
+//                println("key: ${it.key.toJsonSimple().jsonPrimitive.content}\r\n           => OBJECT {cddl(${cddl}), value($value)}")
                 Pair(
                     key,
                     JsonObject(
                         mapOf(
-                            Pair(
-                                CDDL_LITERAL,
-                                cddl
-                            ),
+
+                            CDDL_LITERAL to cddl,
 //                            Pair("key", it.key.toJsonSimple().jsonPrimitive),
-                            Pair(VALUE_LITERAL, value),
+                            VALUE_LITERAL to value,
                         )
                     )
                 )

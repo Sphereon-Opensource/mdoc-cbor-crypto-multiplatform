@@ -68,7 +68,7 @@ kotlin {
           }
       }*/
     js(IR) {
-        moduleName = "@sphereon/kmp-mdl-mdoc"
+        moduleName = "@sphereon/kmp-crypto-kms"
         nodejs {
 //            useEsModules() // Enables ES2015 modules
 
@@ -142,7 +142,6 @@ kotlin {
         }
         val jsMain by getting {
             dependencies {
-                implementation(projects.sphereonKmpCommon)
             }
         }
 

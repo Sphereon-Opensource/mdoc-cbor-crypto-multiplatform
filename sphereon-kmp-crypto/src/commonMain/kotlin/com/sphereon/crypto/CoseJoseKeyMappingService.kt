@@ -92,7 +92,7 @@ object CoseJoseKeyMappingService {
     fun toResolvedCoseKeyInfo(resolvedKeyInfo: IResolvedKeyInfo<*>): ResolvedKeyInfo<CoseKeyCbor> {
         val coseKey = toCoseKey(key = resolvedKeyInfo.key)
         with(resolvedKeyInfo) {
-            return ResolvedKeyInfo(key = coseKey, kid = kid, signatureAlgorithm = signatureAlgorithm, opts = opts)
+            return ResolvedKeyInfo(key = coseKey, kid = kid, signatureAlgorithm = signatureAlgorithm, opts = opts, keyType = keyType, kms = kms, kmsKeyRef = kmsKeyRef)
         }
     }
 

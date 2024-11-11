@@ -6,12 +6,13 @@ import com.sphereon.cbor.CborBuilder
 import com.sphereon.cbor.CborEncodedItem
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborString
+import com.sphereon.cbor.CborTagged
 import com.sphereon.cbor.CborView
-import com.sphereon.json.JsonView
 import com.sphereon.cbor.StringLabel
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.crypto.cose.CoseSign1Cbor
 import com.sphereon.crypto.cose.CoseSign1Json
+import com.sphereon.json.JsonView
 import com.sphereon.json.mdocJsonSerializer
 import com.sphereon.kmp.Encoding
 import com.sphereon.kmp.LongKMP
@@ -58,13 +59,18 @@ data class MobileSecurityObjectCbor(
     val validityInfo: ValidityInfoCbor,
 ) : CborView<MobileSecurityObjectCbor, MobileSecurityObjectJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
     override fun cborBuilder(): CborBuilder<MobileSecurityObjectCbor> {
-        return CborMap.Static.builder(this).put(Static.VERSION, version).put(Static.DIGEST_ALGORITHM, digestAlgorithm)
-            .put(Static.VALUE_DIGESTS, valueDigests).put(Static.DEVICE_KEY_INFO, deviceKeyInfo.toCbor()).put(Static.DOC_TYPE, docType)
-            .put(
-                Static.VALIDITY_INFO, validityInfo.toCbor()
-            ).end()
+        return CborMap.Static.builder(this)
+            .put(Static.VERSION, version)
+            .put(Static.DIGEST_ALGORITHM, digestAlgorithm)
+            .put(Static.VALUE_DIGESTS, valueDigests)
+            .put(Static.DEVICE_KEY_INFO, deviceKeyInfo.toCbor())
+            .put(Static.DOC_TYPE, docType)
+            .put(Static.VALIDITY_INFO, validityInfo.toCbor())
+            .end()
+    }
 
-        TODO("Not yet implemented")
+    override fun cborEncode(): ByteArray {
+        return cborSerializer.encode(CborEncodedItem(this.toCbor()))
     }
 
     override fun toJson(): MobileSecurityObjectJson {

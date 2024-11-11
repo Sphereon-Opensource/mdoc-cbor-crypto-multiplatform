@@ -11,9 +11,10 @@ import com.sphereon.crypto.generic.SignatureAlgorithm
  *
  * @param KT Generic type that extends IKey, representing the cryptographic key type.
  */
-actual external interface IManagedKeyInfo<out KT : IKey> : IResolvedKeyInfo<KT> {
+actual external interface IManagedKeyInfo<KT : IKey> : IResolvedKeyInfo<KT> {
     actual override val kmsKeyRef: String
     actual override val kms: String
+    actual fun toManagedPublicKeyInfo(): IManagedKeyInfo<KT>
 }
 
 
@@ -59,6 +60,8 @@ actual external interface IKey {
     actual fun getX509CertificateChain(): Array<String>?
     actual fun toPublicKey(): IKey
     actual fun getKidAsString(): String?
+    actual fun getXAsString(): String?
+    actual fun getYAsString(): String?
 }
 
 

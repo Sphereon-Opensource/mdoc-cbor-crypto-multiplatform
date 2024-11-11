@@ -133,6 +133,9 @@ expect interface IKey {
 
     fun getKidAsString(): String?
 
+    fun getXAsString(): String?
+    fun getYAsString(): String?
+
     fun toPublicKey(): IKey
 }
 
@@ -267,14 +270,15 @@ expect interface IResolvedKeyInfo<out KT : IKey> : IKeyInfo<KT> {
  *
  * @param KT Generic type that extends IKey, representing the cryptographic key type.
  */
-expect interface IManagedKeyInfo<out KT : IKey> : IResolvedKeyInfo<KT> {
+expect interface IManagedKeyInfo<KT : IKey> : IResolvedKeyInfo<KT> {
     override val kmsKeyRef: String
     override val kms: String
+    fun toManagedPublicKeyInfo(): IManagedKeyInfo<KT>
 }
 
 @JsExport
 @Serializable
-data class KeyInfo<out KT : IKey>(
+data class KeyInfo<KT : IKey>(
     override val kid: String? = null, /*val jwk: JWK,*/
     override val key: KT? = null,
     @Transient // fixme:
@@ -315,7 +319,7 @@ data class KeyInfo<out KT : IKey>(
     override fun toPublicKeyInfo(): IKeyInfo<out KT> = this.copy(key = key?.toPublicKey() as KT?, keyVisibility = KeyVisibility.PUBLIC)
 
     object Static {
-        fun <KeyType : IKey> fromDTO(dto: IKeyInfo<out KeyType>) =
+        fun <KT : IKey> fromDTO(dto: IKeyInfo<out KT>) =
             with(dto) {
                 KeyInfo(
                     kid = kid,
@@ -328,12 +332,19 @@ data class KeyInfo<out KT : IKey>(
                     signatureAlgorithm = signatureAlgorithm
                 )
             }
+
+
     }
+}
+
+enum class KeyEncoding {
+    COSE,
+    JOSE
 }
 
 @JsExport
 @Serializable
-data class ResolvedKeyInfo<out KT : IKey>(
+data class ResolvedKeyInfo<KT : IKey>(
     override val kid: String? = null, /*val jwk: JWK,*/
     override val key: KT,
     @Transient // fixme:
@@ -366,7 +377,7 @@ data class ResolvedKeyInfo<out KT : IKey>(
     override fun toPublicKeyInfo() = toKeyInfo().toPublicKeyInfo()
 
     object Static {
-        fun <KeyType : IKey> fromDTO(dto: IResolvedKeyInfo<out KeyType>) =
+        fun <KT : IKey> fromDTO(dto: IResolvedKeyInfo<out KT>) =
             with(dto) {
                 ResolvedKeyInfo(
                     kid = kid,
@@ -382,11 +393,11 @@ data class ResolvedKeyInfo<out KT : IKey>(
                 )
             }
 
-        fun <KeyType : IKey> fromKeyInfo(dto: IKeyInfo<*>, key: KeyType? = null): ResolvedKeyInfo<KeyType> =
+        fun <KT : IKey> fromKeyInfo(dto: IKeyInfo<*>, key: KT? = null): ResolvedKeyInfo<KT> =
             with(dto) {
                 ResolvedKeyInfo(
                     kid = kid,
-                    key = key ?: dto.key?.let { it as KeyType } ?: throw IllegalArgumentException("No key passed in and key info also had no key"),
+                    key = key ?: dto.key?.let { it as KT } ?: throw IllegalArgumentException("No key passed in and key info also had no key"),
                     opts = opts,
                     x5c = x5c,
                     kmsKeyRef = kmsKeyRef,
@@ -395,10 +406,22 @@ data class ResolvedKeyInfo<out KT : IKey>(
                     x509VerificationResult = null
                 )
             }
+
+        fun <KT : IKey> fromKey(key: KT): IResolvedKeyInfo<KT> {
+            return ResolvedKeyInfo(
+                key = key,
+                keyType = key.getKty(),
+                kid = key.getKidAsString(),
+                x5c = key.getX509CertificateChain(),
+                keyVisibility = if (key.d !== null) KeyVisibility.PRIVATE else KeyVisibility.PUBLIC,
+                signatureAlgorithm = key.getSignatureAlgorithm()
+            )
+        }
     }
+
 }
 
-class ManagedKeyInfo<KT : IKey>(
+data class ManagedKeyInfo<KT : IKey>(
     override val kmsKeyRef: String,
     override val kms: String,
     private val resolvedKeyInfo: IResolvedKeyInfo<KT>
@@ -406,6 +429,9 @@ class ManagedKeyInfo<KT : IKey>(
     override val key = resolvedKeyInfo.key
 
     override fun toResolvedPublicKeyInfo() = resolvedKeyInfo
+    override fun toManagedPublicKeyInfo(): IManagedKeyInfo<KT> =
+        this.copy(resolvedKeyInfo = resolvedKeyInfo.toResolvedPublicKeyInfo(), kmsKeyRef = kmsKeyRef, kms = kms)
+
 
     override val kid = resolvedKeyInfo.kid
     override val signatureAlgorithm = resolvedKeyInfo.signatureAlgorithm

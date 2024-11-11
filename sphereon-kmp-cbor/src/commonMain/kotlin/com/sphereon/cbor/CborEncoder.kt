@@ -225,7 +225,7 @@ object Cbor {
         } catch (e: IndexOutOfBoundsException) {
             throw IllegalArgumentException("Out of bounds decoding data", e)
         } catch (e: Throwable) {
-            throw IllegalArgumentException("Error occurred when decoding CBOR", e)
+            throw IllegalArgumentException("Error occurred when decoding CBOR." +e.message, e)
         }
     }
 
@@ -331,7 +331,7 @@ object Cbor {
                     }
 
                     is CborByteString -> {
-                        if (tagNumberOfParent != null && tagNumberOfParent == CborTagged.Static.ENCODED_CBOR) {
+                        if (tagNumberOfParent != null && tagNumberOfParent == CborTagged.Static.ENCODED_CBOR || item is CborEncodedItem<*>) {
                             sb.append("<< ")
                             try {
                                 val embeddedItem: AnyCborItem = decode(item.value)

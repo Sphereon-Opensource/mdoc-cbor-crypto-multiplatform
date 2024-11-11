@@ -18,20 +18,39 @@ import com.sphereon.cbor.StringLabel
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.toCborByteString
 import com.sphereon.cbor.toCborString
+import com.sphereon.cbor.toCborUIntFromUint
+import com.sphereon.crypto.CoseJoseKeyMappingService
+import com.sphereon.crypto.IKey
+import com.sphereon.crypto.IManagedKeyInfo
+import com.sphereon.crypto.IResolvedKeyInfo
+import com.sphereon.crypto.ManagedKeyInfo
+import com.sphereon.crypto.ResolvedKeyInfo
 import com.sphereon.crypto.cose.COSE_Sign1
+import com.sphereon.crypto.cose.CoseHeaderCbor
+import com.sphereon.crypto.cose.CoseKeyCbor
 import com.sphereon.crypto.cose.CoseSign1Cbor
 import com.sphereon.crypto.cose.CoseSign1Json
+import com.sphereon.crypto.generic.DigestAlg
+import com.sphereon.crypto.generic.SignatureAlgorithm
+import com.sphereon.crypto.generic.hash
 import com.sphereon.json.JsonView
 import com.sphereon.json.mdocJsonSerializer
+import com.sphereon.kmp.DateTimeUtils
 import com.sphereon.kmp.Encoding
+import com.sphereon.kmp.LocalDateTimeKMP
 import com.sphereon.kmp.LongKMP
 import com.sphereon.kmp.decodeFrom
 import com.sphereon.kmp.encodeToBase64Url
+import com.sphereon.mdoc.MdocSignService
 import com.sphereon.mdoc.data.DataElementIdentifier
 import com.sphereon.mdoc.data.DataElementValue
+import com.sphereon.mdoc.data.DocType
 import com.sphereon.mdoc.data.NameSpace
+import com.sphereon.mdoc.data.mso.DeviceKeyInfoCbor
+import com.sphereon.mdoc.data.mso.DigestIDs
 import com.sphereon.mdoc.data.mso.MobileSecurityObjectCbor
 import com.sphereon.mdoc.data.mso.MobileSecurityObjectJson
+import com.sphereon.mdoc.data.mso.ValidityInfoCbor
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -39,6 +58,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonElement
 import kotlin.js.JsExport
 import kotlin.js.JsName
+import kotlin.random.Random
 
 @JsExport
 @Serializable
@@ -141,14 +161,131 @@ data class IssuerSignedCbor(
     fun toDocumentJson(): DocumentJson = toDocument().toJson()
 
 
-    class Builder(val nameSpaces: MutableMap<NameSpace, List<IssuerSignedItemCbor<Any>>> = mutableMapOf()) {
+    class MsoBuilder(
+        var docType: DocType? = null,
+        val nameSpaces: IssuerSignedNamesSpacesCbor = IssuerSignedNamesSpacesCbor(),
+        var signed: LocalDateTimeKMP = DateTimeUtils.Static.DEFAULT.dateTimeLocal(),
+        var validFrom: LocalDateTimeKMP = DateTimeUtils.Static.DEFAULT.dateTimeLocal(),
+        var validUntil: LocalDateTimeKMP? = null,
+        var expectedUpdate: LocalDateTimeKMP? = null,
+        var deviceKeyInfo: IResolvedKeyInfo<CoseKeyCbor>? = null,
+        var issuerKeyInfo: IManagedKeyInfo<*>? = null,
+    ) {
 
         fun addNameSpace(nameSpace: NameSpace, vararg issuerSignedItems: IssuerSignedItemCbor<Any>) = apply {
-            val values = nameSpaces.getOrElse(nameSpace) { mutableListOf() }
-            nameSpaces[nameSpace] = values.plus(issuerSignedItems)
+            val values = nameSpaces.value.getOrElse(nameSpace) { CborArray() }
+            values.value.addAll(issuerSignedItems.map { CborEncodedItem(it) }.toList())
+        }
+
+        fun withDocType(docType: DocType) = apply { this.docType = docType }
+        fun withDocTypeString(docType: String) = apply { withDocType(docType.toCborString()) }
+
+        fun withSigned(signed: LocalDateTimeKMP) = apply { this.signed = signed }
+
+        fun withValidFrom(validFrom: LocalDateTimeKMP) = apply { this.validFrom = validFrom }
+        fun withValidUntil(validUntil: LocalDateTimeKMP) = apply { this.validUntil = validUntil }
+        fun withExpectedUpdate(expectedUpdate: LocalDateTimeKMP?) = apply { this.expectedUpdate = expectedUpdate }
+
+        fun withValidityInfo(
+            signed: LocalDateTimeKMP = DateTimeUtils.Static.DEFAULT.dateTimeLocal(),
+            validFrom: LocalDateTimeKMP = DateTimeUtils.Static.DEFAULT.dateTimeLocal(),
+            validUntil: LocalDateTimeKMP,
+            expectedUpdate: LocalDateTimeKMP? = null
+        ) = apply {
+            this.withSigned(signed)
+            this.withValidFrom(validFrom)
+            this.withValidUntil(validUntil)
+            this.withExpectedUpdate(expectedUpdate)
+        }
+
+        fun withDeviceKey(deviceKey: IKey) = apply {
+            val pubKey = CoseJoseKeyMappingService.toCoseKey(deviceKey).toPublicKey()
+            this.deviceKeyInfo = ResolvedKeyInfo.Static.fromKey(pubKey)
+        }
+
+        fun withDeviceKeyInfo(deviceKeyInfo: IResolvedKeyInfo<*>) = apply {
+            this.deviceKeyInfo = CoseJoseKeyMappingService.toResolvedCoseKeyInfo(deviceKeyInfo)
+        }
+
+        fun withSigningKeyInfo(issuerKeyInfo: IManagedKeyInfo<*>) = apply {
+            this.issuerKeyInfo = issuerKeyInfo
         }
 
 
+        fun build(
+            alg: DigestAlg? = issuerKeyInfo?.signatureAlgorithm?.digestAlgorithm ?: DigestAlg.SHA256
+        ): Pair<MobileSecurityObjectCbor, IssuerSignedNamesSpacesCbor> {
+
+            require(deviceKeyInfo !== null) { "Please provide a device key or key info object" }
+            require(validUntil !== null) { "Please provide a valid until value" }
+            require(docType !== null) { "Please provide a doc type" }
+            require(nameSpaces.value.isNotEmpty() == true) { "Please provide at least one name space" }
+
+            val validityInfo = ValidityInfoCbor.Static.fromDates(
+                signed = signed,
+                validFrom = validFrom,
+                validUntil = validUntil!!,
+                expectedUpdate = expectedUpdate
+            )
+
+
+            val alg = (issuerKeyInfo?.signatureAlgorithm?.digestAlgorithm ?: DigestAlg.SHA256)
+            val mso = MobileSecurityObjectCbor(
+                docType = docType!!,
+                validityInfo = validityInfo,
+                digestAlgorithm = alg.httpHeaderId!!.toCborString(),
+                deviceKeyInfo = DeviceKeyInfoCbor.Static.fromKeyInfo(deviceKeyInfo!!),
+                valueDigests = Static.toValueDigests(nameSpaces = nameSpaces, alg = alg)
+            )
+
+            return mso to nameSpaces
+
+        }
+
+        @JsExport.Ignore
+        suspend fun buildAndSign(
+            mdocSignService: MdocSignService,
+            signatureAlgorithm: SignatureAlgorithm? = issuerKeyInfo?.signatureAlgorithm,
+            alg: DigestAlg = signatureAlgorithm?.digestAlgorithm ?: DigestAlg.SHA256,
+            unprotectedHeader: CoseHeaderCbor? = null,
+            protectedHeader: CoseHeaderCbor? = null,
+            requireDeviceX5Chain: Boolean = false,
+        ): IssuerSignedCbor {
+            require(issuerKeyInfo !== null) { "Please provide an issuer key info object to sign" }
+            val (mso, issuerSignedNameSpaces) = build(alg = alg)
+            return mdocSignService.issuerSignIssuerSigned(
+                mso = mso,
+                issuerSignedNameSpaces = issuerSignedNameSpaces,
+                issuerKeyInfo = issuerKeyInfo!!,
+                signatureAlgorithm = signatureAlgorithm,
+                unprotectedHeader = unprotectedHeader,
+                protectedHeader = protectedHeader,
+                requireDeviceX5Chain = requireDeviceX5Chain
+            )
+        }
+
+
+        @JsExport.Ignore
+        suspend fun buildAndSignMdoc(
+            mdocSignService: MdocSignService,
+            signatureAlgorithm: SignatureAlgorithm? = issuerKeyInfo?.signatureAlgorithm,
+            alg: DigestAlg = signatureAlgorithm?.digestAlgorithm ?: DigestAlg.SHA256,
+            unprotectedHeader: CoseHeaderCbor? = null,
+            protectedHeader: CoseHeaderCbor? = null,
+            requireDeviceX5Chain: Boolean = false,
+        ): DocumentCbor {
+            require(issuerKeyInfo !== null) { "Please provide an issuer key info object to sign" }
+            val (mso, issuerSignedNameSpaces) = build(alg = alg)
+            return mdocSignService.issuerSignDocument(
+                mso = mso,
+                issuerSignedNameSpaces = issuerSignedNameSpaces,
+                issuerKeyInfo = issuerKeyInfo!!,
+                signatureAlgorithm = signatureAlgorithm,
+                unprotectedHeader = unprotectedHeader,
+                protectedHeader = protectedHeader,
+                requireDeviceX5Chain = requireDeviceX5Chain
+            )
+        }
     }
 
     override fun cborBuilder(): CborBuilder<IssuerSignedCbor> {
@@ -202,6 +339,20 @@ data class IssuerSignedCbor(
         val NAME_SPACES = StringLabel("nameSpaces")
         val ISSUER_AUTH = StringLabel("issuerAuth")
 
+        fun toValueDigests(
+            nameSpaces: IssuerSignedNamesSpacesCbor? = null,
+            alg: DigestAlg = DigestAlg.SHA256
+        ): CborMap<NameSpace, CborMap<DigestIDs, CborByteString>> {
+            val digests = nameSpaces?.value?.map { (ns, encodedItems) ->
+                ns to CborMap(mutableMapOf(* encodedItems.value.map { encodedItem ->
+                    encodedItem.decodedValue.digestID to encodedItem.decodedValue.digest(
+                        alg
+                    )
+                }.toTypedArray()))
+            } ?: emptyList()
+            return CborMap(mutableMapOf(*digests.toTypedArray()))
+        }
+
         @JsName("fromCborItem")
         fun fromCborItem(m: CborMap<StringLabel, AnyCborItem>): IssuerSignedCbor {
             val nameSpacesMap =
@@ -224,11 +375,6 @@ data class IssuerSignedCbor(
         @JsName("cborDecode")
         fun cborDecode(encoded: ByteArray): IssuerSignedCbor = fromCborItem(Cbor.decode(encoded))
     }
-}
-
-
-interface JsonElementWithCDDL {
-    val cddl: CDDL
 }
 
 @JsExport
@@ -281,7 +427,7 @@ data class IssuerSignedItemJson(
 @JsExport
 data class IssuerSignedItemCbor<Type : Any>(
     val digestID: CborUInt,
-    val random: CborByteString,
+    val random: CborByteString = Random.nextBytes(24).toCborByteString(),
     val elementIdentifier: DataElementIdentifier,
     val elementValue: DataElementValue<Type>
 ) : CborView<IssuerSignedItemCbor<Type>, IssuerSignedItemJson, Map<StringLabel, AnyCborItem>>(CDDL.map) {
@@ -301,6 +447,9 @@ data class IssuerSignedItemCbor<Type : Any>(
         }
     }
 
+    fun digest(alg: DigestAlg = DigestAlg.SHA256): CborByteString {
+        return CborByteString(hash(cborEncode(), alg))
+    }
 
     fun toJsonDTO() = toJson().toJsonDTO<IssuerSignedItemJson>()
     override fun toJson(): IssuerSignedItemJson {
@@ -359,6 +508,15 @@ data class IssuerSignedItemCbor<Type : Any>(
 
         @JsName("cborDecode")
         fun cborDecode(data: ByteArray): IssuerSignedItemCbor<*> = fromCborItem(cborSerializer.decode(data))
+
+        fun <Type : Any> create(digestID: UInt, elementIdentifier: String, elementValue: DataElementValue<Type>): IssuerSignedItemCbor<Type> {
+            return IssuerSignedItemCbor(
+                digestID = digestID.toCborUIntFromUint(),
+                random = Random.nextBytes(24).toCborByteString(),
+                elementIdentifier = elementIdentifier.toCborString(),
+                elementValue = elementValue
+            )
+        }
     }
 
 

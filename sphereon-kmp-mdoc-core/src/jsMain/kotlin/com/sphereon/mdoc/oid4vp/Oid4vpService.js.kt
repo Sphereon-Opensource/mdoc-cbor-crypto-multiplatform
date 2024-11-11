@@ -58,6 +58,7 @@ class MdocOid4vpServiceJs(val signService: MdocSignService = MdocSignService()) 
                 authorizationRequestNonce,
                 deviceNamespaces,
                 document,
+                inputDescriptor = null,
                 docType,
                 deviceKeyInfo,
                 presentationDefinition

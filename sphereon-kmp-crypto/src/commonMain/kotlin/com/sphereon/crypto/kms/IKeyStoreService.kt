@@ -3,6 +3,7 @@ package com.sphereon.crypto.kms
 import com.sphereon.crypto.IKeyInfo
 import com.sphereon.crypto.IManagedKeyInfo
 import com.sphereon.crypto.IResolvedKeyInfo
+import com.sphereon.crypto.KeyVisibility
 import com.sphereon.crypto.PKIException
 import com.sphereon.crypto.kms.model.KeyProviderSettings
 import kotlin.js.JsExport
@@ -65,4 +66,5 @@ interface IKeyStoreService {
     fun deleteKey(keyInfo: IKeyInfo<*>): Boolean
 
 
+    fun keyVisibility(): KeyVisibility
 }

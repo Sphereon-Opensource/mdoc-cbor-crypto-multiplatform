@@ -5,6 +5,7 @@ import com.sphereon.cbor.CDDL
 import com.sphereon.cbor.CborArray
 import com.sphereon.cbor.CborBuilder
 import com.sphereon.cbor.CborByteString
+import com.sphereon.cbor.CborEncodedItem
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborNull
 import com.sphereon.cbor.CborString
@@ -21,6 +22,7 @@ import com.sphereon.kmp.decodeFromBase64Url
 import com.sphereon.kmp.encodeTo
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.JsonNull.content
 import kotlin.js.JsExport
 import kotlin.js.JsName
 
@@ -128,7 +130,7 @@ data class CoseSign1InputCbor(
     class Builder(
         private var protectedHeader: CoseHeaderCbor? = CoseHeaderCbor(),
         private var unprotectedHeader: CoseHeaderCbor? = null,
-        private var payload: CborView<*, *, *>? = null
+        private var payload: CborView<*, *, *>? = null,
     ) {
 
         fun withProtectedHeader(protectedHeader: CoseHeaderCbor) = apply { this.protectedHeader = protectedHeader }
@@ -136,10 +138,11 @@ data class CoseSign1InputCbor(
         fun withPayload(payload: CborView<*, *, *>) = apply { this.payload = payload }
 
         fun build(): CoseSign1InputCbor {
-            val content = payload?.cborEncode()?.toCborByteString()
+            var content = payload?.cborEncode()?.toCborByteString()
             if (content === null) {
                 throw IllegalArgumentException("Payload is required")
             }
+
             return CoseSign1InputCbor(
                 payload = content,
                 unprotectedHeader = unprotectedHeader,

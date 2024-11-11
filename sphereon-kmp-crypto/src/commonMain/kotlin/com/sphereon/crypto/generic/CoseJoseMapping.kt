@@ -197,7 +197,6 @@ fun CoseKeyType.toJoseKeyType() = KeyType.Static.toJose(this)
 fun JwaKeyType.toCoseKeyType() = KeyType.Static.toCose(this)
 
 
-
 /**
  * Represents a Signature Algorithm with various algorithm properties and identifiers.
  *
@@ -233,7 +232,13 @@ sealed class SignatureAlgorithm(
      * This algorithm is used for digital signatures and is mapped to the
      * COSE (CBOR Object Signing and Encryption) algorithm identifier -7 and the corresponding JWA (JSON Web Algorithm) identifier ES256.
      */
-    object ECDSA_SHA256 : SignatureAlgorithm(CoseAlgorithm.ES256, JwaAlgorithm.ES256, cryptoAlgorithm = CryptoAlg.ECDSA, curve = Curve.P_256)
+    object ECDSA_SHA256 : SignatureAlgorithm(
+        CoseAlgorithm.ES256,
+        JwaAlgorithm.ES256,
+        cryptoAlgorithm = CryptoAlg.ECDSA,
+        curve = Curve.P_256,
+        digestAlgorithm = DigestAlg.SHA256
+    )
 
     /**
      * Represents the ECDSA with SHA-384 algorithm mapping.
@@ -243,7 +248,13 @@ sealed class SignatureAlgorithm(
      * COSE Algorithm: ES384
      * JWA Algorithm: ES384
      */
-    object ECDSA_SHA384 : SignatureAlgorithm(CoseAlgorithm.ES384, JwaAlgorithm.ES384, cryptoAlgorithm = CryptoAlg.ECDSA, curve = Curve.P_384)
+    object ECDSA_SHA384 : SignatureAlgorithm(
+        CoseAlgorithm.ES384,
+        JwaAlgorithm.ES384,
+        cryptoAlgorithm = CryptoAlg.ECDSA,
+        curve = Curve.P_384,
+        digestAlgorithm = DigestAlg.SHA384
+    )
 
     /**
      * Object representing the ES512 algorithm mapping.
@@ -253,7 +264,13 @@ sealed class SignatureAlgorithm(
      * @see CoseAlgorithm.ES512
      * @see JwaAlgorithm.ES512
      */
-    object ECDSA_SHA512 : SignatureAlgorithm(CoseAlgorithm.ES512, JwaAlgorithm.ES512, cryptoAlgorithm = CryptoAlg.ECDSA, curve = Curve.P_521)
+    object ECDSA_SHA512 : SignatureAlgorithm(
+        CoseAlgorithm.ES512,
+        JwaAlgorithm.ES512,
+        cryptoAlgorithm = CryptoAlg.ECDSA,
+        curve = Curve.P_521,
+        digestAlgorithm = DigestAlg.SHA512
+    )
 
     /**
      * An object that maps the COSE algorithm ES256K to the JWA algorithm ES256K.
@@ -301,7 +318,14 @@ sealed class SignatureAlgorithm(
      * @property jwaAlgorithm
      * Identifier for the JWA algorithm.
      */
-    object RSA_SSA_PSS_SHA256_MGF1 : SignatureAlgorithm(CoseAlgorithm.PS256, JwaAlgorithm.PS256, cryptoAlgorithm = CryptoAlg.RSA, curve = Curve.P_256, digestAlgorithm = DigestAlg.SHA256, maskGenFunction = MaskGenFunction.MGF1)
+    object RSA_SSA_PSS_SHA256_MGF1 : SignatureAlgorithm(
+        CoseAlgorithm.PS256,
+        JwaAlgorithm.PS256,
+        cryptoAlgorithm = CryptoAlg.RSA,
+        curve = Curve.P_256,
+        digestAlgorithm = DigestAlg.SHA256,
+        maskGenFunction = MaskGenFunction.MGF1
+    )
 
     /**
      * PS384 object represents an algorithm mapping specifically for PS384 algorithm.
@@ -313,7 +337,14 @@ sealed class SignatureAlgorithm(
      * This class maps the PS384 algorithm supported by COSE (RFC 8152) to the PS384 algorithm
      * recognized by JOSE (RFC 7518).
      */
-    object RSA_SSA_PSS_SHA384_MGF1 : SignatureAlgorithm(CoseAlgorithm.PS384, JwaAlgorithm.PS384, cryptoAlgorithm = CryptoAlg.RSA, curve = Curve.P_384, digestAlgorithm = DigestAlg.SHA384, maskGenFunction = MaskGenFunction.MGF1)
+    object RSA_SSA_PSS_SHA384_MGF1 : SignatureAlgorithm(
+        CoseAlgorithm.PS384,
+        JwaAlgorithm.PS384,
+        cryptoAlgorithm = CryptoAlg.RSA,
+        curve = Curve.P_384,
+        digestAlgorithm = DigestAlg.SHA384,
+        maskGenFunction = MaskGenFunction.MGF1
+    )
 
     /**
      * Represents the RSASSA-PSS signature algorithm using SHA-512 hashing.
@@ -321,22 +352,49 @@ sealed class SignatureAlgorithm(
      * Maps the COSE algorithm identifier for RSASSA-PSS with SHA-512 to the corresponding JWA algorithm.
      * Primarily used in contexts requiring RSASSA-PSS signature with SHA-512 as specified by COSE and JOSE standards.
      */
-    object RSA_SSA_PSS_SHA512_MGF1 : SignatureAlgorithm(CoseAlgorithm.PS512, JwaAlgorithm.PS512, cryptoAlgorithm = CryptoAlg.RSA, curve = Curve.P_521, digestAlgorithm = DigestAlg.SHA512, maskGenFunction = MaskGenFunction.MGF1)
+    object RSA_SSA_PSS_SHA512_MGF1 : SignatureAlgorithm(
+        CoseAlgorithm.PS512,
+        JwaAlgorithm.PS512,
+        cryptoAlgorithm = CryptoAlg.RSA,
+        curve = Curve.P_521,
+        digestAlgorithm = DigestAlg.SHA512,
+        maskGenFunction = MaskGenFunction.MGF1
+    )
 
 
     object RSA_RAW : SignatureAlgorithm(cryptoAlgorithm = CryptoAlg.RSA, curve = null)
-    object RSA_SSA_PSS_RAW_MGF1: SignatureAlgorithm(cryptoAlgorithm = CryptoAlg.RSA, curve = null, maskGenFunction= MaskGenFunction.MGF1)
+    object RSA_SSA_PSS_RAW_MGF1 : SignatureAlgorithm(cryptoAlgorithm = CryptoAlg.RSA, curve = null, maskGenFunction = MaskGenFunction.MGF1)
 
-    object RSA_SHA256: SignatureAlgorithm(coseAlgorithm = null /*TODO*/ , joseAlgorithm = JwaAlgorithm.RS256, cryptoAlgorithm = CryptoAlg.RSA, curve = null, digestAlgorithm = DigestAlg.SHA256)
-    object RSA_SHA384: SignatureAlgorithm(coseAlgorithm = null /*TODO*/ , joseAlgorithm = JwaAlgorithm.RS384, cryptoAlgorithm = CryptoAlg.RSA, curve = null, digestAlgorithm = DigestAlg.SHA384)
-    object RSA_SHA512: SignatureAlgorithm(coseAlgorithm = null /*TODO*/ , joseAlgorithm = JwaAlgorithm.RS512, cryptoAlgorithm = CryptoAlg.RSA, curve = null, digestAlgorithm = DigestAlg.SHA512)
+    object RSA_SHA256 : SignatureAlgorithm(
+        coseAlgorithm = null /*TODO*/,
+        joseAlgorithm = JwaAlgorithm.RS256,
+        cryptoAlgorithm = CryptoAlg.RSA,
+        curve = null,
+        digestAlgorithm = DigestAlg.SHA256
+    )
 
-/*
-    RSA_SHA3_256(CryptoAlg.RSA, DigestAlg.SHA3_256),
-    RSA_SHA3_512(CryptoAlg.RSA, DigestAlg.SHA3_512),
-    RSA_SSA_PSS_SHA3_256_MGF1(CryptoAlg.RSA, DigestAlg.SHA3_256, MaskGenFunction.MGF1),
-    RSA_SSA_PSS_SHA3_512_MGF1(CryptoAlg.RSA, DigestAlg.SHA3_512, MaskGenFunction.MGF1),
-*/
+    object RSA_SHA384 : SignatureAlgorithm(
+        coseAlgorithm = null /*TODO*/,
+        joseAlgorithm = JwaAlgorithm.RS384,
+        cryptoAlgorithm = CryptoAlg.RSA,
+        curve = null,
+        digestAlgorithm = DigestAlg.SHA384
+    )
+
+    object RSA_SHA512 : SignatureAlgorithm(
+        coseAlgorithm = null /*TODO*/,
+        joseAlgorithm = JwaAlgorithm.RS512,
+        cryptoAlgorithm = CryptoAlg.RSA,
+        curve = null,
+        digestAlgorithm = DigestAlg.SHA512
+    )
+
+    /*
+        RSA_SHA3_256(CryptoAlg.RSA, DigestAlg.SHA3_256),
+        RSA_SHA3_512(CryptoAlg.RSA, DigestAlg.SHA3_512),
+        RSA_SSA_PSS_SHA3_256_MGF1(CryptoAlg.RSA, DigestAlg.SHA3_256, MaskGenFunction.MGF1),
+        RSA_SSA_PSS_SHA3_512_MGF1(CryptoAlg.RSA, DigestAlg.SHA3_512, MaskGenFunction.MGF1),
+    */
 
     /**
      * Holds the instance of the `joseAlgorithm` used for cryptographic operations.
@@ -371,7 +429,19 @@ sealed class SignatureAlgorithm(
          * This list includes various algorithms such as EdDSA, ES256K, ES256, ES384, ES512, HS256, HS384, HS512, PS256, PS384, and PS512.
          * It is utilized by functions to map between different cryptographic algorithm standards.
          */
-        val asList = listOf(ED25519, ES256K, ECDSA_SHA256, ECDSA_SHA384, ECDSA_SHA512, HMAC_SHA256, HMAC_SHA384, HMAC_SHA512, RSA_SSA_PSS_SHA256_MGF1, RSA_SSA_PSS_SHA384_MGF1, RSA_SSA_PSS_SHA512_MGF1)
+        val asList = listOf(
+            ED25519,
+            ES256K,
+            ECDSA_SHA256,
+            ECDSA_SHA384,
+            ECDSA_SHA512,
+            HMAC_SHA256,
+            HMAC_SHA384,
+            HMAC_SHA512,
+            RSA_SSA_PSS_SHA256_MGF1,
+            RSA_SSA_PSS_SHA384_MGF1,
+            RSA_SSA_PSS_SHA512_MGF1
+        )
 
         /**
          * Converts a given COSE algorithm to its corresponding JOSE algorithm.
@@ -404,7 +474,7 @@ sealed class SignatureAlgorithm(
          * @param cose the COSE algorithm to be converted.
          * @return the internal representation of the given COSE algorithm if found, null otherwise.
          */
-        fun fromCose(cose: CoseAlgorithm?) = asList.find { it.coseAlgorithm == cose }  ?: throw IllegalArgumentException("cose alg $cose not found")
+        fun fromCose(cose: CoseAlgorithm?) = asList.find { it.coseAlgorithm == cose } ?: throw IllegalArgumentException("cose alg $cose not found")
 
         /**
          * Converts a provided algorithm representation to a `JwaAlgorithm`.

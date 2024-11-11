@@ -68,7 +68,7 @@ kotlin {
           }
       }*/
     js(IR) {
-        moduleName = "@sphereon/kmp-mdl-mdoc"
+        moduleName = "@sphereon/kmp-mdoc-core"
         nodejs {
 //            useEsModules() // Enables ES2015 modules
 

@@ -51,10 +51,35 @@ class EcDSACryptoProviderTest {
 
     @Test
     fun testGenerateKeyAsync() = runTest {
-        val curve = Curve.P_256
-        val result = ecdsaCryptoProvider.generateKeyAsync(alg = SignatureAlgorithm.ECDSA_SHA256)
-        assertNotNull(result)
+        val managedKeyPair = ecdsaCryptoProvider.generateKeyAsync(alg = SignatureAlgorithm.ECDSA_SHA256)
+        assertNotNull(managedKeyPair)
+        assertNotNull(managedKeyPair.cborToManagedKeyInfo().key.kid)
     }
+
+    @Test
+    fun testValidRawSignatureAndVerification() = runTest {
+        val managedKeyPair = ecdsaCryptoProvider.generateKeyAsync(alg = SignatureAlgorithm.ECDSA_SHA256)
+        val keyInfo = managedKeyPair.joseToManagedKeyInfo()
+        assertNotNull(keyInfo)
+        val signature = ecdsaCryptoProvider.createRawSignatureAsync(keyInfo = keyInfo, input = "test".encodeToByteArray())
+        assertNotNull(signature)
+        val verification = ecdsaCryptoProvider.isValidRawSignatureAsync(keyInfo = keyInfo, signature = signature, input = "test".encodeToByteArray())
+        assertTrue(verification)
+
+    }
+
+    @Test
+    fun testInalidRawSignatureAndVerification() = runTest {
+        val managedKeyPair = ecdsaCryptoProvider.generateKeyAsync(alg = SignatureAlgorithm.ECDSA_SHA256)
+        val keyInfo = managedKeyPair.joseToManagedKeyInfo()
+        assertNotNull(keyInfo)
+        val signature = ecdsaCryptoProvider.createRawSignatureAsync(keyInfo = keyInfo, input = "test".encodeToByteArray())
+        assertNotNull(signature)
+        val verification = ecdsaCryptoProvider.isValidRawSignatureAsync(keyInfo = keyInfo, signature = signature, input = "test2".encodeToByteArray())
+        assertFalse(verification)
+
+    }
+
 
     @Test
     fun testGenerateKeyThrowsExceptionForUnsupportedCurve() = runTest {
@@ -62,7 +87,7 @@ class EcDSACryptoProviderTest {
         val exception = assertFailsWith<IllegalArgumentException> {
             ecdsaCryptoProvider.generateKeyAsync(alg = unsupportedAlg)
         }
-        assertEquals("Alg $unsupportedAlg not supported for EcDSA", exception.message)
+        assertEquals("Curve ${unsupportedAlg.curve} not supported for EcDSA", exception.message)
     }
 
     @Test

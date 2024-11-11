@@ -1,5 +1,6 @@
 package com.sphereon.crypto.kms.model
 
+import com.sphereon.crypto.KeyVisibility
 import com.sphereon.kmp.Base64UrlSerializer
 import kotlin.js.JsExport
 
@@ -13,6 +14,8 @@ data class KeyProviderConfig(
     val cacheTTLInSeconds: Int? = 5 * 60,
 
     val type: KeyProviderType,
+
+    val externalKeyVisibility: KeyVisibility = KeyVisibility.PUBLIC, // only public keys for anything with hardware
 
     val password: PasswordInputCallback? = null,
 

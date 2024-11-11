@@ -1,7 +1,6 @@
 package com.sphereon.crypto
 
 import com.sphereon.cbor.toCborByteString
-import com.sphereon.crypto.cose.CoseAlgorithm
 import com.sphereon.crypto.cose.CoseHeaderCbor
 import com.sphereon.crypto.cose.CoseKeyCbor
 import com.sphereon.crypto.cose.CoseSign1Cbor
@@ -9,6 +8,7 @@ import com.sphereon.crypto.cose.CoseSign1InputCbor
 import com.sphereon.crypto.cose.ICoseKeyCbor
 import com.sphereon.crypto.cose.ToBeSignedCbor
 import com.sphereon.crypto.generic.IVerifySignatureResult
+import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.crypto.generic.VerifySignatureResult
 import com.sphereon.kmp.Encoding
 import kotlin.js.JsExport
@@ -102,17 +102,22 @@ abstract class AbstractCoseCryptoService<CallbackServiceType>(open val platformC
         requireX5Chain: Boolean
     ): Triple<CoseSign1InputCbor, ToBeSignedCbor, IKeyInfo<ICoseKeyCbor>> {
         assertEnabled()
-        val (protectedHeader, cborKeyInfo) = verifyAndAmendKeyInfo(
+        var (protectedHeader, cborKeyInfo) = verifyAndAmendKeyInfo(
             protectedHeader = input.protectedHeader,
             unprotectedHeader = input.unprotectedHeader,
             keyInfo = keyInfo,
             requireX5Chain = requireX5Chain
         )
-        val key = cborKeyInfo.key ?: throw IllegalStateException("No key supplied")
+        val key = cborKeyInfo.key
+        var alg = protectedHeader.alg ?: cborKeyInfo.signatureAlgorithm?.cose ?: key.getSignatureAlgorithm()?.cose
+        if (protectedHeader.alg === null) {
+            protectedHeader = protectedHeader.copy(alg = alg)
+        }
         val coseSign1 = input.copy(protectedHeader = protectedHeader)
         val toSign = coseSign1.toBeSignedCbor(
             keyInfo = cborKeyInfo,
-            alg = cborKeyInfo.signatureAlgorithm ?: cborKeyInfo.key?.getSignatureAlgorithm() ?: throw IllegalStateException("No alg supplied. ${key}")
+            alg = input.protectedHeader?.alg?.let { SignatureAlgorithm.Static.fromCose(it) } ?: cborKeyInfo.signatureAlgorithm
+            ?: key.getSignatureAlgorithm() ?: throw IllegalStateException("No alg supplied. ${key}")
         )
         return Triple(coseSign1, toSign, cborKeyInfo)
     }
@@ -136,10 +141,11 @@ abstract class AbstractCoseCryptoService<CallbackServiceType>(open val platformC
         protectedHeader: CoseHeaderCbor? = null,
         unprotectedHeader: CoseHeaderCbor? = null,
         keyInfo: IKeyInfo<*>? = null,
+        managedKey: Boolean = false,
         requireX5Chain: Boolean = true
-    ): Pair<CoseHeaderCbor, IKeyInfo<ICoseKeyCbor>> {
+    ): Pair<CoseHeaderCbor, IResolvedKeyInfo<ICoseKeyCbor>> {
         var x5chain = protectedHeader?.x5chain
-        val sigAlg = protectedHeader?.alg ?: unprotectedHeader?.alg
+        val sigAlg = protectedHeader?.alg ?: unprotectedHeader?.alg ?: keyInfo?.signatureAlgorithm?.cose
         val kid =
             keyInfo?.kid ?: protectedHeader?.kid?.encodeTo(Encoding.BASE64URL) ?: unprotectedHeader?.kid?.encodeTo(Encoding.BASE64URL)
 
@@ -156,6 +162,9 @@ abstract class AbstractCoseCryptoService<CallbackServiceType>(open val platformC
         if (keyInfoWithKey === null) {
             throw IllegalStateException("No protected header or key info passed in")
         }
+        if (managedKey) {
+
+        }
         val key = CoseJoseKeyMappingService.toCoseKey(keyInfoWithKey.key ?: this.resolvePublicCborKey(keyInfoWithKey).key)
         if (x5chain === null) {
             x5chain = key.x5chain
@@ -163,18 +172,13 @@ abstract class AbstractCoseCryptoService<CallbackServiceType>(open val platformC
         if (requireX5Chain && x5chain === null) {
             throw IllegalArgumentException("No x5c or x5chain could be found in header or resolved key")
         }
-        sigAlg
-        CoseAlgorithm.ES256
-
-        keyInfoWithKey = CoseJoseKeyMappingService.toCoseKeyInfo(keyInfoWithKey)
 
 
         val protectedHeaderWithX5chain = protectedHeader?.copy(x5chain = x5chain) ?: CoseHeaderCbor(x5chain = x5chain)
-        val keyType = sigAlg?.keyType ?: key.getKty().cose
-        if (keyType == null) {
-            throw IllegalStateException("No Key type found or provided")
-        }
-        return Pair(protectedHeaderWithX5chain, CoseJoseKeyMappingService.toCoseKeyInfo(keyInfoWithKey))
+        return Pair(
+            protectedHeaderWithX5chain,
+            CoseJoseKeyMappingService.toResolvedCoseKeyInfo(CoseJoseKeyMappingService.toResolvedKeyInfo(keyInfoWithKey, key))
+        )
     }
 
     protected abstract suspend fun resolvePublicCborKey(keyInfo: IKeyInfo<*>): IResolvedKeyInfo<ICoseKeyCbor>

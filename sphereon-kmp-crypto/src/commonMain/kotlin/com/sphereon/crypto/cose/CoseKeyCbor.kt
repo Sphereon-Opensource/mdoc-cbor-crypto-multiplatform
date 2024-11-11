@@ -17,6 +17,7 @@ import com.sphereon.crypto.IKey
 import com.sphereon.crypto.generic.KeyOperations
 import com.sphereon.crypto.generic.KeyType
 import com.sphereon.crypto.generic.SignatureAlgorithm
+import com.sphereon.crypto.jose.Jwk
 import com.sphereon.json.JsonView
 import com.sphereon.json.cryptoJsonSerializer
 import com.sphereon.kmp.Encoding
@@ -205,6 +206,9 @@ data class CoseKeyJson(
      */
     override fun getX509CertificateChain() = x5chain
     override fun getKidAsString(): String? = kid
+    override fun getXAsString() = x
+
+    override fun getYAsString() = y
 
 
     override fun toPublicKey() = copy(d = null)
@@ -645,7 +649,7 @@ expect interface ICoseKeyCbor : IKey {
 @JsExport
 data class CoseKeyCbor(
     override val kty: CborUInt,
-    override val kid: CborByteString? = null,
+    override var kid: CborByteString? = null,
     override val alg: CborUInt? = null,
     override val key_ops: CborArray<CborUInt>? = null,
     override val baseIV: CborByteString? = null,
@@ -656,6 +660,15 @@ data class CoseKeyCbor(
     override val x5chain: CborArray<CborByteString>? = null,
     override val additional: CborMap<NumberLabel, AnyCborItem>? = null
 ) : ICoseKeyCbor, CborView<CoseKeyCbor, CoseKeyJson, CborMap<NumberLabel, AnyCborItem>>(CDDL.map) {
+
+    init {
+        if (kid === null) {
+            this.kid = determineKid()
+        }
+    }
+
+
+    fun determineKid() = Jwk.Static.fromCoseKeyJson(this.toJson()).kid!!.toCborByteString(Encoding.BASE64URL)
 
     /**
      * Constructs and returns a CBOR (Concise Binary Object Representation) builder for the CoseKeyCbor object.
@@ -694,7 +707,7 @@ data class CoseKeyCbor(
     override fun toJson(): CoseKeyJson {
         return CoseKeyJson.Builder()
             .withKty(CoseKeyType.Static.fromValue(kty.value.toInt()))
-            .withKid(kid?.let { kid.value.decodeToString() })
+            .withKid(kid?.value?.decodeToString())
             .withAlg(alg?.let { CoseAlgorithm.Static.fromValue(it.value.toInt()) })
             .withKeyOps(key_ops?.value?.map { ko -> CoseKeyOperations.Static.fromValue(ko.value.toInt()) }
                 ?.toTypedArray())
@@ -757,6 +770,9 @@ data class CoseKeyCbor(
     }
 
     override fun getKidAsString() = kid?.value?.decodeToString()
+    override fun getXAsString() = x?.value?.encodeTo(Encoding.BASE64URL)
+
+    override fun getYAsString() = y?.value?.encodeTo(Encoding.BASE64URL)
 
     override fun toPublicKey() = copy(d = null)
 

@@ -1,6 +1,7 @@
 package com.sphereon.crypto.jose
 
 import com.sphereon.crypto.IKey
+import com.sphereon.crypto.PKIException
 import com.sphereon.crypto.cose.CoseKeyCbor
 import com.sphereon.crypto.cose.CoseKeyJson
 import com.sphereon.crypto.cose.ICoseKeyCbor
@@ -8,6 +9,7 @@ import com.sphereon.crypto.cose.ICoseKeyJson
 import com.sphereon.crypto.generic.KeyOperations
 import com.sphereon.crypto.generic.KeyType
 import com.sphereon.crypto.generic.SignatureAlgorithm
+import com.sphereon.crypto.generic.hash
 import com.sphereon.crypto.generic.toCoseAlgorithm
 import com.sphereon.crypto.generic.toCoseCurve
 import com.sphereon.crypto.generic.toCoseKeyOperations
@@ -17,8 +19,13 @@ import com.sphereon.crypto.generic.toJoseKeyOperations
 import com.sphereon.crypto.generic.toJoseKeyType
 import com.sphereon.crypto.generic.toJoseSignatureAlgorithm
 import com.sphereon.json.cryptoJsonSerializer
+import com.sphereon.kmp.Encoding
+import com.sphereon.kmp.decodeFrom
+import com.sphereon.kmp.encodeToBase64Url
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -364,7 +371,7 @@ data class Jwk(
     override val e: String? = null,
     override val k: String? = null,
     override val key_ops: Array<JoseKeyOperations>? = null,
-    override val kid: String? = null,
+    override var kid: String? = null,
     override val kty: JwaKeyType,
     override val n: String? = null,
     override val use: String? = null,
@@ -377,6 +384,14 @@ data class Jwk(
     override val x5t_S256: String? = null,
     override val y: String? = null,
 ) : IJwk {
+
+    init {
+        if (this.kid === null) {
+            this.kid = determineKid()
+        }
+    }
+
+    private fun determineKid(): String = generateJwkThumbprint(this)
 
     /**
      * Represents additional JSON attributes not explicitly defined in the JWK specification.
@@ -431,6 +446,9 @@ data class Jwk(
     }
 
     override fun getKidAsString() = kid
+    override fun getXAsString() = x
+
+    override fun getYAsString() = y
 
     override fun toPublicKey(): Jwk = copy(d = null)
 
@@ -931,4 +949,25 @@ fun CoseKeyJson.jsonToJwk() = Jwk.Static.fromCoseKeyJson(this)
 enum class JwkUse(val value: String) {
     sig("sig"),
     enc("enc")
+}
+
+fun generateJwkThumbprint(jwk: IJwk): String {
+    val jwkSubset = when (jwk.kty) {
+        JwaKeyType.RSA -> mapOf(
+            "e" to jwk.e!!,
+            "kty" to jwk.kty.value,
+            "n" to jwk.n!!
+        )
+        JwaKeyType.EC -> mapOf(
+            "crv" to (jwk.crv?.value ?: throw PKIException("crv is missing")),
+            "kty" to jwk.kty.value,
+            "x" to jwk.x!!,
+            "y" to jwk.y!!
+        )
+        else -> throw IllegalArgumentException("Unsupported key type: ${jwk.kty}")
+    }
+
+    val json = Json.encodeToString(jwkSubset)
+    val hash = hash(json.decodeFrom(Encoding.UTF8))
+    return hash.encodeToBase64Url()
 }
