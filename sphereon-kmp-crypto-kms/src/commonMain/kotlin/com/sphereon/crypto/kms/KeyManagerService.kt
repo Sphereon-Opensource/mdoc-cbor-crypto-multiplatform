@@ -148,8 +148,8 @@ open class KeyManagerService<X509PlatformCallback : IX509ServiceMarkerType>(
     }
 
     @JsExport.Ignore
-    override suspend fun createRawSignatureAsync(keyInfo: IKeyInfo<*>, input: ByteArray) =
-        getKms(kms = keyInfo.kms, alg = keyInfo.signatureAlgorithm).createRawSignatureAsync(keyInfo, input)
+    override suspend fun createRawSignatureAsync(keyInfo: IKeyInfo<*>, input: ByteArray,requireX5Chain: Boolean) =
+        getKms(kms = keyInfo.kms, alg = keyInfo.signatureAlgorithm).createRawSignatureAsync(keyInfo, input, requireX5Chain)
 
     @JsExport.Ignore
     override suspend fun isValidRawSignatureAsync(keyInfo: IKeyInfo<*>, input: ByteArray, signature: ByteArray): Boolean {

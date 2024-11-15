@@ -45,7 +45,7 @@ class X509CertificateChainKeyResolverService<X509PlatformCallback : IX509Service
             chainDER = x509.map { it.decodeFrom(Encoding.BASE64) }.toTypedArray()
         )
         val leafKey = x509Result.publicKey ?: throw PKIException("No public key could be extracted from the provided certification chain")
-        val updateKeyInfo = KeyInfo.Static.fromDTO(keyInfo).copy(kid = keyInfo.kid ?: leafKey.getKidAsString(), key = leafKey)
+        val updateKeyInfo = KeyInfo.Static.fromDTO(keyInfo).copy(kid = keyInfo.kid ?: leafKey.getKidAsString(true), key = leafKey)
         return ResolvedKeyInfo.Static.fromKeyInfo(updateKeyInfo, leafKey)
     }
 }
@@ -82,7 +82,8 @@ class CoseJoseProvidedKeyResolverService<x509PlatformCallback : IX509ServiceMark
                 chainDER = keyInfo.key?.getX509CertificateChain()?.map { it.decodeFrom(Encoding.BASE64) }?.toTypedArray()
                     ?: throw IllegalArgumentException("X509 chain not present")
             )
-            return resolvedKeyInfo.copy(x509VerificationResult = x509Result)
+            // TODO: Reenable the below data. For whatever reason it messes up the JS side of things where it cannot find the IX509VerificationResult
+//            return resolvedKeyInfo.copy(x509VerificationResult = x509Result)
         }
         return resolvedKeyInfo
     }

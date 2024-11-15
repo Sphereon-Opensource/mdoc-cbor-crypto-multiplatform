@@ -128,7 +128,6 @@ sealed class CDDL(
                 }
                 val cddlObject = util.fromFormat(cddlStr)
                 val cborObject = newCborItemFromJson(jsonObject[jsonObject.keys.find { it != CDDL_LITERAL && it != KEY_LITERAL }], cddlObject)
-                println("CBOR ITEM AS JSON ENCOUNTERED: key:${key}, cddl:${cddlStr}, object: ${cborObject}")
                 if (key === null) {
                     return cborObject
                 }
@@ -239,8 +238,6 @@ sealed class CDDL(
                     if (it.value is AnyCborItem) it.value as AnyCborItem else any.newCborItem(it.value)
                 )
             }.toTypedArray())) /* fixme. Needs inspection of keys and values and map type*/ else {
-                println("===========================================")
-                println("JSON ELEMENT: ${jsonElement}")
                 return map.fromJson(jsonElement.jsonObject)
             }
 
@@ -477,7 +474,6 @@ sealed class CDDL(
         ) {
         fun newAny(value: cddl_any) = CborAny(value)
         fun fromJson(value: JsonElement): CborItem<*> {
-            println("any to json: ${value}")
             return newCborItemFromJson(value)
 //            TODO("Json any to cbor not implemeted yet")
         }

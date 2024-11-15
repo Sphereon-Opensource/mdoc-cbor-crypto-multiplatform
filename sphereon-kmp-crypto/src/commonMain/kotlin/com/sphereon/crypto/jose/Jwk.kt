@@ -365,6 +365,7 @@ expect interface IJwk : IKey {
 @JsExport
 @Serializable
 data class Jwk(
+    private val generateKid: Boolean = false,
     override val alg: JwaAlgorithm? = null,
     override val crv: JwaCurve? = null,
     override val d: String? = null,
@@ -386,7 +387,7 @@ data class Jwk(
 ) : IJwk {
 
     init {
-        if (this.kid === null) {
+        if (kid === null && generateKid) {
             this.kid = determineKid()
         }
     }
@@ -445,7 +446,7 @@ data class Jwk(
         return x5c
     }
 
-    override fun getKidAsString() = kid
+    override fun getKidAsString(generate: Boolean) = kid ?: if (generateKid) determineKid() else kid
     override fun getXAsString() = x
 
     override fun getYAsString() = y
@@ -456,6 +457,17 @@ data class Jwk(
      * The `Builder` class is used to construct instances of the `Jwk` class with various optional properties.
      */
     class Builder {
+
+        /**
+         * Indicates whether the 'kid' (Key ID) should be automatically generated for the JSON Web Key (JWK).
+         *
+         * This is a boolean flag that, when set to true, enables the automatic creation of a unique Key ID for the JWK.
+         * If set to false, the 'kid' will not be generated automatically, and it must be explicitly provided if needed.
+         *
+         * In the builder we enable generation by default, contrary to when we decode a key
+         */
+        var generateKid: Boolean = true
+
         /**
          * The `alg` variable holds an instance of the `JwaAlgorithm` class, representing the algorithm
          * used for JSON Web Algorithms (JWA). It's used in conjunction with JSON Web Tokens (JWT) for
@@ -648,7 +660,7 @@ data class Jwk(
          * @param kid the Key ID to set for the JWK, or null if no Key ID should be assigned.
          * @return the Builder instance with the updated 'kid' property.
          */
-        fun withKid(kid: String?) = apply { this.kid = kid }
+        fun withKid(kid: String? = null, generate: Boolean = true) = apply { this.kid = kid; this.generateKid = generate }
 
         /**
          * Sets the key type for this object.
@@ -721,6 +733,7 @@ data class Jwk(
          * @throws IllegalArgumentException if the `kty` property is missing.
          */
         fun build(): Jwk = Jwk(
+            generateKid = generateKid,
             alg = alg,
             crv = crv,
             d = d,

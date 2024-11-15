@@ -14,15 +14,11 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class EncodedCborItemTest {
-    @OptIn(ExperimentalStdlibApi::class)
     @Test
     fun shouldEncodeAndDecodeWrapper() {
         val input = "input".toCborString()
         val cborInput = CborEncodedItem<CborString>(input)
         val bytes = Cbor.encode(cborInput)
-
-        println("Encoded object to hex:")
-        println(bytes.toHexString())
 
         // Not using type on purpose
         val test: AnyCborItem = Cbor.decode(bytes)

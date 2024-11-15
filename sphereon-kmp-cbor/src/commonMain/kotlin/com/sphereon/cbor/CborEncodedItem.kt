@@ -40,6 +40,10 @@ open class CborEncodedItem<Type>(
         return super.toJsonWithCDDL()
     }
 
+    fun cborEncode(): ByteArray {
+        return cborSerializer.encode(this)
+    }
+
     fun <Type : AnyCborItem> cborDecode(): Type {
         return when (decodedValue) {
             is CborView<*,*,*> -> decodedValue.toCbor() as Type

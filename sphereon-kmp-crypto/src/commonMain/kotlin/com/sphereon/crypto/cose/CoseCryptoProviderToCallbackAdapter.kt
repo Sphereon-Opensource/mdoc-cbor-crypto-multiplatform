@@ -12,13 +12,17 @@ import com.sphereon.crypto.generic.VerifySignatureResult
 import com.sphereon.crypto.kms.IKeyManagerService
 import com.sphereon.crypto.kms.IKeyResolverService
 import com.sphereon.crypto.sign.IRawSignatureService
+import kotlin.js.JsExport
 
 /**
  * Adapter class to bridge between `ICoseCryptoCallbackService` and an array of `ICryptoProvider`.
  * Responsible for handling COSE cryptographic operations including signing and verifying signatures.
  *
+ * Either a Key Manager needs to be supplied, or both a RAW Signature service and public key resolver service need to be supplied
+ *
  * @param providers Array of cryptographic providers implementing `ICryptoProvider`.
  */
+@JsExport.Ignore
 class CoseCryptoProviderToCallbackAdapter(
     private val keyManagerService: IKeyManagerService? = null,
     private val rawSignatureService: IRawSignatureService? = null,
@@ -48,10 +52,10 @@ class CoseCryptoProviderToCallbackAdapter(
      * @param input The data to be signed, along with the key and algorithm information.
      * @return The generated signature as a ByteArray.
      */
-    override suspend fun sign(input: ToBeSignedCbor): ByteArray {
+    override suspend fun sign(input: ToBeSignedCbor, requireX5Chain: Boolean): ByteArray {
         val keyInfo = input.keyInfo
         val alg = keyInfo.signatureAlgorithm ?: input.alg
-        return assertedSignatureProvider(alg = alg, kms = keyInfo.kms).createRawSignatureAsync(keyInfo, input.value)
+        return assertedSignatureProvider(alg = alg, kms = keyInfo.kms).createRawSignatureAsync(keyInfo, input.value, requireX5Chain)
 
     }
 

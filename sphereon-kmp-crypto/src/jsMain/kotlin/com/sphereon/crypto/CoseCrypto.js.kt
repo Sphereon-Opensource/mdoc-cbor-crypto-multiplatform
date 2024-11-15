@@ -14,19 +14,23 @@ import kotlinx.coroutines.await
 import kotlin.js.Promise
 
 
+
 @JsExport
 external interface ICoseCryptoCallbackJS : ICoseCryptoCallbackMarkerType {
-    @JsName("sign")
-    fun sign(
+
+    @JsName("signAsync")
+    fun signAsync(
         input: ToBeSignedCbor,
+        requireX5Chain: Boolean
     ): Promise<ByteArray>
 
-    @JsName("verify1")
-    fun verify1(
+    @JsName("verify1Async")
+    fun verify1Async(
         input: CoseSign1Cbor<*>,
         keyInfo: IKeyInfo<ICoseKeyCbor>
     ): Promise<IVerifySignatureResult<ICoseKeyCbor>>
 
+    @JsName("resolvePublicKeyAsync")
     fun <KT : IKey> resolvePublicKeyAsync(keyInfo: IKeyInfo<KT>): Promise<IResolvedKeyInfo<KT>>
 }
 
@@ -36,17 +40,21 @@ external interface ICoseCryptoCallbackJS : ICoseCryptoCallbackMarkerType {
  */
 @JsExport
 external interface ICoseCryptoServiceJS {
+    @JsName("sign1")
     fun <CborType> sign1(
         input: CoseSign1InputCbor,
-        keyInfo: IKeyInfo<*>?
+        keyInfo: IKeyInfo<*>?,
+        requireX5Chain: Boolean
     ): Promise<CoseSign1Result<CborType>>
 
+    @JsName("verify1")
     fun verify1(
         input: CoseSign1Cbor<*>,
         keyInfo: IKeyInfo<*>?,
         requireX5Chain: Boolean
     ): Promise<IVerifySignatureResult<ICoseKeyCbor>>
 
+    @JsName("resolvePublicKeyAsync")
     fun <KT : IKey> resolvePublicKeyAsync(keyInfo: IKeyInfo<KT>): Promise<IResolvedKeyInfo<KT>>
 }
 
@@ -81,12 +89,19 @@ class CoseCryptoServiceJS(override val platformCallback: ICoseCryptoCallbackJS =
 
     override fun <CborType> sign1(
         input: CoseSign1InputCbor,
-        keyInfo: IKeyInfo<*>?
+        keyInfo: IKeyInfo<*>?,
+        requireX5Chain: Boolean
     ): Promise<CoseSign1Result<CborType>> {
         return CoroutineScope(CoroutineName(COSE_CRYPTO_SERVICE_JS_SCOPE)).async {
-            val (preSignInputResult, toSign, preSignKeyInfoResult) = preSign1(input, keyInfo, true)
-            val signature = platformCallback.sign(toSign).await()
-            return@async this@CoseCryptoServiceJS.postSign1<CborType>(preSignInputResult, preSignKeyInfoResult, signature)
+            println("pre preSign1")
+            val (preSignInputResult, toSign, preSignKeyInfoResult) = preSign1(input, keyInfo, requireX5Chain)
+            println("post presign1, about to call platform callback.sign")
+            val platform = platform()
+            requireNotNull(platform)
+            println("platform: ${platform!!::class.simpleName} ${platform.toString()}")
+            val signature = platform.signAsync(input = toSign, requireX5Chain = requireX5Chain).await()
+            println("post platformcallback.sign, about to call postsign")
+            return@async postSign1<CborType>(preSignInputResult, preSignKeyInfoResult, signature)
         }.asPromise()
 
     }
@@ -117,7 +132,7 @@ class CoseCryptoServiceJS(override val platformCallback: ICoseCryptoCallbackJS =
             }
 
             val sigAlg = input.protectedHeader.alg ?: input.unprotectedHeader?.alg
-            val keyType = sigAlg?.keyType ?: info.key?.getKty()?.cose
+            val keyType = sigAlg?.keyType ?: info.key.getKty().cose
             if (keyType == null) {
                 return@async VerifySignatureResult(
                     keyInfo = info,
@@ -127,7 +142,7 @@ class CoseCryptoServiceJS(override val platformCallback: ICoseCryptoCallbackJS =
                     critical = true
                 )
             }
-            return@async platformCallback.verify1(input = input, keyInfo = info).await()
+            return@async platformCallback.verify1Async(input = input, keyInfo = info).await()
         }.asPromise()
     }
 
@@ -155,7 +170,7 @@ class CoseCryptoServiceJSAdapter(val coseCallbackJS: CoseCryptoServiceJS = CoseC
         input: CoseSign1InputCbor,
         keyInfo: IKeyInfo<*>?,
         requireX5Chain: Boolean
-    ): CoseSign1Result<CborType> = coseCallbackJS.sign1<CborType>(input = input, keyInfo = keyInfo).await()
+    ): CoseSign1Result<CborType> = coseCallbackJS.sign1<CborType>(input = input, keyInfo = keyInfo, requireX5Chain = requireX5Chain).await()
 
 
     override suspend fun verify1(
@@ -183,11 +198,15 @@ class CoseCryptoServiceJSAdapter(val coseCallbackJS: CoseCryptoServiceJS = CoseC
  */
 @JsExport.Ignore
 actual fun coseCryptoService(platformCallback: ICoseCryptoCallbackMarkerType): ICoseCryptoService {
+
     val jsPlatformCallback = platformCallback.unsafeCast<ICoseCryptoCallbackJS>()
     if (jsPlatformCallback === undefined) {
         throw IllegalArgumentException("Invalid platform callback supplied: Needs to be of type ICoseCryptoCallbackJS, but is of type ${platformCallback::class.simpleName} instead")
     }
-    return CoseCryptoServiceJSAdapter(CoseCryptoServiceJS(jsPlatformCallback))
+    DefaultCallbacks.setCoseCryptoDefault(jsPlatformCallback)
+
+    val adapter = CoseCryptoServiceJSAdapter(CoseCryptoServiceJS(jsPlatformCallback))
+    return adapter
 }
 
 @JsExport

@@ -1,6 +1,7 @@
 package com.sphereon.crypto
 
 import kotlin.js.JsExport
+import kotlin.js.JsName
 
 /**
  * The main object used by code to be calling into the platform specific callbacks for X509 Certificates and signature creation/verification
@@ -44,7 +45,13 @@ object DefaultCallbacks {
         return coseCryptoCallback as CoseCryptoCallbackType
     }
 
+    fun hasCoseCryptoDefault(): Boolean {
+        return this.coseCryptoCallback != null
+    }
+
     fun setCoseCryptoDefault(coseCryptoCallback: ICoseCryptoCallbackMarkerType?) {
+        println("setCoseCryptoDefault: ${coseCryptoCallback!!::class.simpleName}")
+        Error("setCoseCryptoDefault: ${coseCryptoCallback::class.simpleName}").printStackTrace()
         this.coseCryptoCallback = coseCryptoCallback
     }
 }
@@ -52,25 +59,29 @@ object DefaultCallbacks {
 /**
  * The main entry point for platform validation, delegating to a platform specific callback implemented by external developers
  */
-
+@JsExport
 interface ICallbackService<PlatformCallbackType> {
     /**
      * Disable callback verification (be careful!)
      */
+    @JsName("disable")
     fun disable(): ICallbackService<PlatformCallbackType>
 
     /**
      * Enable the callback verification (default)
      */
+    @JsName("enable")
     fun enable(): ICallbackService<PlatformCallbackType>
 
 
     /**
      * Is the service enabled or not
      */
+    @JsName("isEnabled")
     fun isEnabled(): Boolean
 
 
+    @JsName("platform")
     fun platform(): PlatformCallbackType
 
     /**

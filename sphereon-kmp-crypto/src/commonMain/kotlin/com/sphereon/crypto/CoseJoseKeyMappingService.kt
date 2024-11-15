@@ -29,11 +29,11 @@ object CoseJoseKeyMappingService {
      * @throws IllegalArgumentException if the key cannot be converted to JOSE JWK format.
      */
     fun toJoseJwk(key: IKey): Jwk = when (key) {
-        is CoseKeyCbor -> key.cborToJwk()
-        is ICoseKeyCbor -> CoseKeyCbor.Static.fromDTO(key).cborToJwk()
-        is CoseKeyJson -> key.jsonToJwk()
-        is ICoseKeyJson -> CoseKeyJson.Static.fromDTO(key).jsonToJwk()
         is Jwk -> key
+        is CoseKeyCbor -> key.cborToJwk()
+        is CoseKeyJson -> key.jsonToJwk()
+        is ICoseKeyCbor -> CoseKeyCbor.Static.fromDTO(key).cborToJwk()
+        is ICoseKeyJson -> CoseKeyJson.Static.fromDTO(key).jsonToJwk()
         is IJwk -> Jwk.Static.fromDTO(key)
         is IJwkJson -> Jwk.Static.fromJson(key)
         else -> throw IllegalArgumentException("Cannot convert key to jose/jwk")
@@ -92,7 +92,15 @@ object CoseJoseKeyMappingService {
     fun toResolvedCoseKeyInfo(resolvedKeyInfo: IResolvedKeyInfo<*>): ResolvedKeyInfo<CoseKeyCbor> {
         val coseKey = toCoseKey(key = resolvedKeyInfo.key)
         with(resolvedKeyInfo) {
-            return ResolvedKeyInfo(key = coseKey, kid = kid, signatureAlgorithm = signatureAlgorithm, opts = opts, keyType = keyType, kms = kms, kmsKeyRef = kmsKeyRef)
+            return ResolvedKeyInfo(
+                key = coseKey,
+                kid = kid,
+                signatureAlgorithm = signatureAlgorithm,
+                opts = opts,
+                keyType = keyType,
+                kms = kms,
+                kmsKeyRef = kmsKeyRef
+            )
         }
     }
 
@@ -151,13 +159,14 @@ object CoseJoseKeyMappingService {
      * @throws IllegalArgumentException If the key cannot be converted to CBOR.
      */
     fun toCoseKey(key: IKey): CoseKeyCbor = when (key) {
+        // WARNING: DO NOT CHANGE THE ORDER. Since we use actual interfaces in js, the ICoseKeyCbor would match even when you pass in a jwk
         is CoseKeyCbor -> key
-        is ICoseKeyCbor -> CoseKeyCbor.Static.fromDTO(key)
-        is CoseKeyJson -> key.toCbor()
-        is ICoseKeyJson -> CoseKeyJson.Static.fromDTO(key).toCbor()
         is Jwk -> key.jwkToCoseKeyCbor()
+        is CoseKeyJson -> key.toCbor()
         is IJwk -> Jwk.Static.fromDTO(key).jwkToCoseKeyCbor()
         is IJwkJson -> Jwk.Static.fromJson(key).jwkToCoseKeyCbor()
+        is ICoseKeyJson -> CoseKeyJson.Static.fromDTO(key).toCbor()
+        is ICoseKeyCbor -> CoseKeyCbor.Static.fromDTO(key)
         else -> throw IllegalArgumentException("Cannot convert key to cbor")
     }
 

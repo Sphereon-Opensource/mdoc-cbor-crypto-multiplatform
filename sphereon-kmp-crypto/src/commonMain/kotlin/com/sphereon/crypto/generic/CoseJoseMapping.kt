@@ -9,6 +9,8 @@ import com.sphereon.crypto.jose.JoseKeyOperations
 import com.sphereon.crypto.jose.JwaAlgorithm
 import com.sphereon.crypto.jose.JwaCurve
 import com.sphereon.crypto.jose.JwaKeyType
+import com.sphereon.kmp.LongKMP
+import com.sphereon.kmp.toKmpLong
 import kotlinx.serialization.Serializable
 import kotlin.js.JsExport
 
@@ -142,9 +144,10 @@ sealed class KeyType(private val coseKeyType: CoseKeyType, private val joseKeyTy
          */
         fun toCoseKty(kty: Any): CoseKeyType {
             return when (kty) {
+                is LongKMP -> CoseKeyType.Static.fromValue(kty)
                 is String -> toCoseKtyFromJose(kty)
-                is Int -> CoseKeyType.Static.fromValue(kty)
-                is CborNumber<*> -> CoseKeyType.Static.fromValue(kty.value.toInt())
+                is Int -> CoseKeyType.Static.fromValue(kty.toKmpLong())
+                is CborNumber<*> -> CoseKeyType.Static.fromValue(kty.value.toKmpLong())
                 is CoseKeyType -> return kty
                 is JwaKeyType -> return toCose(kty)
                 else -> throw IllegalArgumentException("Could not convert kty value $kty to Jose")
@@ -158,7 +161,7 @@ sealed class KeyType(private val coseKeyType: CoseKeyType, private val joseKeyTy
          * @return The equivalent JOSE key type.
          * @throws IllegalArgumentException If the COSE key type is unknown.
          */
-        fun toJoseKtyFromCose(kty: Int) = toJose(CoseKeyType.Static.fromValue(kty))
+        fun toJoseKtyFromCose(kty: Number) = toJose(CoseKeyType.Static.fromValue(kty.toKmpLong()))
 
         /**
          * Converts a JOSE key type (represented as a string) to the corresponding COSE key type.

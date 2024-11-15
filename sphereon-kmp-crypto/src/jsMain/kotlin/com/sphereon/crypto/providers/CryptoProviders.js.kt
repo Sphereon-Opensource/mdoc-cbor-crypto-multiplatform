@@ -20,14 +20,14 @@ import kotlin.js.Promise
 private const val COSE_CRYPTO_ADAPTER_JS = "CoseCryptoAdapterJS"
 
 @JsExport
-class CoseCryptoProviderToCallbackAdapterJS(keyManager: IKeyManagerService) : ICoseCryptoCallbackJS {
-    private val delegate = CoseCryptoProviderToCallbackAdapter(keyManager)
+class CoseCryptoProviderToCallbackAdapterJS(keyManagerService: IKeyManagerService) : ICoseCryptoCallbackJS {
+    private val delegate = CoseCryptoProviderToCallbackAdapter(keyManagerService)
 
-    override fun sign(input: ToBeSignedCbor): Promise<ByteArray> {
-        return CoroutineScope(CoroutineName(COSE_CRYPTO_ADAPTER_JS)).async { delegate.sign(input) }.asPromise()
+    override fun signAsync(input: ToBeSignedCbor, requireX5Chain: Boolean): Promise<ByteArray> {
+        return CoroutineScope(CoroutineName(COSE_CRYPTO_ADAPTER_JS)).async { delegate.sign(input = input, requireX5Chain = requireX5Chain) }.asPromise()
     }
 
-    override fun verify1(input: CoseSign1Cbor<*>, keyInfo: IKeyInfo<ICoseKeyCbor>): Promise<IVerifySignatureResult<ICoseKeyCbor>> {
+    override fun verify1Async(input: CoseSign1Cbor<*>, keyInfo: IKeyInfo<ICoseKeyCbor>): Promise<IVerifySignatureResult<ICoseKeyCbor>> {
         return CoroutineScope(CoroutineName(COSE_CRYPTO_ADAPTER_JS)).async { delegate.verify1(input, keyInfo) }.asPromise()
     }
 

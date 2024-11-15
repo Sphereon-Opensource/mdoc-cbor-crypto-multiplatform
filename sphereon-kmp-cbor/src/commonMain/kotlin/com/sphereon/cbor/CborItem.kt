@@ -84,7 +84,6 @@ sealed class CborItem<Type>(
 
     override fun toJsonWithCDDL(): JsonElement {
         val cddl = JsonPrimitive(this.cddl.format)
-        println("-CborItem(JSONObject(CDDL:$cddl, value:${toJsonSimple()} (jsonsimple))")
         return JsonObject(mapOf(Pair(CDDL_LITERAL, cddl), Pair(VALUE_LITERAL, toJsonSimple())))
     }
 

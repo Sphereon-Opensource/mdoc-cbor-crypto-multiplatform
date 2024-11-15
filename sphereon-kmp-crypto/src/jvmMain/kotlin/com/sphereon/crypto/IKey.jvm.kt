@@ -34,10 +34,11 @@ actual interface IKey {
     actual fun getKty(): KeyType
     actual fun getKeyOperations(): Array<KeyOperations>?
     actual fun getX509CertificateChain(): Array<String>?
-    actual fun getKidAsString(): String?
+    actual fun getKidAsString(generate: Boolean): String?
     actual fun toPublicKey(): IKey
     actual fun getXAsString(): String?
     actual fun getYAsString(): String?
+
 
 }
 
@@ -58,7 +59,7 @@ actual interface IKeyInfo<out KT : IKey> {
 
 actual interface IResolvedKeyInfo<out KT : IKey>: IKeyInfo<KT> {
     actual override val key: KT
-    actual val x509VerificationResult: IX509VerificationResult<KT>?
+//    actual val x509VerificationResult: IX509VerificationResult<KT>?
     actual fun toResolvedPublicKeyInfo(): IResolvedKeyInfo<KT>
 }
 

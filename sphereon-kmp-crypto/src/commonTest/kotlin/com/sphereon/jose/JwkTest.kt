@@ -1,5 +1,6 @@
 package com.sphereon.jose
 
+import com.sphereon.cbor.CborByteString
 import com.sphereon.crypto.cose.CoseCurve
 import com.sphereon.crypto.cose.CoseKeyCbor
 import com.sphereon.crypto.cose.CoseKeyType
@@ -18,20 +19,20 @@ import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 
 private const val HEX_ENCODED_CBOR_KEY =
-    "a401022001215820bb11cddd6e9e869d1559729a30d89ed49f3631524215961271abbbe28d7b731f225820dbd639132e2ee561965b830530a6a024f1098888f313550515921184c86acac3"
+    "a5010202582b6c663872734d5371454f5138626d664f4c44526873414e5878667a5a4678725f64634c6e52496a787671452001215820bb11cddd6e9e869d1559729a30d89ed49f3631524215961271abbbe28d7b731f225820dbd639132e2ee561965b830530a6a024f1098888f313550515921184c86acac3"
 
 class JWKTest {
 
     @Test
     fun shouldConvertECJWKToCoseKey(): TestResult = runTest {
         val jwk = Jwk(
+            generateKid = true,
             kty = JwaKeyType.EC,
             crv = JwaCurve.P_256,
             x = "uxHN3W6ehp0VWXKaMNie1J82MVJCFZYScau74o17cx8",
             y = "29Y5Ey4u5WGWW4MFMKagJPEJiIjzE1UFFZIRhMhqysM"
         )
         val coseKey = jwk.jwkToCoseKeyCbor()
-
         assertEquals(CoseKeyType.EC2.toCbor(), coseKey.kty)
         assertEquals(CoseCurve.P_256.toCbor(), coseKey.crv)
         assertContentEquals(
@@ -121,6 +122,7 @@ class JWKTest {
     @Test
     fun shouldConvertECJWKToCoseKeyAndBack(): TestResult = runTest {
         val jwk = Jwk(
+            generateKid = true,
             kty = JwaKeyType.EC,
             crv = JwaCurve.P_256,
             x = "uxHN3W6ehp0VWXKaMNie1J82MVJCFZYScau74o17cx8",

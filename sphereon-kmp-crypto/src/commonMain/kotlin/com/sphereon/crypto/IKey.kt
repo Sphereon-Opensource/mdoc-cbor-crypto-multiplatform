@@ -13,6 +13,7 @@ import kotlin.js.JsExport
  * Represents an interface for a cryptographic key.
  */
 expect interface IKey {
+
     /**
      * Represents the key type for the implementation of the IKey interface.
      *
@@ -131,7 +132,7 @@ expect interface IKey {
      */
     fun getX509CertificateChain(): Array<String>?
 
-    fun getKidAsString(): String?
+    fun getKidAsString(generate: Boolean = false): String?
 
     fun getXAsString(): String?
     fun getYAsString(): String?
@@ -257,7 +258,7 @@ expect interface IResolvedKeyInfo<out KT : IKey> : IKeyInfo<KT> {
 // Same as the above, but now wit a key guaranteed to be present (resolved)
     override val key: KT
 
-    val x509VerificationResult: IX509VerificationResult<KT>?
+//    val x509VerificationResult: IX509VerificationResult<KT>?
 
     fun toResolvedPublicKeyInfo(): IResolvedKeyInfo<KT>
 }
@@ -353,7 +354,7 @@ data class ResolvedKeyInfo<KT : IKey>(
     override val signatureAlgorithm: SignatureAlgorithm? = null,
     override val kmsKeyRef: String? = null,
     override val x5c: Array<String>? = null,
-    override val x509VerificationResult: IX509VerificationResult<KT>? = null,
+//    override val x509VerificationResult: IX509VerificationResult<KT>? = null,
     override val kms: String? = null,
     override val keyType: KeyType? = null,
 ) : IResolvedKeyInfo<KT> {
@@ -386,7 +387,7 @@ data class ResolvedKeyInfo<KT : IKey>(
                     x5c = x5c,
                     kms = kms,
                     kmsKeyRef = kmsKeyRef,
-                    x509VerificationResult = x509VerificationResult,
+//                    x509VerificationResult = x509VerificationResult,
                     keyVisibility = keyVisibility ?: KeyVisibility.PUBLIC,
                     signatureAlgorithm = signatureAlgorithm,
                     keyType = keyType
@@ -403,7 +404,7 @@ data class ResolvedKeyInfo<KT : IKey>(
                     kmsKeyRef = kmsKeyRef,
                     keyVisibility = keyVisibility ?: KeyVisibility.PUBLIC,
                     signatureAlgorithm = signatureAlgorithm,
-                    x509VerificationResult = null
+//                    x509VerificationResult = null
                 )
             }
 
@@ -411,7 +412,7 @@ data class ResolvedKeyInfo<KT : IKey>(
             return ResolvedKeyInfo(
                 key = key,
                 keyType = key.getKty(),
-                kid = key.getKidAsString(),
+                kid = key.getKidAsString(true),
                 x5c = key.getX509CertificateChain(),
                 keyVisibility = if (key.d !== null) KeyVisibility.PRIVATE else KeyVisibility.PUBLIC,
                 signatureAlgorithm = key.getSignatureAlgorithm()
@@ -439,7 +440,7 @@ data class ManagedKeyInfo<KT : IKey>(
     override val opts = resolvedKeyInfo.opts
     override fun toPublicKeyInfo() = resolvedKeyInfo.toPublicKeyInfo()
 
-    override val x509VerificationResult = resolvedKeyInfo.x509VerificationResult
+//    override val x509VerificationResult = resolvedKeyInfo.x509VerificationResult
     override val x5c = resolvedKeyInfo.x5c
     override val keyType = resolvedKeyInfo.keyType
 }

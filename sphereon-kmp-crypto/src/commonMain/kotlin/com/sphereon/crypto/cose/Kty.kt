@@ -1,6 +1,7 @@
 package com.sphereon.crypto.cose
 
 import com.sphereon.cbor.CborUInt
+import com.sphereon.kmp.LongKMP
 import kotlin.js.JsExport
 import kotlin.js.JsName
 
@@ -28,8 +29,8 @@ enum class CoseKeyType(val value: Int, val description: String) {
 
     object Static {
         @JsName("fromValue")
-        fun fromValue(value: Int): CoseKeyType {
-            return CoseKeyType.entries.find { entry -> entry.value == value }
+        fun fromValue(value: LongKMP): CoseKeyType {
+            return CoseKeyType.entries.find { entry -> entry.value == value.toInt() }
                 ?: throw IllegalArgumentException("Unknown value $value")
         }
     }

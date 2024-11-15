@@ -42,7 +42,7 @@ class X509VerificationResult<KeyType : IKey>(
     critical: Boolean,
     message: String?,
     error: Boolean
-) : VerifyResult(name = name, critical = critical, message = message, error = error), IX509VerificationResult<KeyType> {
+) : IX509VerificationResult<KeyType>,VerifyResult(name = name, critical = critical, message = message, error = error)  {
 
 }
 

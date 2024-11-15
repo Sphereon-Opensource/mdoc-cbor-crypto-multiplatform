@@ -52,7 +52,7 @@ data class ManagedKeyPair(
             keyVisibility = visibility,
             keyType = key.getKty(),
             x5c = key.getX509CertificateChain(),
-            kid = key.getKidAsString(),
+            kid = key.getKidAsString(true),
             signatureAlgorithm = key.getSignatureAlgorithm(),
         )
         return ManagedKeyInfo(

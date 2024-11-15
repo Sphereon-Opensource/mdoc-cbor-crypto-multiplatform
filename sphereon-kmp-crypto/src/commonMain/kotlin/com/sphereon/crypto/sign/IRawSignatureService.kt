@@ -16,7 +16,7 @@ interface IRawSignatureService {
      * @throws IllegalArgumentException If the private key is not provided or not supported.
      */
     @JsExport.Ignore
-    suspend fun createRawSignatureAsync(keyInfo: IKeyInfo<*>, input: ByteArray): ByteArray
+    suspend fun createRawSignatureAsync(keyInfo: IKeyInfo<*>, input: ByteArray, requireX5Chain: Boolean): ByteArray
 
     /**
      * Verifies the signature of the input data using the provided key information.

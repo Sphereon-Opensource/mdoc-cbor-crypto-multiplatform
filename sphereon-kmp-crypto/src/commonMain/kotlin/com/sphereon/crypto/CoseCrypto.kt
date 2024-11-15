@@ -25,7 +25,8 @@ interface ICoseCryptoMarkerType
 @JsExport.Ignore
 interface ICoseCryptoCallbackService : ICoseCryptoCallbackMarkerType {
     suspend fun sign(
-        input: ToBeSignedCbor
+        input: ToBeSignedCbor,
+        requireX5Chain: Boolean
     ): ByteArray
 
     suspend fun verify1(
@@ -67,6 +68,7 @@ interface ICoseCryptoService : ICoseCryptoMarkerType {
 expect fun coseCryptoService(platformCallback: ICoseCryptoCallbackMarkerType = DefaultCallbacks.coseCrypto()): ICoseCryptoService
 //expect fun coseService(platformCallback: ICoseCryptoCallbackMarkerType): ICoseCryptoCallbackService
 
+@JsExport
 abstract class AbstractCoseCryptoService<CallbackServiceType>(open val platformCallback: CallbackServiceType?) :
     ICallbackService<CallbackServiceType> {
     private var disabled = false
@@ -96,6 +98,7 @@ abstract class AbstractCoseCryptoService<CallbackServiceType>(open val platformC
         }
     }
 
+    @JsExport.Ignore
     protected suspend fun preSign1(
         input: CoseSign1InputCbor,
         keyInfo: IKeyInfo<*>?,
@@ -137,6 +140,7 @@ abstract class AbstractCoseCryptoService<CallbackServiceType>(open val platformC
         return CoseSign1Result(coseSign1 = coseSign1, keyInfo = keyInfo, input = input)
     }
 
+    @JsExport.Ignore
     protected suspend fun verifyAndAmendKeyInfo(
         protectedHeader: CoseHeaderCbor? = null,
         unprotectedHeader: CoseHeaderCbor? = null,
@@ -170,7 +174,7 @@ abstract class AbstractCoseCryptoService<CallbackServiceType>(open val platformC
             x5chain = key.x5chain
         }
         if (requireX5Chain && x5chain === null) {
-            throw IllegalArgumentException("No x5c or x5chain could be found in header or resolved key")
+            throw IllegalArgumentException("No x5c or x5chain could be found in header or resolved key. keyinfo x5c: ${keyInfoWithKey.x5c}, header: ${protectedHeader}")
         }
 
 
@@ -181,6 +185,7 @@ abstract class AbstractCoseCryptoService<CallbackServiceType>(open val platformC
         )
     }
 
+    @JsExport.Ignore
     protected abstract suspend fun resolvePublicCborKey(keyInfo: IKeyInfo<*>): IResolvedKeyInfo<ICoseKeyCbor>
 }
 
@@ -205,7 +210,7 @@ class CoseCryptoService(override val platformCallback: ICoseCryptoCallbackServic
         requireX5Chain: Boolean
     ): CoseSign1Result<CborType> {
         val (preSignInputResult, toSign, preSignKeyInfoResult) = this.preSign1(input, keyInfo, requireX5Chain)
-        val signature = this.platformCallback.sign(toSign)
+        val signature = this.platformCallback.sign(toSign, requireX5Chain)
         return this.postSign1(preSignInputResult, preSignKeyInfoResult, signature)
     }
 

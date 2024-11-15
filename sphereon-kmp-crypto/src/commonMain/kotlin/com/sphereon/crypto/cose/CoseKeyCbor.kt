@@ -5,6 +5,7 @@ import com.sphereon.cbor.CDDL
 import com.sphereon.cbor.CborArray
 import com.sphereon.cbor.CborBuilder
 import com.sphereon.cbor.CborByteString
+import com.sphereon.cbor.CborEncodedItem
 import com.sphereon.cbor.CborItem
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborUInt
@@ -13,14 +14,18 @@ import com.sphereon.cbor.NumberLabel
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.encodeToArray
 import com.sphereon.cbor.toCborByteString
+import com.sphereon.cbor.toUInt
 import com.sphereon.crypto.IKey
 import com.sphereon.crypto.generic.KeyOperations
 import com.sphereon.crypto.generic.KeyType
 import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.crypto.jose.Jwk
+import com.sphereon.crypto.jose.generateJwkThumbprint
+import com.sphereon.crypto.jose.jsonToJwk
 import com.sphereon.json.JsonView
 import com.sphereon.json.cryptoJsonSerializer
 import com.sphereon.kmp.Encoding
+import com.sphereon.kmp.LongKMP
 import com.sphereon.kmp.decodeFrom
 import com.sphereon.kmp.encodeTo
 import kotlinx.serialization.Serializable
@@ -129,8 +134,9 @@ expect sealed interface ICoseKeyJson : IKey {
 @JsExport
 @Serializable
 data class CoseKeyJson(
+    val generateKid: Boolean = false,
     override val kty: CoseKeyType,
-    override val kid: String? = null,
+    override var kid: String? = null,
     override val alg: CoseAlgorithm? = null,
 
     override val key_ops: Array<CoseKeyOperations>? = null,
@@ -144,6 +150,14 @@ data class CoseKeyJson(
     override val x5chain: Array<String>? = null,
     override val additional: JsonObject? = null
 ) : JsonView(), ICoseKeyJson {
+    init {
+        if (this.kid == null && generateKid) {
+            this.kid = determineKid()
+        }
+    }
+
+    private fun determineKid() = generateJwkThumbprint(jsonToJwk())
+
     /**
      * Converts the current object to a JSON element using the cryptoJsonSerializer
      * for serialization. This method leverages the encodeToJsonElement function
@@ -205,7 +219,7 @@ data class CoseKeyJson(
      * @return An array of strings representing the X.509 certificate chain, or null if not available.
      */
     override fun getX509CertificateChain() = x5chain
-    override fun getKidAsString(): String? = kid
+    override fun getKidAsString(generate: Boolean): String? = if (!generate) kid else determineKid()
     override fun getXAsString() = x
 
     override fun getYAsString() = y
@@ -302,6 +316,7 @@ data class CoseKeyJson(
          */
         fun fromDTO(dto: ICoseKeyJson) = with(dto) {
             CoseKeyJson(
+                generateKid = false,
                 kty = kty,
                 kid = kid,
                 alg = alg,
@@ -323,13 +338,15 @@ data class CoseKeyJson(
      * Builder class for constructing instances of the CoseKeyJson.
      */
     class Builder {
+        private var generateKid: Boolean = true
+
         /**
          * Stores the type of COSE key being constructed.
          * This parameter must be present and is used to determine the set
          * of key-type-specific parameters applicable to the key.
          * It is verified to ensure compatibility with the algorithm processed.
          */
-        private lateinit var kty: CoseKeyType
+        var kty: CoseKeyType? = null
 
         /**
          * The variable `kid` represents the Key ID associated with a COSE key.
@@ -435,7 +452,7 @@ data class CoseKeyJson(
          * @param kid the key ID to set. If null, the key ID will not be set.
          * @return the current builder instance.
          */
-        fun withKid(kid: String?) = apply { this.kid = kid }
+        fun withKid(kid: String? = null, generate: Boolean = true) = apply { this.kid = kid; this.generateKid = generate }
 
         /**
          * Sets the COSE algorithm for the builder.
@@ -508,8 +525,10 @@ data class CoseKeyJson(
          * @return A CoseKeyJson object populated with the properties set on this Builder.
          */
         fun build(): CoseKeyJson {
+            requireNotNull(kty) { "kty must not be null" }
             return CoseKeyJson(
-                kty = kty,
+                generateKid = generateKid,
+                kty = kty!!,
                 alg = alg,
                 kid = kid,
                 key_ops = key_ops,
@@ -532,6 +551,7 @@ data class CoseKeyJson(
 
 
 expect interface ICoseKeyCbor : IKey {
+
     /**
      * Represents the key type value for the COSE Key encoded using CBOR.
      *
@@ -648,6 +668,7 @@ expect interface ICoseKeyCbor : IKey {
  */
 @JsExport
 data class CoseKeyCbor(
+    private val generateKid: Boolean = false,
     override val kty: CborUInt,
     override var kid: CborByteString? = null,
     override val alg: CborUInt? = null,
@@ -662,13 +683,13 @@ data class CoseKeyCbor(
 ) : ICoseKeyCbor, CborView<CoseKeyCbor, CoseKeyJson, CborMap<NumberLabel, AnyCborItem>>(CDDL.map) {
 
     init {
-        if (kid === null) {
+        if (kid === null && generateKid) {
             this.kid = determineKid()
         }
     }
 
 
-    fun determineKid() = Jwk.Static.fromCoseKeyJson(this.toJson()).kid!!.toCborByteString(Encoding.BASE64URL)
+    fun determineKid() = Jwk.Static.fromCoseKeyJson(this.toJson()).kid!!.toCborByteString(Encoding.UTF8)
 
     /**
      * Constructs and returns a CBOR (Concise Binary Object Representation) builder for the CoseKeyCbor object.
@@ -705,9 +726,10 @@ data class CoseKeyCbor(
      */
 //todo: Probably  nice to be able to provide an encoding parm, but then we have to adjust the whole interface
     override fun toJson(): CoseKeyJson {
+        requireNotNull(kty.value) { "kty must not be null" }
         return CoseKeyJson.Builder()
-            .withKty(CoseKeyType.Static.fromValue(kty.value.toInt()))
-            .withKid(kid?.value?.decodeToString())
+            .withKty(CoseKeyType.Static.fromValue(kty.value))
+            .withKid(kid?.value?.encodeTo(Encoding.UTF8), generate = false)
             .withAlg(alg?.let { CoseAlgorithm.Static.fromValue(it.value.toInt()) })
             .withKeyOps(key_ops?.value?.map { ko -> CoseKeyOperations.Static.fromValue(ko.value.toInt()) }
                 ?.toTypedArray())
@@ -745,7 +767,10 @@ data class CoseKeyCbor(
      * @return An instance of KeyTypeMapping that represents the mapping derived from the current key type.
      */
     override fun getKty(): KeyType {
-        return KeyType.Static.fromCose(CoseKeyType.Static.fromValue(this.kty.value.toInt()))
+        val value = kty.value
+        requireNotNull(value) { "kty must not be null" }
+        val coseKeyType = CoseKeyType.Static.fromValue(value)
+        return KeyType.Static.fromCose(coseKeyType)
     }
 
     /**
@@ -769,7 +794,7 @@ data class CoseKeyCbor(
         return x5chain?.value?.map { it.encodeTo(Encoding.BASE64) }?.toTypedArray()
     }
 
-    override fun getKidAsString() = kid?.value?.decodeToString()
+    override fun getKidAsString(generate: Boolean) = (if (!generate) this.kid else determineKid())?.value?.encodeTo(Encoding.UTF8)
     override fun getXAsString() = x?.value?.encodeTo(Encoding.BASE64URL)
 
     override fun getYAsString() = y?.value?.encodeTo(Encoding.BASE64URL)
@@ -836,14 +861,22 @@ data class CoseKeyCbor(
      */
     class Builder {
         /**
+         * Indicates whether the 'kid' (Key ID) should be automatically generated for the JSON Web Key (JWK).
+         *
+         * This is a boolean flag that, when set to true, enables the automatic creation of a unique Key ID for the JWK.
+         * If set to false, the 'kid' will not be generated automatically, and it must be explicitly provided if needed.
+         *
+         * In the builder we enable generation by default, contrary to when we decode a key
+         */
+        private var generateKid: Boolean = true
+
+        /**
          * Represents a CBOR unsigned integer type that is instantiated later in the lifecycle.
-         * This variable is declared as `lateinit` to allow for instantiation at runtime,
-         * ensuring that `kty` is only set when its value is definitively determined.
          *
          * It is of type `CborUInt`, which is a data type used for CBOR (Concise Binary Object Representation)
          * encoding, specifically to handle unsigned integers.
          */
-        private lateinit var kty: CborUInt
+        private var kty: CborUInt? = null
 
         /**
          * A variable representing a potentially null CborByteString instance.
@@ -931,7 +964,7 @@ data class CoseKeyCbor(
          * @param kty The key type to be set, represented as a [CoseKeyType].
          */
         @JsName("withKty")
-        fun withKty(kty: CoseKeyType) = apply { this.kty = CborUInt(kty.value) }
+        fun withKty(kty: CoseKeyType) = apply { this.kty = CborUInt(LongKMP(kty.value)) }
 
         /**
          * Sets the 'kid' (Key ID) value for the current object. If the provided 'kid' is not null,
@@ -940,7 +973,8 @@ data class CoseKeyCbor(
          * @param kid The Key ID value to set, or null if no value is provided.
          */
         @JsName("withKid")
-        fun withKid(kid: String?) = apply { kid?.let { this.kid = it.toCborByteString(Encoding.UTF8) } }
+        fun withKid(kid: String? = null, generate: Boolean? = true) =
+            apply { kid?.let { this.kid = it.toCborByteString(Encoding.UTF8) }; this.generateKid = generate ?: true }
 
         /**
          * Sets the COSE algorithm for the current builder instance.
@@ -1042,8 +1076,10 @@ data class CoseKeyCbor(
          * @return A new instance of `CoseKeyCbor` with the specified properties.
          */
         fun build(): CoseKeyCbor {
+            requireNotNull(kty) { "kty must not be null" }
             return CoseKeyCbor(
-                kty = kty,
+                generateKid = generateKid,
+                kty = kty!!,
                 alg = alg,
                 kid = kid,
                 key_ops = key_ops,
@@ -1300,6 +1336,7 @@ data class CoseKeyCbor(
         @JsName("fromDTO")
         fun fromDTO(dto: ICoseKeyCbor) = with(dto) {
             CoseKeyCbor(
+                generateKid = false,
                 kty = kty,
                 kid = kid,
                 alg = alg,
@@ -1324,6 +1361,8 @@ data class CoseKeyCbor(
         fun cborDecode(encodedDeviceEngagement: ByteArray): CoseKeyCbor =
             fromCborItem(cborSerializer.decode(encodedDeviceEngagement))
 
+        fun fromEncodedCborItem(encoded: CborEncodedItem<CborMap<NumberLabel, AnyCborItem>>) = fromCborItem(encoded.decodedValue)
+
         /**
          * Converts a given CBOR map into a COSE key object.
          *
@@ -1334,13 +1373,15 @@ data class CoseKeyCbor(
         @JsName("fromCborItem")
         fun fromCborItem(m: CborMap<NumberLabel, AnyCborItem>): CoseKeyCbor {
             val kty = KTY.required<CborUInt>(m)
-            val keyType = CoseKeyType.Static.fromValue(kty.value.toInt())
+            requireNotNull(kty) { "kty is required, but was not present in the cbor data"}
+            val keyType = CoseKeyType.Static.fromValue(kty.value)
             if (keyType === CoseKeyType.RSA) {
                 throw IllegalArgumentException("RSA type not supported yet")
             }
-            val additional = mutableMapOf(* m.value.entries.filter { labels.contains(it.key) == false }.map { Pair(it.key, it.value) }.toTypedArray())
+            val additional = mutableMapOf(* m.value.entries.filter { !labels.contains(it.key) }.map { it.key to it.value }.toTypedArray())
             return CoseKeyCbor(
-                kty = KTY.required(m),
+                generateKid = false,
+                kty = kty,
                 kid = KID.optional(m),
                 alg = ALG.optional(m),
                 key_ops = KEY_OPS.optional(m),
