@@ -12,6 +12,7 @@ interface IRawSignatureService {
      *
      * @param keyInfo Information about the signing key.
      * @param input The data to be signed.
+     * @param requireX5Chain Whether the X5 chain should be included in the signature.
      * @return The generated signature as a byte array.
      * @throws IllegalArgumentException If the private key is not provided or not supported.
      */

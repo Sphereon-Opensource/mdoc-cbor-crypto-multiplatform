@@ -1,0 +1,81 @@
+package com.sphereon.crypto.kms
+
+import com.sphereon.crypto.IKeyInfo
+import com.sphereon.crypto.generic.Curve
+import com.sphereon.crypto.generic.DigestAlg
+import com.sphereon.crypto.generic.KeyOperations
+import com.sphereon.crypto.generic.KeyType
+import com.sphereon.crypto.generic.ManagedKeyPair
+import com.sphereon.crypto.generic.SignatureAlgorithm
+import com.sphereon.crypto.jose.JwkUse
+import com.sphereon.crypto.sign.IRawSignatureService
+import com.sphereon.crypto.sign.ISimpleSignatureService
+import com.sphereon.crypto.sign.model.SignInput
+import com.sphereon.crypto.sign.model.SignOutput
+import com.sphereon.crypto.sign.model.Signature
+
+actual class AzureKeyVaultCryptoProvider actual constructor(
+    id: String,
+    config: AzureKeyvaultClientConfig
+) : IKeyManagementSystem, IRawSignatureService, ISimpleSignatureService {
+    override fun getId(): String {
+        TODO("Not yet implemented")
+    }
+
+    override fun supportedKeyTypes(): Array<KeyType> {
+        TODO("Not yet implemented")
+    }
+
+    override fun supportedSignatureAlgorithms(): Array<SignatureAlgorithm> {
+        TODO("Not yet implemented")
+    }
+
+    override fun supportedDigests(): Array<DigestAlg> {
+        TODO("Not yet implemented")
+    }
+
+    override fun supportedCurves(): Array<Curve> {
+        TODO("Not yet implemented")
+    }
+
+    override fun isSupportedCurve(curve: Curve): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun generateKeyAsync(
+        kmsKeyRef: String?,
+        use: JwkUse?,
+        keyOperations: Array<out KeyOperations>?,
+        alg: SignatureAlgorithm?
+    ): ManagedKeyPair {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun createRawSignatureAsync(
+        keyInfo: IKeyInfo<*>,
+        input: ByteArray,
+        requireX5Chain: Boolean
+    ): ByteArray {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun isValidRawSignatureAsync(
+        keyInfo: IKeyInfo<*>,
+        input: ByteArray,
+        signature: ByteArray
+    ): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun createSignature(
+        signInput: SignInput,
+        keyInfo: IKeyInfo<*>?,
+        signatureAlgorithm: SignatureAlgorithm?
+    ): SignOutput {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun isValidSignature(signInput: SignInput, signature: Signature): Boolean {
+        TODO("Not yet implemented")
+    }
+}

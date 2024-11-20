@@ -19,7 +19,6 @@ interface ISimpleSignatureService {
      *
      * @param signInput The input data and metadata required for creating the signature.
      * @param keyInfo Optional key information required for the signing operation.
-     * @param mgf Optional mask generation function to use during signature creation.
      * @param signatureAlgorithm Optional signature algorithm to be used; defaults to the algorithm in keyInfo.
      * @return The generated signature output.
      * @throws SigningException If any error occurs during the signing process.
