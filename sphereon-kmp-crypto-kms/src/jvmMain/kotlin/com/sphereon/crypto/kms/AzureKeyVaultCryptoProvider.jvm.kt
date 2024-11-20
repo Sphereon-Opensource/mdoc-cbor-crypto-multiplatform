@@ -53,14 +53,14 @@ import java.time.Duration
 private val logger = Logger("sphereon:kmp:kms:azure-keyvault")
 
 actual class AzureKeyVaultCryptoProvider actual constructor(
-    id: String,
+    private val id: String,
     config: AzureKeyvaultClientConfig
 ) : IKeyManagementSystem,
-    IRawSignatureService, ISimpleSignatureService {
-    private val id: String = "azure-keyvault"
-    private val keyClient: KeyAsyncClient
+    IRawSignatureService,
+    ISimpleSignatureService {
     private val hasCerts: Boolean
     private val isManagedHsm: Boolean
+    private val keyClient: KeyAsyncClient
     private val certClient: CertificateAsyncClient?
 
     init {
@@ -147,7 +147,7 @@ actual class AzureKeyVaultCryptoProvider actual constructor(
         keyOperations: Array<out KeyOperations>?,
         alg: SignatureAlgorithm?
     ): ManagedKeyPair {
-        if(alg?.curve?.let { isSupportedCurve(it) } == false) {
+        if (alg?.curve?.let { isSupportedCurve(it) } == false) {
             throw IllegalArgumentException("Curve is not supported by Azure Key Vault")
         }
 
@@ -194,6 +194,7 @@ actual class AzureKeyVaultCryptoProvider actual constructor(
                     else -> throw SignClientException("Unsupported curve: ${keyVaultKey.key.curveName}")
                 }
             }
+
             else -> throw SignClientException("Unsupported key type: ${keyVaultKey.key.keyType}")
         }
     }
