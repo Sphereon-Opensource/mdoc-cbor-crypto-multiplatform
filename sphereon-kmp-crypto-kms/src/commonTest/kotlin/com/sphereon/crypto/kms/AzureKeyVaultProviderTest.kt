@@ -5,8 +5,10 @@ import com.sphereon.crypto.generic.DigestAlg
 import com.sphereon.crypto.generic.KeyOperations
 import com.sphereon.crypto.generic.KeyType
 import com.sphereon.crypto.generic.SignatureAlgorithm
-import com.sphereon.crypto.kms.utils.getEnv
+import com.sphereon.kmp.Logger
 import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.TestInstance
+import org.junit.jupiter.api.condition.EnabledIf
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
@@ -16,19 +18,42 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
+private val logger = Logger("sphereon:kmp:kms:azure-keyvault:test")
+
+@EnabledIf("checkForAzureKeyVaultCredentials")
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class AzureKeyVaultProviderTest {
     private lateinit var azureKeyVaultCryptoProvider: AzureKeyVaultCryptoProvider
+
+    companion object {
+        @JvmStatic
+        fun checkForAzureKeyVaultCredentials(): Boolean {
+            val envKeys = arrayOf(
+                BuildKonfig.SPHEREON_CRYPTO_KMS_AZURE_URL,
+                BuildKonfig.SPHEREON_CRYPTO_KMS_AZURE_TENANT_ID,
+                BuildKonfig.SPHEREON_CRYPTO_KMS_AZURE_CLIENT_ID,
+                BuildKonfig.SPHEREON_CRYPTO_KMS_AZURE_CLIENT_SECRET
+            )
+            envKeys.forEach {
+                if (it == null) {
+                    logger.debug("Azure Key Vault credentials not found. Skipping tests.")
+                    return false
+                }
+            }
+            return true
+        }
+    }
 
     @BeforeTest
     fun setUp() {
         val azureConfig = AzureKeyvaultClientConfig(
-            keyvaultUrl = getEnv("SPHEREON_CRYPTO_KMS_AZURE_URL"),
-            tenantId = getEnv("SPHEREON_CRYPTO_KMS_AZURE_TENANT_ID"),
+            keyvaultUrl = BuildKonfig.SPHEREON_CRYPTO_KMS_AZURE_URL!!,
+            tenantId = BuildKonfig.SPHEREON_CRYPTO_KMS_AZURE_TENANT_ID!!,
             credentialOpts = CredentialOpts(
                 credentialMode = CredentialMode.SERVICE_CLIENT_SECRET, // Use a client id and secret to authenticate as an app
                 secretCredentialOpts = SecretCredentialOpts(
-                    clientId = getEnv("SPHEREON_CRYPTO_KMS_AZURE_CLIENT_ID"),
-                    clientSecret = getEnv("SPHEREON_CRYPTO_KMS_AZURE_CLIENT_SECRET")
+                    clientId = BuildKonfig.SPHEREON_CRYPTO_KMS_AZURE_CLIENT_ID!!,
+                    clientSecret = BuildKonfig.SPHEREON_CRYPTO_KMS_AZURE_CLIENT_SECRET!!
                 )
             ),
             hsmType = HSMType.KEYVAULT, // Either KEYVAULT as HSM (FIPS140 Level-2), or MANAGED_HSM

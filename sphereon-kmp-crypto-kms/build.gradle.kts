@@ -1,6 +1,6 @@
+import com.codingfeline.buildkonfig.compiler.FieldSpec
 import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnLockMismatchReport
 import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootExtension
-
 
 plugins {
 //    alias(libs.plugins.androidLibrary)
@@ -8,8 +8,8 @@ plugins {
     kotlin("plugin.serialization")
     id("io.kotest.multiplatform")
     id("module.publication")
+    id("com.codingfeline.buildkonfig") version "0.15.2"
 }
-
 
 rootProject.plugins.withType<org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootPlugin> {
     rootProject.the<org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootExtension>().download = false
@@ -26,11 +26,11 @@ rootProject.plugins.withType(org.jetbrains.kotlin.gradle.targets.js.yarn.YarnPlu
     rootProject.the<YarnRootExtension>().yarnLockAutoReplace = true // true
 }
 
-
 /*
 ksp {
     arg("erasePackage", "true")
 }*/
+
 repositories {
     mavenLocal()
     mavenCentral()
@@ -41,12 +41,12 @@ repositories {
     }
     maven(url = "https://raw.githubusercontent.com/Deezer/KustomExport/mvn-repo")
 }
+
 /*
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     kotlinOptions.freeCompilerArgs += "-opt-in=kotlin.js.ExperimentalJsExport"
 }
 */
-
 
 kotlin {
     kotlin.applyDefaultHierarchyTemplate()
@@ -121,7 +121,6 @@ kotlin {
                 implementation(libs.kotlinx.io.core)
                 implementation(libs.kermit)
                 implementation(libs.kable.core)
-
             }
         }
         val commonTest by getting {
@@ -163,5 +162,19 @@ kotlin {
              dependencies {}
          }
          val nativeTest by getting*/
+    }
+}
+
+buildkonfig {
+    packageName = "com.sphereon.crypto.kms"
+    defaultConfigs {
+        buildConfigField(FieldSpec.Type.STRING, "SPHEREON_CRYPTO_KMS_AZURE_URL",
+            System.getenv("SPHEREON_CRYPTO_KMS_AZURE_URL"), nullable = true)
+        buildConfigField(FieldSpec.Type.STRING, "SPHEREON_CRYPTO_KMS_AZURE_TENANT_ID",
+            System.getenv("SPHEREON_CRYPTO_KMS_AZURE_TENANT_ID"), nullable = true)
+        buildConfigField(FieldSpec.Type.STRING, "SPHEREON_CRYPTO_KMS_AZURE_CLIENT_ID",
+            System.getenv("SPHEREON_CRYPTO_KMS_AZURE_CLIENT_ID"), nullable = true)
+        buildConfigField(FieldSpec.Type.STRING, "SPHEREON_CRYPTO_KMS_AZURE_CLIENT_SECRET",
+            System.getenv("SPHEREON_CRYPTO_KMS_AZURE_CLIENT_SECRET"), nullable = true)
     }
 }
