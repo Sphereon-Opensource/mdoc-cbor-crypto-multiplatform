@@ -29,10 +29,10 @@ class AzureKeyVaultProviderTest {
         @JvmStatic
         fun checkForAzureKeyVaultCredentials(): Boolean {
             val envKeys = arrayOf(
-                BuildKonfig.SPHEREON_CRYPTO_KMS_AZURE_URL,
-                BuildKonfig.SPHEREON_CRYPTO_KMS_AZURE_TENANT_ID,
-                BuildKonfig.SPHEREON_CRYPTO_KMS_AZURE_CLIENT_ID,
-                BuildKonfig.SPHEREON_CRYPTO_KMS_AZURE_CLIENT_SECRET
+                BuildKonfig.AZURE_KEYVAULT_URL,
+                BuildKonfig.AZURE_KEYVAULT_TENANT_ID,
+                BuildKonfig.AZURE_KEYVAULT_CLIENT_ID,
+                BuildKonfig.AZURE_KEYVAULT_CLIENT_SECRET
             )
             envKeys.forEach {
                 if (it == null) {
@@ -47,13 +47,13 @@ class AzureKeyVaultProviderTest {
     @BeforeTest
     fun setUp() {
         val azureConfig = AzureKeyvaultClientConfig(
-            keyvaultUrl = BuildKonfig.SPHEREON_CRYPTO_KMS_AZURE_URL!!,
-            tenantId = BuildKonfig.SPHEREON_CRYPTO_KMS_AZURE_TENANT_ID!!,
+            keyvaultUrl = BuildKonfig.AZURE_KEYVAULT_URL!!,
+            tenantId = BuildKonfig.AZURE_KEYVAULT_TENANT_ID!!,
             credentialOpts = CredentialOpts(
                 credentialMode = CredentialMode.SERVICE_CLIENT_SECRET, // Use a client id and secret to authenticate as an app
                 secretCredentialOpts = SecretCredentialOpts(
-                    clientId = BuildKonfig.SPHEREON_CRYPTO_KMS_AZURE_CLIENT_ID!!,
-                    clientSecret = BuildKonfig.SPHEREON_CRYPTO_KMS_AZURE_CLIENT_SECRET!!
+                    clientId = BuildKonfig.AZURE_KEYVAULT_CLIENT_ID!!,
+                    clientSecret = BuildKonfig.AZURE_KEYVAULT_CLIENT_SECRET!!
                 )
             ),
             hsmType = HSMType.KEYVAULT, // Either KEYVAULT as HSM (FIPS140 Level-2), or MANAGED_HSM
@@ -101,16 +101,22 @@ class AzureKeyVaultProviderTest {
 
     @Test
     fun testGenerateECKeyAsync() = runTest {
-        val managedKeyPair = azureKeyVaultCryptoProvider.generateKeyAsync(alg = SignatureAlgorithm.ECDSA_SHA256, keyOperations = arrayOf(
-            KeyOperations.SIGN, KeyOperations.VERIFY))
+        val managedKeyPair = azureKeyVaultCryptoProvider.generateKeyAsync(
+            alg = SignatureAlgorithm.ECDSA_SHA256, keyOperations = arrayOf(
+                KeyOperations.SIGN, KeyOperations.VERIFY
+            )
+        )
         assertNotNull(managedKeyPair)
         assertNotNull(managedKeyPair.cborToManagedKeyInfo().key.kid)
     }
 
     @Test
     fun testGenerateRSAKeyAsync() = runTest {
-        val managedKeyPair = azureKeyVaultCryptoProvider.generateKeyAsync(alg = SignatureAlgorithm.RSA_SHA256, keyOperations = arrayOf(
-            KeyOperations.SIGN, KeyOperations.VERIFY, KeyOperations.WRAP_KEY, KeyOperations.UNWRAP_KEY))
+        val managedKeyPair = azureKeyVaultCryptoProvider.generateKeyAsync(
+            alg = SignatureAlgorithm.RSA_SHA256, keyOperations = arrayOf(
+                KeyOperations.SIGN, KeyOperations.VERIFY, KeyOperations.WRAP_KEY, KeyOperations.UNWRAP_KEY
+            )
+        )
         assertNotNull(managedKeyPair)
         assertNotNull(managedKeyPair.cborToManagedKeyInfo().key.kid)
     }
@@ -120,9 +126,17 @@ class AzureKeyVaultProviderTest {
         val managedKeyPair = azureKeyVaultCryptoProvider.generateKeyAsync(alg = SignatureAlgorithm.ECDSA_SHA256)
         val keyInfo = managedKeyPair.joseToManagedKeyInfo()
         assertNotNull(keyInfo)
-        val signature = azureKeyVaultCryptoProvider.createRawSignatureAsync(keyInfo = keyInfo, input = "test".encodeToByteArray(), false)
+        val signature = azureKeyVaultCryptoProvider.createRawSignatureAsync(
+            keyInfo = keyInfo,
+            input = "test".encodeToByteArray(),
+            false
+        )
         assertNotNull(signature)
-        val verification = azureKeyVaultCryptoProvider.isValidRawSignatureAsync(keyInfo = keyInfo, signature = signature, input = "test".encodeToByteArray())
+        val verification = azureKeyVaultCryptoProvider.isValidRawSignatureAsync(
+            keyInfo = keyInfo,
+            signature = signature,
+            input = "test".encodeToByteArray()
+        )
         assertTrue(verification)
     }
 
@@ -131,9 +145,17 @@ class AzureKeyVaultProviderTest {
         val managedKeyPair = azureKeyVaultCryptoProvider.generateKeyAsync(alg = SignatureAlgorithm.ECDSA_SHA256)
         val keyInfo = managedKeyPair.joseToManagedKeyInfo()
         assertNotNull(keyInfo)
-        val signature = azureKeyVaultCryptoProvider.createRawSignatureAsync(keyInfo = keyInfo, input = "test".encodeToByteArray(), false)
+        val signature = azureKeyVaultCryptoProvider.createRawSignatureAsync(
+            keyInfo = keyInfo,
+            input = "test".encodeToByteArray(),
+            false
+        )
         assertNotNull(signature)
-        val verification = azureKeyVaultCryptoProvider.isValidRawSignatureAsync(keyInfo = keyInfo, signature = signature, input = "test2".encodeToByteArray())
+        val verification = azureKeyVaultCryptoProvider.isValidRawSignatureAsync(
+            keyInfo = keyInfo,
+            signature = signature,
+            input = "test2".encodeToByteArray()
+        )
         assertFalse(verification)
     }
 

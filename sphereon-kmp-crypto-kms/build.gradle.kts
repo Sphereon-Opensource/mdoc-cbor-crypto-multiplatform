@@ -168,13 +168,13 @@ kotlin {
 buildkonfig {
     packageName = "com.sphereon.crypto.kms"
     defaultConfigs {
-        buildConfigField(FieldSpec.Type.STRING, "SPHEREON_CRYPTO_KMS_AZURE_URL",
-            System.getenv("SPHEREON_CRYPTO_KMS_AZURE_URL"), nullable = true)
-        buildConfigField(FieldSpec.Type.STRING, "SPHEREON_CRYPTO_KMS_AZURE_TENANT_ID",
-            System.getenv("SPHEREON_CRYPTO_KMS_AZURE_TENANT_ID"), nullable = true)
-        buildConfigField(FieldSpec.Type.STRING, "SPHEREON_CRYPTO_KMS_AZURE_CLIENT_ID",
-            System.getenv("SPHEREON_CRYPTO_KMS_AZURE_CLIENT_ID"), nullable = true)
-        buildConfigField(FieldSpec.Type.STRING, "SPHEREON_CRYPTO_KMS_AZURE_CLIENT_SECRET",
-            System.getenv("SPHEREON_CRYPTO_KMS_AZURE_CLIENT_SECRET"), nullable = true)
+        buildConfigField(FieldSpec.Type.STRING, "AZURE_KEYVAULT_URL",
+            System.getenv("AZURE_KEYVAULT_URL"), nullable = true)
+        buildConfigField(FieldSpec.Type.STRING, "AZURE_KEYVAULT_TENANT_ID",
+            System.getenv("AZURE_KEYVAULT_TENANT_ID"), nullable = true)
+        buildConfigField(FieldSpec.Type.STRING, "AZURE_KEYVAULT_CLIENT_ID",
+            System.getenv("AZURE_KEYVAULT_CLIENT_ID"), nullable = true)
+        buildConfigField(FieldSpec.Type.STRING, "AZURE_KEYVAULT_CLIENT_SECRET",
+            System.getenv("AZURE_KEYVAULT_CLIENT_SECRET"), nullable = true)
     }
 }
