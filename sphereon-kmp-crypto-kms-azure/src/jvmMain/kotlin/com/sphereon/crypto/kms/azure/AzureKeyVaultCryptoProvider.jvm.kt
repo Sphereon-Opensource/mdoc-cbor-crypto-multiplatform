@@ -27,6 +27,7 @@ import com.sphereon.crypto.CoseJoseKeyMappingService
 import com.sphereon.crypto.IKeyInfo
 import com.sphereon.crypto.SignClientException
 import com.sphereon.crypto.generic.CoseKeyPair
+import com.sphereon.crypto.generic.CryptoAlg
 import com.sphereon.crypto.generic.Curve
 import com.sphereon.crypto.generic.DigestAlg
 import com.sphereon.crypto.generic.JoseKeyPair
@@ -39,6 +40,7 @@ import com.sphereon.crypto.jose.JwaAlgorithm
 import com.sphereon.crypto.jose.JwaKeyType
 import com.sphereon.crypto.jose.Jwk
 import com.sphereon.crypto.jose.JwkUse
+import com.sphereon.crypto.jose.generateJwkThumbprint
 import com.sphereon.crypto.kms.IKeyManagementSystem
 import com.sphereon.crypto.sign.IRawSignatureService
 import com.sphereon.crypto.sign.ISimpleSignatureService
@@ -173,12 +175,15 @@ actual class AzureKeyVaultCryptoProvider actual constructor(
             throw SignClientException("Failed to create key in Azure Key Vault")
         }
 
-        val jwk = keyVaultKey.toJwk()
+        val keyVaultJwk = keyVaultKey.toJwk()
+        val kid = keyVaultJwk.kid ?: generateJwkThumbprint(keyVaultJwk)
+        val jwk = keyVaultJwk.copy(kid = kid)
         val publicCoseKey = CoseJoseKeyMappingService.toCoseKey(jwk)
 
         return ManagedKeyPair(
             kms = getId(),
             kmsKeyRef = keyVaultKey.name,
+            kid = kid,
             jose = JoseKeyPair(null, jwk),
             cose = CoseKeyPair(null, publicCoseKey)
         )
@@ -370,25 +375,11 @@ actual class AzureKeyVaultCryptoProvider actual constructor(
     }
 
     private fun SignatureAlgorithm.toKeyType(): com.azure.security.keyvault.keys.models.KeyType {
-        return when (this) {
-            SignatureAlgorithm.ECDSA_SHA256,
-            SignatureAlgorithm.ECDSA_SHA384,
-            SignatureAlgorithm.ECDSA_SHA512 -> com.azure.security.keyvault.keys.models.KeyType.EC
 
-            SignatureAlgorithm.RSA_SHA256,
-            SignatureAlgorithm.RSA_SHA384,
-            SignatureAlgorithm.RSA_SHA512,
-            SignatureAlgorithm.RSA_SSA_PSS_SHA256_MGF1,
-            SignatureAlgorithm.RSA_SSA_PSS_SHA384_MGF1,
-            SignatureAlgorithm.RSA_SSA_PSS_SHA512_MGF1 -> com.azure.security.keyvault.keys.models.KeyType.RSA
-
-            SignatureAlgorithm.ED25519,
-            SignatureAlgorithm.ES256K,
-            SignatureAlgorithm.HMAC_SHA256,
-            SignatureAlgorithm.HMAC_SHA384,
-            SignatureAlgorithm.HMAC_SHA512,
-            SignatureAlgorithm.RSA_RAW,
-            SignatureAlgorithm.RSA_SSA_PSS_RAW_MGF1 -> throw IllegalArgumentException("Key type not supported for Azure Key Vault")
+        return when (this.cryptoAlgorithm) {
+            CryptoAlg.ECDSA -> com.azure.security.keyvault.keys.models.KeyType.EC
+            CryptoAlg.RSA -> com.azure.security.keyvault.keys.models.KeyType.RSA
+            else -> throw IllegalArgumentException("Key type not supported for Azure Key Vault")
         }
     }
 
