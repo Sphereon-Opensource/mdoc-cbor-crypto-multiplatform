@@ -2,7 +2,6 @@
 
 package com.sphereon.mdoc.oid4vp
 
-import com.sphereon.crypto.cose.CoseAlgorithm
 import kotlinx.serialization.SerialName
 
 @JsExport
@@ -10,6 +9,10 @@ actual sealed external interface IOid4VPFormat {
     @JsName("mso_mdoc")
     @SerialName("mso_mdoc")
     actual val mso_mdoc: IOid4VPSupportedAlgorithm?
+
+    @SerialName("vc+sd-jwt")
+    actual val vc_sd_jwt: IOid4VPSupportedAlgorithm?
+    actual fun hasFormat(format: Oid4VPFormatIdentifier): Boolean
 }
 
 @JsExport

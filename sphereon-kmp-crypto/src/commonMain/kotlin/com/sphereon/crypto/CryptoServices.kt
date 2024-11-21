@@ -51,7 +51,7 @@ object DefaultCallbacks {
 
     fun setCoseCryptoDefault(coseCryptoCallback: ICoseCryptoCallbackMarkerType?) {
         println("setCoseCryptoDefault: ${coseCryptoCallback!!::class.simpleName}")
-        Error("setCoseCryptoDefault: ${coseCryptoCallback::class.simpleName}").printStackTrace()
+        Error("setCoseCryptoDefault (stacktrace): ${coseCryptoCallback::class.simpleName}").printStackTrace()
         this.coseCryptoCallback = coseCryptoCallback
     }
 }

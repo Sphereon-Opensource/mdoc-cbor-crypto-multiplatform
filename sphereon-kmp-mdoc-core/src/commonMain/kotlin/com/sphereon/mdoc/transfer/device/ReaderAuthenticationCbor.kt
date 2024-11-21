@@ -5,8 +5,11 @@ import com.sphereon.cbor.CDDL
 import com.sphereon.cbor.CborArray
 import com.sphereon.cbor.CborBuilder
 import com.sphereon.cbor.CborByteString
+import com.sphereon.cbor.CborEncodedItem
+import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborString
 import com.sphereon.cbor.CborView
+import com.sphereon.cbor.NumberLabel
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.toCborByteString
 import com.sphereon.cbor.toCborString
@@ -92,11 +95,13 @@ data class SessionTranscriptCbor(
 ) : CborView<SessionTranscriptCbor, SessionTranscriptJson, CborArray<AnyCborItem>>(CDDL.list) {
     override fun cborBuilder(): CborBuilder<SessionTranscriptCbor> {
         return CborArray.Static.builder(this)
-            .add(deviceEngagement?.let { CborByteString.Static.fromCborItem(it.toCbor()) })
-            .add(eReaderKey?.let { CborByteString.Static.fromCborItem(it.toCbor()) })
+            .add(deviceEngagement?.let { CborEncodedItem(it.toCbor()) })
+            .add(eReaderKey?.let { CborEncodedItem(it.toCbor()) })
             .add(handover.toCbor())
             .end()
     }
+
+    fun toCborEncodedItem(): CborEncodedItem<SessionTranscriptCbor> = CborEncodedItem(this)
 
     override fun toJson() =
         SessionTranscriptJson(
@@ -113,16 +118,16 @@ data class SessionTranscriptCbor(
         const val HANDOVER = 2
 
         @JsName("fromCborItem")
-        fun fromCborItem(a: CborArray<AnyCborItem>): SessionTranscriptCbor {
-
+        fun fromCborItem(encodedItem: CborEncodedItem<CborArray<AnyCborItem>>): SessionTranscriptCbor {
+            val a: CborArray<AnyCborItem> = encodedItem.decodedValue
+            val handover = a.optional<CborArray<AnyCborItem>>(HANDOVER)
             return SessionTranscriptCbor(
-                a.optional<ByteArray>(DEVICE_ENGAGEMENT)?.let {
-                    DeviceEngagementCbor.Static.fromCborItem(
-                        cborSerializer.decode(it)
-                    )
+                a.optional<CborEncodedItem<CborMap<NumberLabel, AnyCborItem>>>(DEVICE_ENGAGEMENT)?.let {
+                    DeviceEngagementCbor.Static.fromCborItem(it.decodedValue)
                 },
-                a.optional<ByteArray>(ENGAGEMENT_READER_KEY)?.let { CoseKeyCbor.Static.cborDecode(it) },
-                a.required(HANDOVER)
+                a.optional<CborEncodedItem<CborMap<NumberLabel, AnyCborItem>>>(ENGAGEMENT_READER_KEY)
+                    ?.let { CoseKeyCbor.Static.fromCborItem(it.decodedValue) },
+                if (handover === null) QrHandoverCbor() else NfcHandoverCbor.Static.fromCborItem(handover)
             )
 
         }
@@ -202,7 +207,7 @@ data class NfcHandoverCbor(val handoverSelectMessage: CborByteString, val handov
         const val HANDOVER_SELECT_MESSAGE = 0
         const val HANDOVER_REQUEST_MESSAGE = 1
         fun fromCborItem(a: CborArray<AnyCborItem>) =
-            NfcHandoverCbor(a.required(HANDOVER_REQUEST_MESSAGE), a.optional(HANDOVER_SELECT_MESSAGE))
+            NfcHandoverCbor(handoverSelectMessage = a.required(HANDOVER_SELECT_MESSAGE), handoverRequestMessage = a.optional(HANDOVER_REQUEST_MESSAGE))
 
         fun cborDecode(data: ByteArray) = fromCborItem(cborSerializer.decode(data))
     }

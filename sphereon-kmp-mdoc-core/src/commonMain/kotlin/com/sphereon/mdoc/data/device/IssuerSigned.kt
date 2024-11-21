@@ -304,8 +304,6 @@ data class IssuerSignedCbor(
                 Pair(
                     it.key.value,
                     it.value.value.map { elts ->
-
-                        println("* ${count++} ${elts.decodedValue.elementIdentifier.value} : ${elts.decodedValue.elementValue} ")
                         elts.decodedValue.toJson()
 
                     }

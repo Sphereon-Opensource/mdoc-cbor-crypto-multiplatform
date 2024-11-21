@@ -2,6 +2,7 @@ package com.sphereon.crypto.kms
 
 import EcdsaRawKmpKeyInfoContext
 import checkSupportedEcdsaCurve
+import com.sphereon.cbor.toCborByteString
 import com.sphereon.crypto.CoseJoseKeyMappingService
 import com.sphereon.crypto.IKeyInfo
 import com.sphereon.crypto.KeyInfo
@@ -17,12 +18,13 @@ import com.sphereon.crypto.generic.ManagedKeyPair
 import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.crypto.jose.Jwk
 import com.sphereon.crypto.jose.JwkUse
+import com.sphereon.crypto.jose.generateJwkThumbprint
 import com.sphereon.crypto.sign.IRawSignatureService
 import com.sphereon.crypto.sign.ISimpleSignatureService
 import com.sphereon.crypto.sign.model.SignInput
 import com.sphereon.crypto.sign.model.SignOutput
 import com.sphereon.crypto.sign.model.Signature
-import com.sphereon.kmp.Uuid
+import com.sphereon.kmp.Encoding
 import convertRawKeyBytesToJwk
 import dev.whyoleg.cryptography.CryptographyProvider
 import dev.whyoleg.cryptography.algorithms.EC
@@ -41,7 +43,8 @@ import kotlin.js.JsExport
 class EcDSACryptoProvider(
     private val id: String = "ecdsa",
     provider: CryptographyProvider = CryptographyProvider.Default,
-    private val privateKeyStore: IKeyStoreService? = MemoryKeyStoreService(keyVisibility = KeyVisibility.PRIVATE)
+    private val privateKeyStore: IKeyStoreService? = MemoryKeyStoreService(keyVisibility = KeyVisibility.PRIVATE),
+    private val exposePrivateKeysDuringGeneration: Boolean = false
 ) : IKeyManagementSystem,
     IRawSignatureService, ISimpleSignatureService {
     /**
@@ -112,13 +115,19 @@ class EcDSACryptoProvider(
             keyOperations = keyOpsMapping
         )
         val publicJwk = privateJwk.copy(d = null) // let's make sure we do not leak the private key component
+        val kid = privateJwk.kid ?: generateJwkThumbprint(publicJwk)
         val privateCoseKey = CoseJoseKeyMappingService.toCoseKey(privateJwk)
         val publicCoseKey = CoseJoseKeyMappingService.toCoseKey(publicJwk)
+
         val managedKeyPair = ManagedKeyPair(
             kms = getId(),
-            kmsKeyRef = kmsKeyRef ?: Uuid.v4String(), // TODO: Generate kid and use that as fallback instead of uuid
-            jose = JoseKeyPair(privateJwk, publicJwk),
-            cose = CoseKeyPair(privateCoseKey, publicCoseKey)
+            kid = kid,
+            kmsKeyRef = kmsKeyRef ?: kid,
+            jose = JoseKeyPair(if (exposePrivateKeysDuringGeneration) privateJwk.copy(kid = kid) else null, publicJwk.copy(kid = kid)),
+            cose = CoseKeyPair(
+                if (exposePrivateKeysDuringGeneration) privateCoseKey.copy(kid = kid.toCborByteString(Encoding.UTF8)) else null,
+                publicCoseKey.copy(kid = kid.toCborByteString(Encoding.UTF8))
+            )
         )
         val keyInfo: IKeyInfo<Jwk> = KeyInfo(
             key = privateJwk,
@@ -126,7 +135,7 @@ class EcDSACryptoProvider(
             keyType = KeyType.EC,
             kmsKeyRef = managedKeyPair.kmsKeyRef,
             kms = managedKeyPair.kms,
-            kid = privateJwk.kid,
+            kid = kid,
             x5c = privateJwk.x5c,
             signatureAlgorithm = privateJwk.getSignatureAlgorithm() ?: alg
         )
@@ -138,8 +147,9 @@ class EcDSACryptoProvider(
 
         return managedKeyPair
     }
+
     private fun keyInfoToBytesWithKeystoreLookup(keyInfo: IKeyInfo<*>): EcdsaRawKmpKeyInfoContext {
-        return keyInfoToEcdsaRawKmpContext(keyInfo, resolver = { privateKeyStore?.getKey(keyInfo)})
+        return keyInfoToEcdsaRawKmpContext(keyInfo, resolver = { privateKeyStore?.getKey(keyInfo) })
     }
 
     /**
@@ -151,7 +161,7 @@ class EcDSACryptoProvider(
      * @throws IllegalArgumentException If the private key is not provided or not supported.
      */
     @JsExport.Ignore
-    override suspend fun createRawSignatureAsync(keyInfo: IKeyInfo<*>, input: ByteArray,requireX5Chain: Boolean): ByteArray {
+    override suspend fun createRawSignatureAsync(keyInfo: IKeyInfo<*>, input: ByteArray, requireX5Chain: Boolean): ByteArray {
         val (key, _, privateKeyBytes, curveImpl, algImpl) = keyInfoToBytesWithKeystoreLookup(keyInfo)
 
         if (key.d != null && privateKeyBytes !== null) {

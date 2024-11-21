@@ -9,6 +9,10 @@ import kotlinx.serialization.Serializable
 actual sealed interface IOid4VPFormat {
     @SerialName("mso_mdoc")
     actual val mso_mdoc: IOid4VPSupportedAlgorithm?
+
+    @SerialName("vc+sd-jwt")
+    actual val vc_sd_jwt: IOid4VPSupportedAlgorithm?
+    actual fun hasFormat(format: Oid4VPFormatIdentifier): Boolean
 }
 
 actual sealed interface IOid4VPSupportedAlgorithm {

@@ -285,6 +285,15 @@ sealed class SignatureAlgorithm(
      */
     object ES256K : SignatureAlgorithm(CoseAlgorithm.ES256K, JwaAlgorithm.ES256K, cryptoAlgorithm = CryptoAlg.ECDSA, curve = Curve.Secp256k1)
 
+
+    object ECKA_DH_SHA256 : SignatureAlgorithm(
+        CoseAlgorithm.HMAC256_256 /*FIXME*/,
+        JwaAlgorithm.ECDH_ES/*FIXME*/,
+        cryptoAlgorithm = CryptoAlg.ECDSA,
+        curve = null,
+        digestAlgorithm = DigestAlg.SHA256
+    )
+
     /**
      * This object represents the HS256 algorithm, which is a specific type of HMAC utilizing SHA-256.
      *

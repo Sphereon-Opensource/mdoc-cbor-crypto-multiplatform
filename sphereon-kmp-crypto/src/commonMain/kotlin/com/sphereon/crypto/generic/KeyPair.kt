@@ -24,6 +24,7 @@ import kotlin.js.JsExport
  */
 @JsExport
 data class ManagedKeyPair(
+    val kid: String?,
     val kms: String,
     val kmsKeyRef: String,
     val cose: CoseKeyPair,
