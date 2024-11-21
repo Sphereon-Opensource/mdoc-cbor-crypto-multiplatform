@@ -144,6 +144,9 @@ kotlin {
         }
         val jsMain by getting {
             dependencies {
+                implementation(npm("@azure/identity", "4.5.0"))
+                implementation(npm("@azure/keyvault-keys", "4.9.0"))
+                implementation(npm("@azure/keyvault-secrets", "4.9.0"))
             }
         }
 

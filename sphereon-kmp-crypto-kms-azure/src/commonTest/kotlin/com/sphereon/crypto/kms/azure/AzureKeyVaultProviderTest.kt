@@ -16,7 +16,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class AzureKeyVaultProviderTest {
-    private lateinit var azureKeyVaultCryptoProvider: AzureKeyVaultCryptoProvider
+    private lateinit var azureKeyVaultCryptoProvider: AzureKeyvaultCryptoProvider
 
     @BeforeTest
     fun setUp() {
@@ -38,12 +38,12 @@ class AzureKeyVaultProviderTest {
                 maxDelayInMS = 15000 // Wait for max 15 seconds eventually
             )
         )
-        azureKeyVaultCryptoProvider = AzureKeyVaultCryptoProvider(
+        azureKeyVaultCryptoProvider = AzureKeyvaultCryptoProvider(
             id = "azure-keyvault-test",
             config = azureConfig
         )
 
-        azureKeyVaultCryptoProvider = AzureKeyVaultCryptoProvider(id = "test-azure-key-vault", config = azureConfig)
+        azureKeyVaultCryptoProvider = AzureKeyvaultCryptoProvider(id = "test-azure-key-vault", config = azureConfig)
     }
 
     @Test
@@ -79,6 +79,10 @@ class AzureKeyVaultProviderTest {
             KeyOperations.SIGN, KeyOperations.VERIFY))
         assertNotNull(managedKeyPair)
         assertNotNull(managedKeyPair.cborToManagedKeyInfo().key.kid)
+        println(managedKeyPair)
+        println(managedKeyPair.jose)
+
+        assertEquals("EC", managedKeyPair.jose.publicJwk.kty.toString())
     }
 
     @Test
@@ -87,6 +91,7 @@ class AzureKeyVaultProviderTest {
             KeyOperations.SIGN, KeyOperations.VERIFY, KeyOperations.WRAP_KEY, KeyOperations.UNWRAP_KEY))
         assertNotNull(managedKeyPair)
         assertNotNull(managedKeyPair.cborToManagedKeyInfo().key.kid)
+        assertEquals("RSA", managedKeyPair.jose.publicJwk.kty.toString())
     }
 
     @Test

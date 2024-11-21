@@ -6,7 +6,7 @@ import com.sphereon.crypto.generic.KeyType
 import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.crypto.kms.IKeyManagementSystem
 
-abstract class BaseAzureKeyVaultCryptoProvider(private val id: String) : IKeyManagementSystem {
+abstract class BaseAzureKeyvaultCryptoProvider(private val id: String) : IKeyManagementSystem {
     override fun getId(): String = id
 
     override fun supportedCurves(): Array<Curve> = arrayOf(Curve.P_256, Curve.Secp256k1, Curve.P_384, Curve.P_521)

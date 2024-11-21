@@ -27,11 +27,8 @@ import com.sphereon.crypto.CoseJoseKeyMappingService
 import com.sphereon.crypto.IKeyInfo
 import com.sphereon.crypto.SignClientException
 import com.sphereon.crypto.generic.CoseKeyPair
-import com.sphereon.crypto.generic.Curve
-import com.sphereon.crypto.generic.DigestAlg
 import com.sphereon.crypto.generic.JoseKeyPair
 import com.sphereon.crypto.generic.KeyOperations
-import com.sphereon.crypto.generic.KeyType
 import com.sphereon.crypto.generic.ManagedKeyPair
 import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.crypto.jose.JoseKeyOperations
@@ -53,11 +50,14 @@ import java.time.Duration
 
 private val logger = Logger("sphereon:kmp:kms:azure-keyvault")
 
-actual class AzureKeyVaultCryptoProvider actual constructor(
+actual class AzureKeyvaultCryptoProvider actual constructor(
     id: String,
     config: AzureKeyvaultClientConfig
 ) : IKeyManagementSystem,
-    IRawSignatureService, ISimpleSignatureService, BaseAzureKeyVaultCryptoProvider(id) {
+    IRawSignatureService,
+    ISimpleSignatureService,
+    BaseAzureKeyvaultCryptoProvider(id)
+{
     private val keyClient: KeyAsyncClient
     private val hasCerts: Boolean
     private val isManagedHsm: Boolean
