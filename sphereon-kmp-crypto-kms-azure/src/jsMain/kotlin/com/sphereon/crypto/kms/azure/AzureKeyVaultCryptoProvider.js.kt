@@ -168,6 +168,18 @@ actual class AzureKeyvaultCryptoProvider actual constructor(
         )
     }
 
+    private fun SignatureAlgorithm.toKeyTypeString(): String {
+        return when (this) {
+            SignatureAlgorithm.RSA_SHA256 -> "RSA"
+            SignatureAlgorithm.RSA_SHA384 -> "RSA"
+            SignatureAlgorithm.RSA_SHA512 -> "RSA"
+            SignatureAlgorithm.ECDSA_SHA256 -> "EC"
+            SignatureAlgorithm.ECDSA_SHA384 -> "EC"
+            SignatureAlgorithm.ECDSA_SHA512 -> "EC"
+            else -> throw IllegalArgumentException("Unsupported signature algorithm: $this")
+        }
+    }
+
     override suspend fun generateKeyAsync(
         kmsKeyRef: String?,
         use: JwkUse?,
@@ -193,7 +205,7 @@ actual class AzureKeyvaultCryptoProvider actual constructor(
 //            .setKeyOperations(*operations)
 //
 
-        val keyVaultKey = keyClient.createKey(keyName, "RSA").await()
+        val keyVaultKey = keyClient.createKey(keyName, alg?.toKeyTypeString() ?: SignatureAlgorithm.ECDSA_SHA256.toKeyTypeString()).await()
 
         if (keyVaultKey === null) {
 //            logger.debug("Failed to create key in Azure Key Vault for reference: $keyName")
