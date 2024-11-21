@@ -6,7 +6,6 @@ import com.sphereon.crypto.SignClientException
 import com.sphereon.crypto.generic.CoseKeyPair
 import com.sphereon.crypto.generic.JoseKeyPair
 import com.sphereon.crypto.generic.KeyOperations
-import com.sphereon.crypto.generic.KeyType
 import com.sphereon.crypto.generic.ManagedKeyPair
 import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.crypto.jose.JoseKeyOperations
@@ -19,48 +18,8 @@ import com.sphereon.crypto.sign.ISimpleSignatureService
 import com.sphereon.crypto.sign.model.SignInput
 import com.sphereon.crypto.sign.model.SignOutput
 import com.sphereon.crypto.sign.model.Signature
-import com.sphereon.kmp.Logger
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.await
-import kotlinx.coroutines.withContext
 import kotlin.js.Promise
-
-
-external interface KeyResponse {
-    val key: KeyDetails
-    val id: String
-    val name: String
-    val keyOperations: Array<String>
-    val keyType: String
-    val properties: KeyProperties
-}
-
-external interface KeyDetails {
-    val kid: String
-    val kty: String
-    val keyOps: Array<String>
-    val n: ByteArray // Use ByteArray for buffers
-    val e: ByteArray
-}
-
-external interface KeyProperties {
-    val tags: dynamic // Can be null/undefined
-    val enabled: Boolean
-    val notBefore: dynamic // Can be null/undefined
-    val expiresOn: dynamic // Can be null/undefined
-    val createdOn: String // ISO date string
-    val updatedOn: String // ISO date string
-    val recoverableDays: Int
-    val recoveryLevel: String
-    val exportable: Boolean
-    val releasePolicy: dynamic // Can be null/undefined
-    val hsmPlatform: String
-    val vaultUrl: String
-    val version: String
-    val name: String
-    val managed: dynamic // Can be null/undefined
-    val id: String
-}
 
 @JsModule("@azure/identity")
 @JsNonModule
@@ -71,17 +30,21 @@ external object AzureIdentity {
 @JsNonModule
 external class AzureKeyvaultKeys(url: String, credential: AzureIdentity.ClientSecretCredential) {
     class KeyClient(keyvaultUrl: String, credential: AzureIdentity.ClientSecretCredential) {
-        fun createKey(keyName: String, keyType: String): Promise<KeyResponse>
+        fun createKey(keyName: String, keyType: String): Promise<AzureKeyvaultKey>
+        fun getKey(keyName: String): Promise<AzureKeyvaultKey>
     }
-    class KeyType
+    class CryptographyClient(key: AzureKeyvaultKey, credential: AzureIdentity.ClientSecretCredential) {
+        fun signData(
+            algorithm: String,
+            data: ByteArray
+        ): Promise<AzureKeyvaultSignDataResult>
+        fun verifyData(
+            algorithm: String,
+            data: ByteArray,
+            signature: ByteArray
+        ): Promise<AzureKeyvaultVerifyDataResult>
+    }
 }
-
-@JsModule("@azure/keyvault-secrets")
-@JsNonModule
-external class AzureKeyvaultSecrets(url: String, credential: AzureIdentity.ClientSecretCredential) {
-    class SecretClient(keyvaultUrl: String, credential: AzureIdentity.ClientSecretCredential)
-}
-
 
 @JsModule("crypto")
 @JsNonModule
@@ -98,6 +61,7 @@ actual class AzureKeyvaultCryptoProvider actual constructor(
     BaseAzureKeyvaultCryptoProvider(id)
 {
     private val keyClient: AzureKeyvaultKeys.KeyClient // Representing the Azure Key Vault client
+    private val clientSecretCredential: AzureIdentity.ClientSecretCredential
     private val hasCerts: Boolean
     private val isManagedHsm: Boolean
 //    private val certClient: dynamic? // Representing the Certificate client, if any
@@ -116,12 +80,14 @@ actual class AzureKeyvaultCryptoProvider actual constructor(
             )
 
         keyClient = AzureKeyvaultKeys.KeyClient(config.keyvaultUrl, credential)
+        clientSecretCredential = AzureIdentity.ClientSecretCredential(
+            config.tenantId,
+            config.credentialOpts.secretCredentialOpts.clientId,
+            config.credentialOpts.secretCredentialOpts.clientSecret
+        )
 
         hasCerts = config.hsmType !== HSMType.MANAGED_HSM
         isManagedHsm = config.hsmType === HSMType.MANAGED_HSM
-
-        console.log(keyClient)
-
 
 //        certClient = when (config.hsmType) {
 //            HSMType.MANAGED_HSM -> {
@@ -138,48 +104,6 @@ actual class AzureKeyvaultCryptoProvider actual constructor(
 //        }
     }
 
-    private fun String.toJwaKeyType(): JwaKeyType {
-        return when (this) {
-            "RSA" -> JwaKeyType.RSA
-            "EC" -> JwaKeyType.EC
-            else -> throw IllegalArgumentException("Unsupported key type: $this")
-        }
-    }
-
-    private fun String.toJoseKeyOperationsArray(): JoseKeyOperations {
-            return when (this) {
-                "sign" -> JoseKeyOperations.SIGN
-                "verify" -> JoseKeyOperations.VERIFY
-                "encrypt" -> JoseKeyOperations.ENCRYPT
-                "decrypt" -> JoseKeyOperations.DECRYPT
-                "wrapKey" -> JoseKeyOperations.WRAP_KEY
-                "unwrapKey" -> JoseKeyOperations.UNWRAP_KEY
-                else -> throw IllegalArgumentException("Unsupported key operation: $this")
-            }
-    }
-
-    private fun KeyResponse.toJwk(): Jwk {
-        return Jwk(
-            kid = key.kid,
-            kty = key.kty.toJwaKeyType(),
-            key_ops = key.keyOps.map { it.toJoseKeyOperationsArray() }.toTypedArray(),
-            n = key.n.toString(),
-            e = key.e.toString()
-        )
-    }
-
-    private fun SignatureAlgorithm.toKeyTypeString(): String {
-        return when (this) {
-            SignatureAlgorithm.RSA_SHA256 -> "RSA"
-            SignatureAlgorithm.RSA_SHA384 -> "RSA"
-            SignatureAlgorithm.RSA_SHA512 -> "RSA"
-            SignatureAlgorithm.ECDSA_SHA256 -> "EC"
-            SignatureAlgorithm.ECDSA_SHA384 -> "EC"
-            SignatureAlgorithm.ECDSA_SHA512 -> "EC"
-            else -> throw IllegalArgumentException("Unsupported signature algorithm: $this")
-        }
-    }
-
     override suspend fun generateKeyAsync(
         kmsKeyRef: String?,
         use: JwkUse?,
@@ -191,19 +115,6 @@ actual class AzureKeyvaultCryptoProvider actual constructor(
         }
 
         val keyName = kmsKeyRef ?: "key-${Crypto.randomUUID()}"
-
-
-        //        val keyType = alg?.toKeyType() ?: KeyType.EC
-//
-//        val operations: Array<KeyOperation> = (keyOperations ?: arrayOf(KeyOperations.SIGN, KeyOperations.VERIFY))
-//            .map {
-//                it.toAzureKeyOperation()
-//            }
-//            .toTypedArray()
-//
-//        val createKeyOptions = CreateKeyOptions(keyName, keyType)
-//            .setKeyOperations(*operations)
-//
 
         val keyVaultKey = keyClient.createKey(keyName, alg?.toKeyTypeString() ?: SignatureAlgorithm.ECDSA_SHA256.toKeyTypeString()).await()
 
@@ -221,7 +132,23 @@ actual class AzureKeyvaultCryptoProvider actual constructor(
             jose = JoseKeyPair(null, jwk),
             cose = CoseKeyPair(null, publicCoseKey)
         )
+    }
 
+    private fun String.toSignatureAlgorithm(): String {
+        val algorithmMap = mapOf(
+            "P-256" to "ES256",
+            "secp256k1" to "ES256K",
+            "P-384" to "ES384",
+            "P-521" to "ES512",
+            "RS256" to "RS256",
+            "RS384" to "RS384",
+            "RS512" to "RS512",
+            "PS256" to "PS256",
+            "PS384" to "PS384",
+            "PS512" to "PS512"
+        )
+
+        return algorithmMap[this] ?: throw IllegalArgumentException("Unsupported algorithm or curve: $this")
     }
 
     override suspend fun createRawSignatureAsync(
@@ -229,7 +156,13 @@ actual class AzureKeyvaultCryptoProvider actual constructor(
         input: ByteArray,
         requireX5Chain: Boolean
     ): ByteArray {
-        TODO("Not yet implemented")
+        if (keyInfo.kmsKeyRef === null) {
+            throw IllegalArgumentException("Key reference is required")
+        }
+        val azureKey = keyClient.getKey(keyInfo.kmsKeyRef.toString()).await()
+        val cryptographyClient = AzureKeyvaultKeys.CryptographyClient(azureKey, clientSecretCredential)
+        val signature = cryptographyClient.signData(azureKey.key.crv.toSignatureAlgorithm(), input).await()
+        return signature.result
     }
 
     override suspend fun isValidRawSignatureAsync(
@@ -237,7 +170,10 @@ actual class AzureKeyvaultCryptoProvider actual constructor(
         input: ByteArray,
         signature: ByteArray
     ): Boolean {
-        TODO("Not yet implemented")
+        val azureKey = keyClient.getKey(keyInfo.kmsKeyRef.toString()).await()
+        val cryptographyClient = AzureKeyvaultKeys.CryptographyClient(azureKey, clientSecretCredential)
+        val verifyResult = cryptographyClient.verifyData(azureKey.key.crv.toSignatureAlgorithm(), input, signature).await()
+        return verifyResult.result
     }
 
     override suspend fun createSignature(
