@@ -21,6 +21,7 @@ import com.sphereon.json.JsonView
 import com.sphereon.json.mdocJsonSerializer
 import com.sphereon.mdoc.data.RequestInfo
 import com.sphereon.mdoc.transfer.device.ReaderAuthenticationCbor
+import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlin.js.JsExport
@@ -43,6 +44,7 @@ data class DocRequestJson(
     /**
      * ReaderAuth is used for mdoc reader authentication as defined in 9.1.4.
      */
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
     val readerAuth: CoseSign1Json? = null
 ) : JsonView() {
     override fun toJsonString() = mdocJsonSerializer.encodeToString(this)

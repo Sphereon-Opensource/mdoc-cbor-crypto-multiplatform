@@ -29,9 +29,10 @@ import com.sphereon.mdoc.data.device.DeviceResponseCbor
 import com.sphereon.mdoc.data.device.IssuerSignedCbor
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
+import me.sujanpoudel.utils.platformIdentifier.Platform
+import me.sujanpoudel.utils.platformIdentifier.platform
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -94,7 +95,12 @@ class Oid4vpTest {
 
 
         val serialized = oid4vpJsonSerializer.encodeToString(Oid4VPPresentationDefinition.serializer(), pd)
-        println(serialized)
+
+        println("=========")
+        println(iso18013_7_pd)
+        println("=========")
+        println(serialized.replace("\n", "").replace(" ", ""))
+        println("=========")
 
         // We cannot compare strings as the order of a JSON object is undefined (except for arrays). Removing the newlines because of pretty printing
         assertEquals(iso18013_7_pd.length, serialized.replace("\n", "").replace(" ", "").length)
@@ -129,12 +135,22 @@ class Oid4vpTest {
         assertNotNull(nameSpaces)
 
 
-//        val privateKeyStore = MemoryKeyStoreService(keyVisibility = KeyVisibility.PRIVATE)
         val keyManagerService = KeyManagerService<X509Service>(
             keyManagementSystems = arrayOf(EcDSACryptoProvider()),
             keyResolvers = arrayOf(CoseJoseProvidedKeyResolverService<X509Service>())
         )
-        DefaultCallbacks.setCoseCryptoDefault(CoseCryptoProviderToCallbackAdapter(keyManagerService = keyManagerService))
+        //TODO: We should create some common test code, and then set the appropriate default callbacks I guess. Lazy for now.
+        // There is a copy of this test in JS with the correct callback for JS
+        val currentPlatform = platform()
+        when (currentPlatform) {
+            is Platform.JS.Node, is Platform.JS.Browser -> {
+                println("Test cannot run on JS. Needs CoseCryptoProviderToCallbackAdapterJS, which is only available in JS")
+                return@runTest
+            }
+            else -> {
+                DefaultCallbacks.setCoseCryptoDefault(CoseCryptoProviderToCallbackAdapter(keyManagerService = keyManagerService))
+            }
+        }
 
         // both below service have a default, but let's set it explicitly to show you could set another sign service as well
         val mdocSignService = MdocSignService(DefaultCallbacks.coseCrypto())
@@ -155,7 +171,7 @@ class Oid4vpTest {
                 deviceKey.toManagedKeyInfo<ICoseKeyCbor>(visibility = KeyVisibility.PUBLIC, KeyEncoding.COSE).toResolvedPublicKeyInfo()
             ).withSigningKeyInfo(issuerKey.toManagedKeyInfo<ICoseKeyCbor>(visibility = KeyVisibility.PUBLIC, KeyEncoding.COSE))
             .withValidUntil(DateTimeUtils.Static.DEFAULT.dateTime(epochSeconds = (Clock.System.now().epochSeconds + 1000).toInt()))
-            .buildAndSignMdoc(mdocSignService = mdocSignService)
+            .buildAndSignMdoc(mdocSignService = mdocSignService, requireDeviceX5Chain = false)
 
         val applicableDocs = mdocOid4vpService.filterApplicableDocumentsPerInputDescriptor(arrayOf(doc), pd.input_descriptors[0])
         assertEquals(1, applicableDocs.size)
@@ -165,20 +181,15 @@ class Oid4vpTest {
         assertEquals(1, docsAndDescriptors.size)
         assertNotNull(docsAndDescriptors[0].deviceKeyInfo)
 
-        println(doc.cborEncode().encodeTo(Encoding.HEX))
+        val deviceResponse = mdocOid4vpService.createDeviceResponse(
+            matchingDocuments = docsAndDescriptors,
+            presentationDefinition = pd,
+            clientId = "https://test.com",
+            responseUri = "https://test.com/response",
+            authorizationRequestNonce = "auth-nonce"
+        )
 
-        // Will never work, as we are using a public example for which we do not have the private key. So we fail at the signature part
-//        assertFailsWith(IllegalArgumentException::class, "Need to provide a kmsKeyRef", {
-val deviceResponse =            mdocOid4vpService.createDeviceResponse(
-                matchingDocuments = docsAndDescriptors,
-                presentationDefinition = pd,
-                clientId = "https://test.com",
-                responseUri = "https://test.com/response",
-                authorizationRequestNonce = "auth-nonce"
-            )
-//        })
-         assertNotNull(deviceResponse)
-
+        assertNotNull(deviceResponse)
         val vpToken = deviceResponse.cborEncode().encodeTo(Encoding.BASE64URL)
         assertTrue(vpToken.startsWith("o2d2ZXJzaW9uYzEuMGlkb2N1bWVudHOBo2dkb2NUeXBld2V1LmV1cm9wYS5lYy5ldWRpLnBpZC4xbGlzc3VlclNpZ25lZKJqbmFtZVNwYWNlc6F3ZXUuZXVyb3BhLmVjLmV1ZGkucGlkLjGH"))
     }

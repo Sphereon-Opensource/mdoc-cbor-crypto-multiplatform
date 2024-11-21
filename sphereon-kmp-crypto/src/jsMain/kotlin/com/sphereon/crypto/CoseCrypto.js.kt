@@ -1,18 +1,20 @@
 package com.sphereon.crypto
 
+import com.sphereon.crypto.cose.CoseMac0InputCbor
 import com.sphereon.crypto.cose.CoseSign1Cbor
 import com.sphereon.crypto.cose.CoseSign1InputCbor
 import com.sphereon.crypto.cose.ICoseKeyCbor
 import com.sphereon.crypto.cose.ToBeSignedCbor
 import com.sphereon.crypto.generic.IVerifySignatureResult
+import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.crypto.generic.VerifySignatureResult
+import dev.whyoleg.cryptography.CryptographyProvider
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asPromise
 import kotlinx.coroutines.async
 import kotlinx.coroutines.await
 import kotlin.js.Promise
-
 
 
 @JsExport
@@ -30,6 +32,13 @@ external interface ICoseCryptoCallbackJS : ICoseCryptoCallbackMarkerType {
         keyInfo: IKeyInfo<ICoseKeyCbor>
     ): Promise<IVerifySignatureResult<ICoseKeyCbor>>
 
+    /*@JsName("mac0Async")
+    fun mac0Async(
+        input: CoseMac0InputCbor,
+        sharedSecret: ByteArray,
+        alg: SignatureAlgorithm
+    ): Promise<CoseMac0Result>
+*/
     @JsName("resolvePublicKeyAsync")
     fun <KT : IKey> resolvePublicKeyAsync(keyInfo: IKeyInfo<KT>): Promise<IResolvedKeyInfo<KT>>
 }
@@ -54,6 +63,13 @@ external interface ICoseCryptoServiceJS {
         requireX5Chain: Boolean
     ): Promise<IVerifySignatureResult<ICoseKeyCbor>>
 
+    @JsName("mac0Async")
+    fun mac0Async(
+        input: CoseMac0InputCbor,
+        sharedSecret: ByteArray,
+        alg: SignatureAlgorithm
+    ): Promise<CoseMac0Result>
+
     @JsName("resolvePublicKeyAsync")
     fun <KT : IKey> resolvePublicKeyAsync(keyInfo: IKeyInfo<KT>): Promise<IResolvedKeyInfo<KT>>
 }
@@ -72,16 +88,23 @@ private const val COSE_CRYPTO_SERVICE_JS_SCOPE = "CoseCryptoServiceJS"
  * We do provide some defaults and examples
  */
 @JsExport
-class CoseCryptoServiceJS(override val platformCallback: ICoseCryptoCallbackJS = DefaultCallbacks.coseCrypto()) :
-    AbstractCoseCryptoService<ICoseCryptoCallbackJS>(platformCallback),
+class CoseCryptoServiceJS(
+    override val platformCallback: ICoseCryptoCallbackJS = DefaultCallbacks.coseCrypto(),
+    provider: CryptographyProvider = CryptographyProvider.Default
+) :
+    AbstractCoseCryptoService<ICoseCryptoCallbackJS>(platformCallback, provider = provider),
     ICoseCryptoServiceJS {
-
+    override fun mac0Async(input: CoseMac0InputCbor, sharedSecret: ByteArray, alg: SignatureAlgorithm): Promise<CoseMac0Result> {
+        return CoroutineScope(CoroutineName(COSE_CRYPTO_SERVICE_JS_SCOPE)).async {
+            return@async defaultCreateMac0(input, sharedSecret, alg, provider)
+        }.asPromise()
+    }
 
     @JsExport.Ignore
     override suspend fun resolvePublicCborKey(keyInfo: IKeyInfo<*>): IResolvedKeyInfo<ICoseKeyCbor> {
         val resolvedKeyInfo = resolvePublicKeyAsync(keyInfo).await()
         return CoseJoseKeyMappingService.toResolvedCoseKeyInfo(resolvedKeyInfo)
-     }
+    }
 
     override fun platform(): ICoseCryptoCallbackJS {
         return this.platformCallback
@@ -179,7 +202,12 @@ class CoseCryptoServiceJSAdapter(val coseCallbackJS: CoseCryptoServiceJS = CoseC
         requireX5Chain: Boolean
     ): IVerifySignatureResult<ICoseKeyCbor> = coseCallbackJS.verify1(input = input, keyInfo = keyInfo, requireX5Chain = true).await()
 
-    override suspend fun <KeyType : IKey> resolvePublicKey(keyInfo: IKeyInfo<KeyType>): IResolvedKeyInfo<KeyType> = coseCallbackJS.resolvePublicKeyAsync(keyInfo).await()
+    override suspend fun mac0(input: CoseMac0InputCbor, sharedSecret: ByteArray, alg: SignatureAlgorithm) =
+        coseCallbackJS.mac0Async(input = input, sharedSecret = sharedSecret, alg = alg).await()
+
+
+    override suspend fun <KeyType : IKey> resolvePublicKey(keyInfo: IKeyInfo<KeyType>): IResolvedKeyInfo<KeyType> =
+        coseCallbackJS.resolvePublicKeyAsync(keyInfo).await()
 
 
     override suspend fun resolvePublicCborKey(keyInfo: IKeyInfo<*>): IResolvedKeyInfo<ICoseKeyCbor> {

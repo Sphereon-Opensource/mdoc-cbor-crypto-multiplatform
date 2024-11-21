@@ -12,6 +12,7 @@ import com.sphereon.crypto.jose.JwaCurve
 import com.sphereon.crypto.jose.JwaKeyType
 import com.sphereon.crypto.jose.Jwk
 import com.sphereon.crypto.jose.JwkUse
+import com.sphereon.crypto.jose.generateJwkThumbprint
 import com.sphereon.kmp.Encoding
 import com.sphereon.kmp.decodeFromBase64Url
 import com.sphereon.kmp.encodeTo
@@ -123,7 +124,7 @@ fun convertRawKeyBytesToJwk(
     val x = publicKeyBytes.copyOfRange(1, 33).encodeTo(Encoding.BASE64URL)
     val y = publicKeyBytes.copyOfRange(33, 65).encodeTo(Encoding.BASE64URL)
     val d = privateKeyBytes?.encodeTo(Encoding.BASE64URL)
-    return Jwk(
+    val jwk = Jwk(
         kty = JwaKeyType.EC,
         alg = alg.jose,
         crv = curve.jose,
@@ -133,6 +134,9 @@ fun convertRawKeyBytesToJwk(
         use = use.value,
         key_ops = keyOperations.map { it.jose }.toTypedArray()
     )
+
+    val kid = generateJwkThumbprint(jwk)
+    return jwk.copy(kid = kid)
 }
 
 /**

@@ -11,7 +11,7 @@ import kotlin.js.JsName
 
 @JsExport
 @JsName("oid4vpJsonSerializer")
-val oid4vpJsonSerializer = MdocJsonSupport.serializer
+val oid4vpJsonSerializer = mdocJsonSerializer
 
 @JsExport
 @JsName("Oid4vpJsonSupport")
@@ -32,9 +32,14 @@ object Oid4vpJsonSupport {
                 Oid4VPPresentationSubmission::class
             )
         }*/
+        /*polymorphic(JsonView::class) {
+            subclass(CoseKeyJson::class)
+            subclass(IssuerSignedItemJson::class)
+        }*/
         polymorphicDefaultDeserializer(IOid4VPPresentationSubmission::class, { Oid4VPPresentationSubmission.serializer() })
         polymorphicDefaultDeserializer(IOid4VPPresentationDefinition::class, { Oid4VPPresentationDefinition.serializer() })
 
     }
-    val serializer = Json { serializersModule = module; encodeDefaults = true; isLenient = true; prettyPrint = true; ignoreUnknownKeys = true }
+
+    val serializer = Json { serializersModule = module; encodeDefaults = false; isLenient = true; prettyPrint = true; ignoreUnknownKeys = true }
 }
