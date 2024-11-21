@@ -43,5 +43,5 @@ object MdocJsonSupport {
         }
 
     }
-    val serializer = Json { serializersModule = module; encodeDefaults = true; isLenient = true; prettyPrint = true; ignoreUnknownKeys = true }
+    val serializer = Json { serializersModule = module; encodeDefaults = false; isLenient = true; prettyPrint = true; ignoreUnknownKeys = true;  }
 }

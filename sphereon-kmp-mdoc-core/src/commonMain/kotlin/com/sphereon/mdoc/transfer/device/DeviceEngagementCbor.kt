@@ -12,7 +12,6 @@ import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborString
 import com.sphereon.cbor.CborUInt
 import com.sphereon.cbor.CborView
-import com.sphereon.json.JsonView
 import com.sphereon.cbor.NumberLabel
 import com.sphereon.cbor.StringLabel
 import com.sphereon.cbor.cborSerializer
@@ -21,10 +20,13 @@ import com.sphereon.cbor.cddl_uint
 import com.sphereon.cbor.toCborUInt
 import com.sphereon.crypto.cose.CoseKeyCbor
 import com.sphereon.crypto.cose.CoseKeyJson
+import com.sphereon.json.JsonView
 import com.sphereon.json.mdocJsonSerializer
 import com.sphereon.kmp.LongKMP
 import com.sphereon.kmp.numberToKmpLong
 import com.sphereon.kmp.toKmpLong
+import com.sphereon.mdoc.experimental.oid4vp.OID4VP_PROTOCOL_INFO_LABEL
+import com.sphereon.mdoc.experimental.oid4vp.Oid4vpRequestProtocolCbor
 import com.sphereon.mdoc.transfer.device.WifiOptionsCbor.Static.CHANNEL_INFO_CHANNEL_NUMBER
 import com.sphereon.mdoc.transfer.device.WifiOptionsCbor.Static.CHANNEL_INFO_OPERATING_CLASS
 import com.sphereon.mdoc.transfer.device.WifiOptionsCbor.Static.PASS_PHRASE
@@ -58,6 +60,16 @@ data class DeviceEngagementCbor(
     val protocolInfo: ProtocolInfo? = null,
     val additionalItems: CborMap<NumberLabel, AnyCborItem>? = CborMap(mutableMapOf())
 ) : CborView<DeviceEngagementCbor, DeviceEngagementJson, CborMap<NumberLabel, AnyCborItem>>(CDDL.map) {
+
+    // SPHEREON Funke: Experimental credential format extension
+    val hasOid4vpProtocolInfo: Boolean =
+        protocolInfo is CborMap<*, *> && protocolInfo.value.containsKey(OID4VP_PROTOCOL_INFO_LABEL)
+
+    // SPHEREON Funke: Experimental credential format extension
+    fun getOid4vpProtocolInfo(): Oid4vpRequestProtocolCbor {
+        check(hasOid4vpProtocolInfo) { "Oid4vp Protocol info is not present. Cannot use experimental extension" }
+        return Oid4vpRequestProtocolCbor.Static.fromProtocolInfo(protocolInfo!!)
+    }
 
     object Static {
         val VERSION = NumberLabel(0)

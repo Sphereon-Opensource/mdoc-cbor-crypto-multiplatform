@@ -4,14 +4,22 @@ import com.sphereon.cbor.AnyCborItem
 import com.sphereon.cbor.CDDL
 import com.sphereon.cbor.CborArray
 import com.sphereon.cbor.CborBuilder
+import com.sphereon.cbor.CborByteString
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborString
 import com.sphereon.cbor.CborView
-import com.sphereon.json.JsonView
 import com.sphereon.cbor.StringLabel
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.cddl_tstr
+import com.sphereon.json.JsonView
 import com.sphereon.json.mdocJsonSerializer
+import com.sphereon.json.oid4vpJsonSerializer
+import com.sphereon.kmp.Encoding
+import com.sphereon.kmp.decodeFrom
+import com.sphereon.kmp.encodeTo
+import com.sphereon.mdoc.oid4vp.IOid4VPPresentationDefinition
+import com.sphereon.mdoc.oid4vp.Oid4VPPresentationDefinition
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlin.js.JsExport
 import kotlin.js.JsName
@@ -66,15 +74,22 @@ data class DeviceRequestCbor(
     /**
      * docRequests contains an array of all requested documents.
      */
-    val docRequests: Array<DocRequestCbor>
+    val docRequests: Array<DocRequestCbor>? = null,
 
-) : CborView<DeviceRequestCbor, DeviceRequestJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
+    val oid4vpRequest: Oid4VPPresentationDefinition? = null,
+
+    ) : CborView<DeviceRequestCbor, DeviceRequestJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
+
+    val hasOid4vpRequest: Boolean = oid4vpRequest != null
+    val hasDocRequest: Boolean = !docRequests.isNullOrEmpty()
     override fun cborBuilder(): CborBuilder<DeviceRequestCbor> =
-        CborMap.Static.builder(this).put(Static.VERSION, version, optional = false).put(
-            Static.DOC_REQUESTS,
-            CborArray(docRequests.map { it.toCbor() }.toMutableList()),
-            optional = false
-        )
+        CborMap.Static.builder(this)
+            .put(Static.VERSION, version, optional = false)
+            .put(
+                Static.DOC_REQUESTS, docRequests?.let { CborArray(it.map { req -> req.toCbor() }.toMutableList()) },
+                optional = true
+            )
+            .put(Static.OID4VP_REQUEST, CborByteString(oid4vpJsonSerializer.encodeToString(oid4vpRequest).decodeFrom(Encoding.UTF8)), optional = true)
             .end()
 
 
@@ -106,14 +121,16 @@ data class DeviceRequestCbor(
     object Static {
         val VERSION = StringLabel("version")
         val DOC_REQUESTS = StringLabel("docRequests")
+        val OID4VP_REQUEST = StringLabel("oid4vpRequest")
 
         @JsName("fromCborItem")
         fun fromCborItem(m: CborMap<StringLabel, AnyCborItem>): DeviceRequestCbor {
             return DeviceRequestCbor(
                 VERSION.required(m),
-                DOC_REQUESTS.required<CborArray<CborMap<StringLabel, AnyCborItem>>>(m).value.map {
+                DOC_REQUESTS.optional<CborArray<CborMap<StringLabel, AnyCborItem>>>(m)?.value?.map {
                     DocRequestCbor.Static.fromCborItem(it)
-                }.toTypedArray()
+                }?.toTypedArray(),
+                OID4VP_REQUEST.optional<CborByteString>(m)?.value?.let { oid4vpJsonSerializer.decodeFromString(it.encodeTo(Encoding.UTF8)) }
             )
         }
 

@@ -6,6 +6,7 @@ import com.sphereon.crypto.IKey
 import com.sphereon.crypto.IKeyInfo
 import com.sphereon.crypto.IResolvedKeyInfo
 import com.sphereon.crypto.PKIException
+import com.sphereon.crypto.defaultCreateMac0
 import com.sphereon.crypto.generic.IVerifySignatureResult
 import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.crypto.generic.VerifySignatureResult
@@ -87,6 +88,10 @@ class CoseCryptoProviderToCallbackAdapter(
             name = "Cose verify1"
         )
     }
+
+    override suspend fun mac0(input: CoseMac0InputCbor, sharedSecret: ByteArray, alg: SignatureAlgorithm) =
+        defaultCreateMac0(input, sharedSecret, alg)
+
 
     /**
      * Resolves a public key based on the provided key information.

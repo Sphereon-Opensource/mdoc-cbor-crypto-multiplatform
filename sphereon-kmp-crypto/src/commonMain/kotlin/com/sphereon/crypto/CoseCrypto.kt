@@ -1,8 +1,11 @@
 package com.sphereon.crypto
 
 import com.sphereon.cbor.toCborByteString
+import com.sphereon.crypto.cose.CoseAlgorithm
 import com.sphereon.crypto.cose.CoseHeaderCbor
 import com.sphereon.crypto.cose.CoseKeyCbor
+import com.sphereon.crypto.cose.CoseMac0Cbor
+import com.sphereon.crypto.cose.CoseMac0InputCbor
 import com.sphereon.crypto.cose.CoseSign1Cbor
 import com.sphereon.crypto.cose.CoseSign1InputCbor
 import com.sphereon.crypto.cose.ICoseKeyCbor
@@ -11,6 +14,14 @@ import com.sphereon.crypto.generic.IVerifySignatureResult
 import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.crypto.generic.VerifySignatureResult
 import com.sphereon.kmp.Encoding
+import com.sphereon.kmp.decodeFrom
+import dev.whyoleg.cryptography.BinarySize.Companion.bytes
+import dev.whyoleg.cryptography.CryptographyProvider
+import dev.whyoleg.cryptography.algorithms.HKDF
+import dev.whyoleg.cryptography.algorithms.HMAC
+import dev.whyoleg.cryptography.algorithms.SHA256
+import toRawEcdhPrivateKey
+import toRawEcdhPublicKey
 import kotlin.js.JsExport
 
 
@@ -33,6 +44,12 @@ interface ICoseCryptoCallbackService : ICoseCryptoCallbackMarkerType {
         input: CoseSign1Cbor<*>,
         keyInfo: IKeyInfo<*>
     ): IVerifySignatureResult<ICoseKeyCbor>
+
+    suspend fun mac0(
+        input: CoseMac0InputCbor,
+        sharedSecret: ByteArray,
+        alg: SignatureAlgorithm
+    ): CoseMac0Result
 
     suspend fun <KeyType : IKey> resolvePublicKeyAsync(keyInfo: IKeyInfo<KeyType>): IResolvedKeyInfo<KeyType>
 }
@@ -57,6 +74,13 @@ interface ICoseCryptoService : ICoseCryptoMarkerType {
         requireX5Chain: Boolean
     ): IVerifySignatureResult<ICoseKeyCbor>
 
+
+    suspend fun mac0(
+        input: CoseMac0InputCbor,
+        sharedSecret: ByteArray,
+        alg: SignatureAlgorithm
+    ): CoseMac0Result
+
     suspend fun <KeyType : IKey> resolvePublicKey(keyInfo: IKeyInfo<KeyType>): IResolvedKeyInfo<KeyType>
 }
 
@@ -69,7 +93,10 @@ expect fun coseCryptoService(platformCallback: ICoseCryptoCallbackMarkerType = D
 //expect fun coseService(platformCallback: ICoseCryptoCallbackMarkerType): ICoseCryptoCallbackService
 
 @JsExport
-abstract class AbstractCoseCryptoService<CallbackServiceType>(open val platformCallback: CallbackServiceType?) :
+abstract class AbstractCoseCryptoService<CallbackServiceType>(
+    open val platformCallback: CallbackServiceType?,
+    val provider: CryptographyProvider? = CryptographyProvider.Default,
+) :
     ICallbackService<CallbackServiceType> {
     private var disabled = false
 
@@ -185,6 +212,7 @@ abstract class AbstractCoseCryptoService<CallbackServiceType>(open val platformC
         )
     }
 
+
     @JsExport.Ignore
     protected abstract suspend fun resolvePublicCborKey(keyInfo: IKeyInfo<*>): IResolvedKeyInfo<ICoseKeyCbor>
 }
@@ -192,7 +220,6 @@ abstract class AbstractCoseCryptoService<CallbackServiceType>(open val platformC
 class CoseCryptoService(override val platformCallback: ICoseCryptoCallbackService = DefaultCallbacks.coseCrypto()) :
     AbstractCoseCryptoService<ICoseCryptoCallbackService>(platformCallback),
     ICoseCryptoService {
-
 
     override suspend fun resolvePublicCborKey(keyInfo: IKeyInfo<*>): IResolvedKeyInfo<ICoseKeyCbor> {
         val info = resolvePublicKey(keyInfo)
@@ -252,9 +279,73 @@ class CoseCryptoService(override val platformCallback: ICoseCryptoCallbackServic
         return platformCallback.verify1(input = input, keyInfo = info)
     }
 
+    override suspend fun mac0(input: CoseMac0InputCbor,
+                              sharedSecret: ByteArray,
+                              alg: SignatureAlgorithm): CoseMac0Result = this.platformCallback.mac0(input = input, sharedSecret = sharedSecret, alg = alg)
+
     override suspend fun <KeyType : IKey> resolvePublicKey(keyInfo: IKeyInfo<KeyType>) = this.platformCallback.resolvePublicKeyAsync(keyInfo)
 
 }
 
 @JsExport
 data class CoseSign1Result<CborType>(val coseSign1: CoseSign1Cbor<CborType>, val keyInfo: IKeyInfo<ICoseKeyCbor>, val input: CoseSign1InputCbor)
+
+
+@JsExport
+data class CoseMac0Result(val coseMac0: CoseMac0Cbor, val input: CoseMac0InputCbor)
+
+
+@JsExport.Ignore
+suspend fun defaultCreateMac0(
+    input: CoseMac0InputCbor,
+    sharedSecret: ByteArray,
+    alg: SignatureAlgorithm = input.protectedHeader.alg?.let { SignatureAlgorithm.Static.fromCose(it) } ?: SignatureAlgorithm.HMAC_SHA256,
+    provider: CryptographyProvider? = CryptographyProvider.Default
+): CoseMac0Result {
+    // Since this lib will mostly be used in the context of Mdl/Mdocs where the mac0 is ECKA-DH (Diffie-Hellman) with SHA-256, we provide a default
+    // We expose the provider as optional, as it can be set later on services. But in reallity it is required for this call!
+    requireNotNull(provider) { "Crypto provider needs to be set for the default Mac0 implementation" }
+    val digest = alg.digestAlgorithm?.toCryptoGraphicAlgorithm()
+    checkNotNull(digest) {
+        """Signature (Digest) algorithm $alg not supported or provided. Supported algorithms: ${
+            arrayOf(SignatureAlgorithm.HMAC_SHA256, SignatureAlgorithm.HMAC_SHA384, SignatureAlgorithm.HMAC_SHA512).joinToString(", ")
+        }"""
+    }
+    val protectedHeader = input.protectedHeader.copy(alg = alg.cose)
+    val inputWithHeader = input.copy(protectedHeader = protectedHeader)
+    val toBeMaced = inputWithHeader.toMac0Structure().toBeMaced()
+    val tag = provider.get(HMAC).keyDecoder(digest).decodeFromByteArray(HMAC.Key.Format.RAW, sharedSecret).signatureGenerator()
+        .generateSignature(toBeMaced.value)
+    val coseMac0 = CoseMac0Cbor(
+        tag = tag.toCborByteString(),
+        protectedHeader = inputWithHeader.protectedHeader ?: CoseHeaderCbor(alg = CoseAlgorithm.HMAC256_256),
+        unprotectedHeader = inputWithHeader.unprotectedHeader,
+        payload = inputWithHeader.payload?.toCborByteString()
+    )
+    return CoseMac0Result(input = inputWithHeader, coseMac0 = coseMac0)
+}
+
+@JsExport.Ignore
+suspend fun defaultCreateMac0UsingKeys(
+    provider: CryptographyProvider? = null,
+    input: CoseMac0InputCbor,
+    selfPrivateKey: IResolvedKeyInfo<*>,
+    otherPublicKey: IResolvedKeyInfo<*>,
+    alg: SignatureAlgorithm = SignatureAlgorithm.HMAC_SHA256,
+    info: String = "EMacKey",
+    salt: ByteArray = byteArrayOf(),
+    macCallback: (provider: CryptographyProvider?, input: CoseMac0InputCbor,
+                  sharedSecret: ByteArray,
+                  alg: SignatureAlgorithm) -> CoseMac0Result
+): CoseMac0Result {
+    // Since this lib will mostly be used in the context of Mdl/Mdocs where the mac0 is ECKA-DH (Diffie-Hellman) with SHA-256, we provide a default
+    requireNotNull(provider) { "Crypto provider needs to be set for the default Mac0 implementation" }
+    val selfRawPrivateKey = toRawEcdhPrivateKey(provider = provider, selfPrivateKey)
+    val otherRawPublicKey = toRawEcdhPublicKey(provider = provider, otherPublicKey)
+    val sharedSecret = selfRawPrivateKey.sharedSecretGenerator().generateSharedSecretToByteArray(otherRawPublicKey)
+    val emacKey =
+        provider.get(HKDF).secretDerivation(digest = SHA256, outputSize = 32.bytes, salt = salt, info = info.decodeFrom(Encoding.UTF8))
+            .deriveSecretToByteArray(sharedSecret)
+//fixme
+    return macCallback(provider, input, emacKey, alg)
+}

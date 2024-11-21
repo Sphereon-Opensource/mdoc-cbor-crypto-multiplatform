@@ -12,6 +12,7 @@ import com.sphereon.crypto.jose.JoseKeyOperations
 import com.sphereon.crypto.jose.JwaKeyType
 import com.sphereon.crypto.jose.Jwk
 import com.sphereon.crypto.jose.JwkUse
+import com.sphereon.crypto.jose.generateJwkThumbprint
 import com.sphereon.crypto.kms.IKeyManagementSystem
 import com.sphereon.crypto.sign.IRawSignatureService
 import com.sphereon.crypto.sign.ISimpleSignatureService
@@ -118,18 +119,15 @@ actual class AzureKeyvaultCryptoProvider actual constructor(
 
         val keyVaultKey = keyClient.createKey(keyName, alg?.toKeyTypeString() ?: SignatureAlgorithm.ECDSA_SHA256.toKeyTypeString()).await()
 
-        if (keyVaultKey === null) {
-//            logger.debug("Failed to create key in Azure Key Vault for reference: $keyName")
-            throw SignClientException("Failed to create key in Azure Key Vault")
-        }
+        val keyVaultJwk = keyVaultKey.toJwk()
+        val publicCoseKey = CoseJoseKeyMappingService.toCoseKey(keyVaultJwk)
+        val kid = keyVaultKey.key.kid
 
-        val jwk = keyVaultKey.toJwk()
-        val publicCoseKey = CoseJoseKeyMappingService.toCoseKey(jwk)
-//
         return ManagedKeyPair(
             kms = getId(),
-            kmsKeyRef = keyVaultKey.name as String,
-            jose = JoseKeyPair(null, jwk),
+            kmsKeyRef = keyVaultKey.name,
+            kid = kid,
+            jose = JoseKeyPair(null, keyVaultJwk),
             cose = CoseKeyPair(null, publicCoseKey)
         )
     }

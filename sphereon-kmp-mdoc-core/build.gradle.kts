@@ -127,6 +127,7 @@ kotlin {
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
+                implementation("me.sujanpoudel.multiplatform.utils:platform-identifier:0.2.2")
                 implementation(libs.kotlinx.coroutines.test)
                 implementation(projects.sphereonKmpCryptoKms)
             }
