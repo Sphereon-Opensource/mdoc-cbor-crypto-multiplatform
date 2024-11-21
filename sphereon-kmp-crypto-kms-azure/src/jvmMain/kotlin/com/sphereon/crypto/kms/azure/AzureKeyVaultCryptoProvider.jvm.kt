@@ -57,8 +57,7 @@ actual class AzureKeyVaultCryptoProvider actual constructor(
     id: String,
     config: AzureKeyvaultClientConfig
 ) : IKeyManagementSystem,
-    IRawSignatureService, ISimpleSignatureService {
-    private val id: String = "azure-keyvault"
+    IRawSignatureService, ISimpleSignatureService, BaseAzureKeyVaultCryptoProvider(id) {
     private val keyClient: KeyAsyncClient
     private val hasCerts: Boolean
     private val isManagedHsm: Boolean
@@ -101,36 +100,6 @@ actual class AzureKeyVaultCryptoProvider actual constructor(
             }
         }
     }
-
-    override fun getId(): String {
-        return id
-    }
-
-    override fun supportedCurves(): Array<Curve> = arrayOf(Curve.P_256, Curve.Secp256k1, Curve.P_384, Curve.P_521)
-
-    override fun isSupportedCurve(curve: Curve): Boolean {
-        return supportedCurves().contains(curve)
-    }
-
-    override fun supportedDigests(): Array<DigestAlg> {
-        return supportedSignatureAlgorithms().filter { it.digestAlgorithm !== null }.map { it.digestAlgorithm!! }
-            .toSet().toTypedArray()
-    }
-
-    override fun supportedKeyTypes(): Array<KeyType> = arrayOf(KeyType.EC, KeyType.RSA)
-
-    override fun supportedSignatureAlgorithms(): Array<SignatureAlgorithm> =
-        arrayOf(
-            SignatureAlgorithm.ECDSA_SHA256,
-            SignatureAlgorithm.ECDSA_SHA384,
-            SignatureAlgorithm.ECDSA_SHA512,
-            SignatureAlgorithm.RSA_SHA256,
-            SignatureAlgorithm.RSA_SHA384,
-            SignatureAlgorithm.RSA_SHA512,
-            SignatureAlgorithm.RSA_SSA_PSS_SHA256_MGF1,
-            SignatureAlgorithm.RSA_SSA_PSS_SHA384_MGF1,
-            SignatureAlgorithm.RSA_SSA_PSS_SHA512_MGF1
-        )
 
     /**
      * Generates a new key pair in Azure Key Vault.

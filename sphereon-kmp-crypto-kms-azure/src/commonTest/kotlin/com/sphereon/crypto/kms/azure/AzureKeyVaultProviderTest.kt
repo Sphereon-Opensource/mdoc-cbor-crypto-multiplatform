@@ -6,7 +6,6 @@ import com.sphereon.crypto.generic.KeyOperations
 import com.sphereon.crypto.generic.KeyType
 import com.sphereon.crypto.generic.SignatureAlgorithm
 import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.TestInstance
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
@@ -16,7 +15,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class AzureKeyVaultProviderTest {
     private lateinit var azureKeyVaultCryptoProvider: AzureKeyVaultCryptoProvider
 

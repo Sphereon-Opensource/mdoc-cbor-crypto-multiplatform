@@ -8,6 +8,7 @@ import com.sphereon.crypto.generic.KeyType
 import com.sphereon.crypto.generic.ManagedKeyPair
 import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.crypto.jose.JwkUse
+import com.sphereon.crypto.kms.IKeyManagementSystem
 import com.sphereon.crypto.sign.IRawSignatureService
 import com.sphereon.crypto.sign.ISimpleSignatureService
 import com.sphereon.crypto.sign.model.SignInput
@@ -17,31 +18,7 @@ import com.sphereon.crypto.sign.model.Signature
 actual class AzureKeyVaultCryptoProvider actual constructor(
     id: String,
     config: AzureKeyvaultClientConfig
-) : IKeyManagementSystem, IRawSignatureService, ISimpleSignatureService {
-    override fun getId(): String {
-        TODO("Not yet implemented")
-    }
-
-    override fun supportedKeyTypes(): Array<KeyType> {
-        TODO("Not yet implemented")
-    }
-
-    override fun supportedSignatureAlgorithms(): Array<SignatureAlgorithm> {
-        TODO("Not yet implemented")
-    }
-
-    override fun supportedDigests(): Array<DigestAlg> {
-        TODO("Not yet implemented")
-    }
-
-    override fun supportedCurves(): Array<Curve> {
-        TODO("Not yet implemented")
-    }
-
-    override fun isSupportedCurve(curve: Curve): Boolean {
-        TODO("Not yet implemented")
-    }
-
+) : IKeyManagementSystem, IRawSignatureService, ISimpleSignatureService, BaseAzureKeyVaultCryptoProvider(id) {
     override suspend fun generateKeyAsync(
         kmsKeyRef: String?,
         use: JwkUse?,

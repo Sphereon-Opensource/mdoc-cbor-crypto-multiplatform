@@ -67,27 +67,27 @@ kotlin {
               }
           }
       }*/
-//    js(IR) {
-//        moduleName = "@sphereon/kmp-crypto-kms"
-//        nodejs {
-////            useEsModules() // Enables ES2015 modules
-//
-//            testTask {
-//                useMocha()
-//            } // To run tests with Node.js.
-//
-//        }
-//        browser {
-////            useEsModules() // Enables ES2015 modules
-//
-//            testTask {
-//                useMocha()
-//            }
-//        }
-//
-//        binaries.library()
-//        generateTypeScriptDefinitions()
-//    }
+    js(IR) {
+        moduleName = "@sphereon/kmp-crypto-kms"
+        nodejs {
+//            useEsModules() // Enables ES2015 modules
+
+            testTask {
+                useMocha()
+            } // To run tests with Node.js.
+
+        }
+        browser {
+//            useEsModules() // Enables ES2015 modules
+
+            testTask {
+                useMocha()
+            }
+        }
+
+        binaries.library()
+        generateTypeScriptDefinitions()
+    }
     /*
     val hostOs = System.getProperty("os.name")
     val isArm64 = System.getProperty("os.arch") == "aarch64"
@@ -100,7 +100,6 @@ kotlin {
         isMingwX64 -> mingwX64("native")
         else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
     }*/
-
 
     sourceSets {
         all {
@@ -143,21 +142,21 @@ kotlin {
                 implementation(libs.whyoleg.cryptography.provider.jdk)
             }
         }
-//        val jsMain by getting {
-//            dependencies {
-//            }
-//        }
-//
-//        val jsTest by getting {
-//            dependencies {
-//                implementation(libs.kotest.assertions.core)
-//                implementation(libs.kotest.framework.engine)
-//                implementation(libs.kotest.framework.datatest)
-//                implementation(libs.kotest.property)
-//                implementation(libs.whyoleg.cryptography.provider.webcrypto)
-//
-//            }
-//        }
+        val jsMain by getting {
+            dependencies {
+            }
+        }
+
+        val jsTest by getting {
+            dependencies {
+                implementation(libs.kotest.assertions.core)
+                implementation(libs.kotest.framework.engine)
+                implementation(libs.kotest.framework.datatest)
+                implementation(libs.kotest.property)
+                implementation(libs.whyoleg.cryptography.provider.webcrypto)
+
+            }
+        }
         /* val nativeMain by getting {
              dependencies {}
          }
