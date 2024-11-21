@@ -1,4 +1,4 @@
-package com.sphereon.crypto.kms
+package com.sphereon.crypto.kms.azure
 
 import com.sphereon.crypto.IKeyInfo
 import com.sphereon.crypto.generic.Curve

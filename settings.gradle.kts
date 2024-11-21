@@ -52,6 +52,7 @@ include(
     "sphereon-kmp-cbor",
     "sphereon-kmp-crypto",
     "sphereon-kmp-crypto-kms",
+    "sphereon-kmp-crypto-kms-azure",
     "sphereon-kmp-ades-client",
     "sphereon-kmp-mdoc-core",
     "sphereon-kmp-mdoc-datatransfer-ble"

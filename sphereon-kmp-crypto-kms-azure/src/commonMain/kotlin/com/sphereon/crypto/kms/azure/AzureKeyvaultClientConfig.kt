@@ -1,4 +1,4 @@
-package com.sphereon.crypto.kms
+package com.sphereon.crypto.kms.azure
 
 @kotlinx.serialization.Serializable
 data class AzureKeyvaultClientConfig(

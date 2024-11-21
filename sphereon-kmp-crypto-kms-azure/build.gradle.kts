@@ -1,3 +1,4 @@
+import com.codingfeline.buildkonfig.compiler.FieldSpec
 import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnLockMismatchReport
 import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootExtension
 
@@ -7,6 +8,7 @@ plugins {
     kotlin("plugin.serialization")
     id("io.kotest.multiplatform")
     id("module.publication")
+    id("com.codingfeline.buildkonfig") version "0.15.2"
 }
 
 rootProject.plugins.withType<org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootPlugin> {
@@ -65,27 +67,27 @@ kotlin {
               }
           }
       }*/
-    js(IR) {
-        moduleName = "@sphereon/kmp-crypto-kms"
-        nodejs {
-//            useEsModules() // Enables ES2015 modules
-
-            testTask {
-                useMocha()
-            } // To run tests with Node.js.
-
-        }
-        browser {
-//            useEsModules() // Enables ES2015 modules
-
-            testTask {
-                useMocha()
-            }
-        }
-
-        binaries.library()
-        generateTypeScriptDefinitions()
-    }
+//    js(IR) {
+//        moduleName = "@sphereon/kmp-crypto-kms"
+//        nodejs {
+////            useEsModules() // Enables ES2015 modules
+//
+//            testTask {
+//                useMocha()
+//            } // To run tests with Node.js.
+//
+//        }
+//        browser {
+////            useEsModules() // Enables ES2015 modules
+//
+//            testTask {
+//                useMocha()
+//            }
+//        }
+//
+//        binaries.library()
+//        generateTypeScriptDefinitions()
+//    }
     /*
     val hostOs = System.getProperty("os.name")
     val isArm64 = System.getProperty("os.arch") == "aarch64"
@@ -129,6 +131,11 @@ kotlin {
         }
         val jvmMain by getting {
             dependencies {
+                implementation(project.dependencies.platform("com.azure:azure-sdk-bom:1.2.4"))
+                implementation("com.azure:azure-identity")
+                implementation("com.azure:azure-security-keyvault-administration")
+                implementation("com.azure:azure-security-keyvault-certificates")
+                implementation("com.azure:azure-security-keyvault-keys")
             }
         }
         val jvmTest by getting {
@@ -136,24 +143,38 @@ kotlin {
                 implementation(libs.whyoleg.cryptography.provider.jdk)
             }
         }
-        val jsMain by getting {
-            dependencies {
-            }
-        }
-
-        val jsTest by getting {
-            dependencies {
-                implementation(libs.kotest.assertions.core)
-                implementation(libs.kotest.framework.engine)
-                implementation(libs.kotest.framework.datatest)
-                implementation(libs.kotest.property)
-                implementation(libs.whyoleg.cryptography.provider.webcrypto)
-
-            }
-        }
+//        val jsMain by getting {
+//            dependencies {
+//            }
+//        }
+//
+//        val jsTest by getting {
+//            dependencies {
+//                implementation(libs.kotest.assertions.core)
+//                implementation(libs.kotest.framework.engine)
+//                implementation(libs.kotest.framework.datatest)
+//                implementation(libs.kotest.property)
+//                implementation(libs.whyoleg.cryptography.provider.webcrypto)
+//
+//            }
+//        }
         /* val nativeMain by getting {
              dependencies {}
          }
          val nativeTest by getting*/
+    }
+}
+
+buildkonfig {
+    packageName = "com.sphereon.crypto.kms.azure"
+    defaultConfigs {
+        buildConfigField(FieldSpec.Type.STRING, "AZURE_KEYVAULT_URL",
+            System.getenv("AZURE_KEYVAULT_URL"), nullable = true)
+        buildConfigField(FieldSpec.Type.STRING, "AZURE_KEYVAULT_TENANT_ID",
+            System.getenv("AZURE_KEYVAULT_TENANT_ID"), nullable = true)
+        buildConfigField(FieldSpec.Type.STRING, "AZURE_KEYVAULT_CLIENT_ID",
+            System.getenv("AZURE_KEYVAULT_CLIENT_ID"), nullable = true)
+        buildConfigField(FieldSpec.Type.STRING, "AZURE_KEYVAULT_CLIENT_SECRET",
+            System.getenv("AZURE_KEYVAULT_CLIENT_SECRET"), nullable = true)
     }
 }
