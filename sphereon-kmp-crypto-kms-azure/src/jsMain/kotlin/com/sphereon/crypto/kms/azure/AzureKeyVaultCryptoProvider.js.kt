@@ -52,10 +52,7 @@ external class AzureKeyvaultKeys(url: String, credential: AzureIdentity.ClientSe
 
 actual class AzureKeyvaultCryptoProvider actual constructor(
     config: AzureKeyvaultClientConfig
-) : IKeyManagementSystem,
-    IRawSignatureService,
-    ISimpleSignatureService,
-    BaseAzureKeyvaultCryptoProvider(config.applicationId) {
+) : BaseAzureKeyvaultCryptoProvider(config.applicationId) {
     private val keyClient: AzureKeyvaultKeys.KeyClient // Representing the Azure Key Vault client
     private val clientSecretCredential: AzureIdentity.ClientSecretCredential
 

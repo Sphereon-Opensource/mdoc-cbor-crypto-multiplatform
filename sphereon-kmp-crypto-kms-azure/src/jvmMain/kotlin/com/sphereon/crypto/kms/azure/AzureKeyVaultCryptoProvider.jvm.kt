@@ -38,10 +38,7 @@ private val logger = Logger("sphereon:kmp:kms:azure-keyvault")
 
 actual class AzureKeyvaultCryptoProvider actual constructor(
     config: AzureKeyvaultClientConfig
-) : IKeyManagementSystem,
-    IRawSignatureService,
-    ISimpleSignatureService,
-    BaseAzureKeyvaultCryptoProvider(config.applicationId) {
+) : BaseAzureKeyvaultCryptoProvider(config.applicationId) {
     private val keyClient: KeyAsyncClient
 
     init {
