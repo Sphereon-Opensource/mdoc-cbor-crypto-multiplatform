@@ -1,3 +1,4 @@
+import com.codingfeline.buildkonfig.compiler.FieldSpec
 import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnLockMismatchReport
 import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootExtension
 
@@ -7,6 +8,7 @@ plugins {
     kotlin("plugin.serialization")
     id("io.kotest.multiplatform")
     id("module.publication")
+    id("com.codingfeline.buildkonfig") version "0.15.2"
 }
 
 rootProject.plugins.withType<org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootPlugin> {
@@ -99,7 +101,6 @@ kotlin {
         else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
     }*/
 
-
     sourceSets {
         all {
             languageSettings.optIn("kotlin.js.ExperimentalJsExport")
@@ -129,6 +130,11 @@ kotlin {
         }
         val jvmMain by getting {
             dependencies {
+                implementation(project.dependencies.platform("com.azure:azure-sdk-bom:1.2.4"))
+                implementation("com.azure:azure-identity")
+                implementation("com.azure:azure-security-keyvault-administration")
+                implementation("com.azure:azure-security-keyvault-certificates")
+                implementation("com.azure:azure-security-keyvault-keys")
             }
         }
         val jvmTest by getting {
@@ -138,6 +144,9 @@ kotlin {
         }
         val jsMain by getting {
             dependencies {
+                implementation(npm("@azure/identity", "4.5.0"))
+                implementation(npm("@azure/keyvault-keys", "4.9.0"))
+                implementation(npm("@azure/keyvault-secrets", "4.9.0"))
             }
         }
 
@@ -155,5 +164,19 @@ kotlin {
              dependencies {}
          }
          val nativeTest by getting*/
+    }
+}
+
+buildkonfig {
+    packageName = "com.sphereon.crypto.kms.azure"
+    defaultConfigs {
+        buildConfigField(FieldSpec.Type.STRING, "AZURE_KEYVAULT_URL",
+            System.getenv("AZURE_KEYVAULT_URL"), nullable = true)
+        buildConfigField(FieldSpec.Type.STRING, "AZURE_KEYVAULT_TENANT_ID",
+            System.getenv("AZURE_KEYVAULT_TENANT_ID"), nullable = true)
+        buildConfigField(FieldSpec.Type.STRING, "AZURE_KEYVAULT_CLIENT_ID",
+            System.getenv("AZURE_KEYVAULT_CLIENT_ID"), nullable = true)
+        buildConfigField(FieldSpec.Type.STRING, "AZURE_KEYVAULT_CLIENT_SECRET",
+            System.getenv("AZURE_KEYVAULT_CLIENT_SECRET"), nullable = true)
     }
 }

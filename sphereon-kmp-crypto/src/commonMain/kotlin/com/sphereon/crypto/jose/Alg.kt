@@ -13,6 +13,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlin.js.ExperimentalJsExport
 import kotlin.js.JsExport
+import kotlin.js.JsName
 
 @JsExport
 enum class AlgorithmType {
@@ -27,41 +28,45 @@ enum class AlgorithmType {
  * @property value The value representing the algorithm.
  */
 @JsExport
-@Serializable(with = JwaAlgSerializer::class )
-enum class JwaAlgorithm(val value: String, val type: AlgorithmType) {
+@Serializable(with = JwaAlgSerializer::class)
+enum class JwaAlgorithm(
+    val value: String, val type: AlgorithmType,
+    @JsName("keyType")
+    val keyType: JwaKeyType?
+) {
     // Signature algos
-    HS256("HS256", AlgorithmType.SIGNATURE),
-    HS384("HS384", AlgorithmType.SIGNATURE),
-    HS512("HS512", AlgorithmType.SIGNATURE),
-    RS256("RS256", AlgorithmType.SIGNATURE),
-    RS384("RS384", AlgorithmType.SIGNATURE),
-    RS512("RS512", AlgorithmType.SIGNATURE),
-    ES256("ES256", AlgorithmType.SIGNATURE),
-    ES384("ES384", AlgorithmType.SIGNATURE),
-    ES512("ES512", AlgorithmType.SIGNATURE),
-    ES256K("ES256K", AlgorithmType.SIGNATURE),
-    PS256("PS256", AlgorithmType.SIGNATURE),
-    PS384("PS384", AlgorithmType.SIGNATURE),
-    PS512("PS512", AlgorithmType.SIGNATURE),
-    EdDSA("EdDSA", AlgorithmType.SIGNATURE),
+    HS256("HS256", AlgorithmType.SIGNATURE, JwaKeyType.oct),
+    HS384("HS384", AlgorithmType.SIGNATURE, JwaKeyType.oct),
+    HS512("HS512", AlgorithmType.SIGNATURE, JwaKeyType.oct),
+    RS256("RS256", AlgorithmType.SIGNATURE, JwaKeyType.RSA),
+    RS384("RS384", AlgorithmType.SIGNATURE, JwaKeyType.RSA),
+    RS512("RS512", AlgorithmType.SIGNATURE, JwaKeyType.RSA),
+    ES256("ES256", AlgorithmType.SIGNATURE, JwaKeyType.EC),
+    ES384("ES384", AlgorithmType.SIGNATURE, JwaKeyType.EC),
+    ES512("ES512", AlgorithmType.SIGNATURE, JwaKeyType.EC),
+    ES256K("ES256K", AlgorithmType.SIGNATURE, JwaKeyType.EC),
+    PS256("PS256", AlgorithmType.SIGNATURE, JwaKeyType.RSA),
+    PS384("PS384", AlgorithmType.SIGNATURE, JwaKeyType.RSA),
+    PS512("PS512", AlgorithmType.SIGNATURE, JwaKeyType.RSA),
+    EdDSA("EdDSA", AlgorithmType.SIGNATURE, JwaKeyType.OKP),
 
     // encryption
-    RSA1_5("RSA1_5", AlgorithmType.ENCRYPTION),
-    RSA_OAEP("RSA-OAEP", AlgorithmType.ENCRYPTION),
-    RSA_OAEP_256("RSA-OAEP-256", AlgorithmType.ENCRYPTION),
-    A128KW("A128KW", AlgorithmType.ENCRYPTION),
-    A192KW("A192KW", AlgorithmType.ENCRYPTION),
-    A256KW("A256KW", AlgorithmType.ENCRYPTION),
-    ECDH_ES("ECDH-ES", AlgorithmType.ENCRYPTION),
-    ECDH_ES_A128KW("ECDH-ES+A128KW", AlgorithmType.ENCRYPTION),
-    ECDH_ES_A192KW("ECDH-ES+A192KW", AlgorithmType.ENCRYPTION),
-    ECDH_ES_A256KW("ECDH-ES+A256KW", AlgorithmType.ENCRYPTION),
-    A128GCMKW("A128GCMKW", AlgorithmType.ENCRYPTION),
-    A192GCMKW("A192GCMKW", AlgorithmType.ENCRYPTION),
-    A256GCMKW("A256GCMKW", AlgorithmType.ENCRYPTION),
-    PBES2_HS256_A128KW("PBES2-HS256+A128KW", AlgorithmType.ENCRYPTION),
-    PBES2_HS384_A192KW("PBES2-HS384+A192KW", AlgorithmType.ENCRYPTION),
-    PBES2_HS512_A256KW("PBES2-HS512+A256KW", AlgorithmType.ENCRYPTION);
+    RSA1_5("RSA1_5", AlgorithmType.ENCRYPTION, JwaKeyType.RSA),
+    RSA_OAEP("RSA-OAEP", AlgorithmType.ENCRYPTION, JwaKeyType.RSA),
+    RSA_OAEP_256("RSA-OAEP-256", AlgorithmType.ENCRYPTION, JwaKeyType.RSA),
+    A128KW("A128KW", AlgorithmType.ENCRYPTION, JwaKeyType.oct),
+    A192KW("A192KW", AlgorithmType.ENCRYPTION, JwaKeyType.oct),
+    A256KW("A256KW", AlgorithmType.ENCRYPTION, JwaKeyType.oct),
+    ECDH_ES("ECDH-ES", AlgorithmType.ENCRYPTION, JwaKeyType.EC),
+    ECDH_ES_A128KW("ECDH-ES+A128KW", AlgorithmType.ENCRYPTION, JwaKeyType.EC),
+    ECDH_ES_A192KW("ECDH-ES+A192KW", AlgorithmType.ENCRYPTION, JwaKeyType.EC),
+    ECDH_ES_A256KW("ECDH-ES+A256KW", AlgorithmType.ENCRYPTION, JwaKeyType.EC),
+    A128GCMKW("A128GCMKW", AlgorithmType.ENCRYPTION, JwaKeyType.oct),
+    A192GCMKW("A192GCMKW", AlgorithmType.ENCRYPTION, JwaKeyType.oct),
+    A256GCMKW("A256GCMKW", AlgorithmType.ENCRYPTION, JwaKeyType.oct),
+    PBES2_HS256_A128KW("PBES2-HS256+A128KW", AlgorithmType.ENCRYPTION, null),
+    PBES2_HS384_A192KW("PBES2-HS384+A192KW", AlgorithmType.ENCRYPTION, null),
+    PBES2_HS512_A256KW("PBES2-HS512+A256KW", AlgorithmType.ENCRYPTION, null);
 
 
     object Static {
