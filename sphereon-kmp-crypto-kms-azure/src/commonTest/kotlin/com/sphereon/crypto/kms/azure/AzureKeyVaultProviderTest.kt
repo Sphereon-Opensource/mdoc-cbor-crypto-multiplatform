@@ -55,7 +55,7 @@ class AzureKeyVaultProviderTest {
     fun testSupportedKeyTypes() {
         val keyTypes = azureKeyVaultCryptoProvider.supportedKeyTypes()
         assertContentEquals(
-            arrayOf(KeyType.EC, KeyType.RSA), keyTypes
+            arrayOf(KeyType.EC), keyTypes
         )
     }
 

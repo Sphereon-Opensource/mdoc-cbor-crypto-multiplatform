@@ -34,7 +34,7 @@ abstract class BaseAzureKeyvaultCryptoProvider(private val id: String) : IKeyMan
             .toTypedArray()
     }
 
-    override fun supportedKeyTypes(): Array<KeyType> = arrayOf(KeyType.EC, KeyType.RSA)
+    override fun supportedKeyTypes(): Array<KeyType> = arrayOf(KeyType.EC)
 
     override fun supportedSignatureAlgorithms(): Array<SignatureAlgorithm> =
         arrayOf(
