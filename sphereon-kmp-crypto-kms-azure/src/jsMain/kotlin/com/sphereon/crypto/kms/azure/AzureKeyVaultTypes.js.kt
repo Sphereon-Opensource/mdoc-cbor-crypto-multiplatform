@@ -13,8 +13,8 @@ external interface AzureKeyvaultKeyDetails {
     val kid: String
     val kty: String
     val keyOps: Array<String>
-    val n: ByteArray // Use ByteArray for buffers
-    val e: ByteArray
+    val x: ByteArray // Use ByteArray for buffers
+    val y: ByteArray
     val crv: String
 }
 

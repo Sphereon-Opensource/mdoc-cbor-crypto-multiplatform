@@ -57,18 +57,13 @@ actual class AzureKeyvaultCryptoProvider actual constructor(
         if (config.credentialOpts.secretCredentialOpts == null) {
             throw IllegalArgumentException("Azure Key Vault requires a secret credential")
         }
-        val credential =
+        clientSecretCredential =
             AzureIdentity.ClientSecretCredential(
                 config.tenantId,
                 config.credentialOpts.secretCredentialOpts.clientId,
                 config.credentialOpts.secretCredentialOpts.clientSecret
             )
-        keyClient = AzureKeyvaultKeys.KeyClient(config.keyvaultUrl, credential)
-        clientSecretCredential = AzureIdentity.ClientSecretCredential(
-            config.tenantId,
-            config.credentialOpts.secretCredentialOpts.clientId,
-            config.credentialOpts.secretCredentialOpts.clientSecret
-        )
+        keyClient = AzureKeyvaultKeys.KeyClient(config.keyvaultUrl, clientSecretCredential)
     }
 
     override suspend fun generateKeyAsync(
@@ -82,6 +77,7 @@ actual class AzureKeyvaultCryptoProvider actual constructor(
             throw IllegalArgumentException("Signature algorithm ${signatureAlgorithm.cryptoAlgorithm.name} is not supported by Azure Key Vault")
         }
         val keyName = kmsKeyRef ?: "key-${Uuid.v4String()}"
+        // TODO: Replace this JS cast with a strongly-typed approach or utility function if possible.
         val options: AzureKeyvaultKeys.CreateEcKeyOptions = js("{}").unsafeCast<AzureKeyvaultKeys.CreateEcKeyOptions>().apply {
             curve = signatureAlgorithm.curve?.jose?.value
         }
@@ -96,15 +92,6 @@ actual class AzureKeyvaultCryptoProvider actual constructor(
             jose = JoseKeyPair(null, keyVaultJwk),
             cose = CoseKeyPair(null, publicCoseKey)
         )
-    }
-
-    private fun String.toSignatureAlgorithm(): String {
-        val algorithmMap = mapOf(
-            "P-256" to "ES256",
-            "P-384" to "ES384",
-            "P-521" to "ES512"
-        )
-        return algorithmMap[this] ?: throw IllegalArgumentException("Unsupported algorithm or curve: $this")
     }
 
     override suspend fun createRawSignatureAsync(
@@ -126,7 +113,7 @@ actual class AzureKeyvaultCryptoProvider actual constructor(
         input: ByteArray,
         signature: ByteArray
     ): Boolean {
-        val azureKey = keyClient.getKey(keyInfo.kmsKeyRef.toString()).await()
+        val azureKey = keyClient.getKey(keyInfo.kmsKeyRef!!).await()
         val cryptographyClient = AzureKeyvaultKeys.CryptographyClient(azureKey, clientSecretCredential)
         val verifyResult =
             cryptographyClient.verifyData(azureKey.key.crv.toSignatureAlgorithm(), input, signature).await()

@@ -119,8 +119,6 @@ fun KeyVaultKey.toJwk(): Jwk {
         .withKid(jsonWebKey.id) // Key ID
         .withKty(jsonWebKey.keyType?.toString()?.let { JwaKeyType.Static.fromValue(it) }) // Key type
         .withAlg(mapJwkToAlgorithm(jsonWebKey)) // Algorithm
-        .withN(jsonWebKey.n?.toBase64UrlString())
-        .withE(jsonWebKey.e?.toBase64UrlString())
         .withX(jsonWebKey.x?.toBase64UrlString())
         .withY(jsonWebKey.y?.toBase64UrlString())
         .withKeyOps(jsonWebKey.keyOps?.map { JoseKeyOperations.Static.fromValue(it.toKeyOperations().jose.value) }
@@ -140,6 +138,7 @@ fun KeyOperations.toAzureKeyOperation(): KeyOperation {
         KeyOperations.DERIVE_KEY -> throw SignClientException("Azure Key Vault does not support DERIVE_KEY operation")
         KeyOperations.MAC_CREATE -> throw SignClientException("Azure Key Vault does not support MAC_CREATE operation")
         KeyOperations.MAC_VERIFY -> throw SignClientException("Azure Key Vault does not support MAC_VERIFY operation")
+        else -> throw SignClientException("Unsupported key operation: $this")
     }
 }
 
@@ -163,7 +162,7 @@ fun Curve.toAzureKeyCurveName(): KeyCurveName {
         Curve.P_521 -> KeyCurveName.P_521
         Curve.Ed25519 -> throw SignClientException("Curve Ed25519 is not supported")
         Curve.X25519 -> throw SignClientException("Curve X25519 is not supported")
-        Curve.Secp256k1 -> throw SignClientException("Curve Secp256k1 is not supported")
+        else -> throw SignClientException("Unsupported curve: $this")
     }
 }
 

@@ -39,7 +39,16 @@ fun AzureKeyvaultKey.toJwk(): Jwk {
         kid = key.kid,
         kty = key.kty.toJwaKeyType(),
         key_ops = key.keyOps.map { it.toJoseKeyOperationsArray() }.toTypedArray(),
-        n = key.n.toString(),
-        e = key.e.toString()
+        x = key.x.toString(),
+        y = key.y.toString()
     )
+}
+
+fun String.toSignatureAlgorithm(): String {
+    val algorithmMap = mapOf(
+        "P-256" to "ES256",
+        "P-384" to "ES384",
+        "P-521" to "ES512"
+    )
+    return algorithmMap[this] ?: throw IllegalArgumentException("Unsupported algorithm or curve: $this")
 }
