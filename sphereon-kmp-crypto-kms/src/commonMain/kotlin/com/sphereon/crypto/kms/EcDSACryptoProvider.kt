@@ -84,6 +84,7 @@ class EcDSACryptoProvider(
      * @return A `CryptoProviderKeyPair` object containing the generated key pair
      *         with their respective JWK and COSE representations.
      */
+
     @JsExport.Ignore
     override suspend fun generateKeyAsync(
         kmsKeyRef: String?,
