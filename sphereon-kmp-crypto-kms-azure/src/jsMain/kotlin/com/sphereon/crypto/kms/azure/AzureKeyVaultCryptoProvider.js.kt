@@ -8,9 +8,6 @@ import com.sphereon.crypto.generic.KeyOperations
 import com.sphereon.crypto.generic.ManagedKeyPair
 import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.crypto.jose.JwkUse
-import com.sphereon.crypto.kms.IKeyManagementSystem
-import com.sphereon.crypto.sign.IRawSignatureService
-import com.sphereon.crypto.sign.ISimpleSignatureService
 import com.sphereon.crypto.sign.model.SignInput
 import com.sphereon.crypto.sign.model.SignOutput
 import com.sphereon.crypto.sign.model.Signature
