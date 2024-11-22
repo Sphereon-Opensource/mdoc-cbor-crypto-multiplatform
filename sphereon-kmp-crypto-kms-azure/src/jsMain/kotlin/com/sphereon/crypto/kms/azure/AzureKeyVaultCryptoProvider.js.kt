@@ -113,6 +113,7 @@ actual class AzureKeyvaultCryptoProvider actual constructor(
         input: ByteArray,
         signature: ByteArray
     ): Boolean {
+        // TODO: Evaluate update keyInfo interface to use ManagedKey to ensure kmsKeyRef is present.
         val azureKey = keyClient.getKey(keyInfo.kmsKeyRef!!).await()
         val cryptographyClient = AzureKeyvaultKeys.CryptographyClient(azureKey, clientSecretCredential)
         val verifyResult =
