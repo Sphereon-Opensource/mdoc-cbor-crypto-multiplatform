@@ -29,11 +29,11 @@ external class AzureKeyvaultKeys(url: String, credential: AzureIdentity.ClientSe
     }
 
     class KeyClient(keyvaultUrl: String, credential: AzureIdentity.ClientSecretCredential) {
-        fun createEcKey(keyName: String, options: CreateEcKeyOptions): Promise<AzureKeyvaultKey>
-        fun getKey(keyName: String): Promise<AzureKeyvaultKey>
+        fun createEcKey(keyName: String, options: CreateEcKeyOptions): Promise<AzureKeyVaultKey>
+        fun getKey(keyName: String): Promise<AzureKeyVaultKey>
     }
 
-    class CryptographyClient(key: AzureKeyvaultKey, credential: AzureIdentity.ClientSecretCredential) {
+    class CryptographyClient(key: AzureKeyVaultKey, credential: AzureIdentity.ClientSecretCredential) {
         fun signData(
             algorithm: String,
             data: ByteArray

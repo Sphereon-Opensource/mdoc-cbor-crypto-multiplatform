@@ -1,6 +1,6 @@
 package com.sphereon.crypto.kms.azure
 
-external interface AzureKeyvaultKey {
+external interface AzureKeyVaultKey {
     val key: AzureKeyvaultKeyDetails
     val id: String
     val name: String

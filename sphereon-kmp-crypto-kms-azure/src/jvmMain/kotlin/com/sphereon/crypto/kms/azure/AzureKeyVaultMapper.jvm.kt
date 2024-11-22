@@ -23,6 +23,7 @@ import com.sphereon.crypto.jose.JoseKeyOperations
 import com.sphereon.crypto.jose.JwaAlgorithm
 import com.sphereon.crypto.jose.JwaKeyType
 import com.sphereon.crypto.jose.Jwk
+import com.sphereon.kmp.encodeToBase64
 import java.time.Duration
 
 fun AzureKeyvaultClientConfig.toClientOptions(): ClientOptions? {
@@ -95,9 +96,6 @@ fun InteractiveBrowserCredentialOpts.toInteractiveBrowserCredential(tenantId: St
         .build()
 }
 
-fun ByteArray.toBase64UrlString(): String =
-    java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(this)
-
 fun KeyOperation.toKeyOperations(): KeyOperations {
     return when (this) {
         KeyOperation.ENCRYPT -> KeyOperations.ENCRYPT
@@ -119,8 +117,8 @@ fun KeyVaultKey.toJwk(): Jwk {
         .withKid(jsonWebKey.id) // Key ID
         .withKty(jsonWebKey.keyType?.toString()?.let { JwaKeyType.Static.fromValue(it) }) // Key type
         .withAlg(mapJwkToAlgorithm(jsonWebKey)) // Algorithm
-        .withX(jsonWebKey.x?.toBase64UrlString())
-        .withY(jsonWebKey.y?.toBase64UrlString())
+        .withX(jsonWebKey.x?.encodeToBase64(true))
+        .withY(jsonWebKey.y?.encodeToBase64(true))
         .withKeyOps(jsonWebKey.keyOps?.map { JoseKeyOperations.Static.fromValue(it.toKeyOperations().jose.value) }
             ?.toTypedArray())
         .build()

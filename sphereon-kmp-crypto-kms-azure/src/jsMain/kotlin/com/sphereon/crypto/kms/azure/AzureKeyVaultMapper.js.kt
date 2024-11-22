@@ -4,6 +4,7 @@ import com.sphereon.crypto.jose.JoseKeyOperations
 import com.sphereon.crypto.jose.JwaAlgorithm
 import com.sphereon.crypto.jose.JwaKeyType
 import com.sphereon.crypto.jose.Jwk
+import com.sphereon.kmp.encodeToBase64
 
 private fun String.toJwaKeyType(): JwaKeyType {
     return when (this) {
@@ -33,14 +34,14 @@ fun String.toJwaAlgorithm(): JwaAlgorithm {
     }
 }
 
-fun AzureKeyvaultKey.toJwk(): Jwk {
+fun AzureKeyVaultKey.toJwk(): Jwk {
     return Jwk(
         alg = key.crv.toJwaAlgorithm(),
         kid = key.kid,
         kty = key.kty.toJwaKeyType(),
         key_ops = key.keyOps.map { it.toJoseKeyOperationsArray() }.toTypedArray(),
-        x = key.x.toString(),
-        y = key.y.toString()
+        x = key.x.encodeToBase64(),
+        y = key.y.encodeToBase64()
     )
 }
 
