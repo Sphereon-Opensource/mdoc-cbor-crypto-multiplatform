@@ -29,12 +29,10 @@ abstract class BaseAzureKeyvaultCryptoProvider(private val id: String) : IKeyMan
         arrayOf(
             SignatureAlgorithm.ECDSA_SHA256,
             SignatureAlgorithm.ECDSA_SHA384,
-            SignatureAlgorithm.ECDSA_SHA512,
-            SignatureAlgorithm.RSA_SHA256,
-            SignatureAlgorithm.RSA_SHA384,
-            SignatureAlgorithm.RSA_SHA512,
-            SignatureAlgorithm.RSA_SSA_PSS_SHA256_MGF1,
-            SignatureAlgorithm.RSA_SSA_PSS_SHA384_MGF1,
-            SignatureAlgorithm.RSA_SSA_PSS_SHA512_MGF1
+            SignatureAlgorithm.ECDSA_SHA512
         )
+
+    fun isSupportedSignatureAlgorithm(signatureAlgorithm: SignatureAlgorithm): Boolean {
+        return supportedSignatureAlgorithms().contains(signatureAlgorithm)
+    }
 }

@@ -5,7 +5,6 @@ import com.sphereon.crypto.sign.IRawSignatureService
 import com.sphereon.crypto.sign.ISimpleSignatureService
 
 expect class AzureKeyvaultCryptoProvider(
-    id: String = "azure-key-vault",
     config: AzureKeyvaultClientConfig
 ) : IKeyManagementSystem,
     IRawSignatureService,

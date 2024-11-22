@@ -1,17 +1,34 @@
 package com.sphereon.crypto.kms.azure
 
-@kotlinx.serialization.Serializable
+import kotlinx.serialization.Serializable
+import kotlin.js.JsExport
+
+private const val SECOND = 1000L
+private const val ONE = 1
+private const val FIFTEEN = 15
+
+@Serializable
+@JsExport
 data class AzureKeyvaultClientConfig(
+    val applicationId: String = "azure-keyvault",
     val keyvaultUrl: String,
     val tenantId: String,
     val credentialOpts: CredentialOpts,
-    val hsmType: HSMType,
-    val applicationId: String? = null,
     val headers: List<Header>? = null,
     val exponentialBackoffRetryOpts: ExponentialBackoffRetryOpts? = null,
 )
 
-@kotlinx.serialization.Serializable
+@Serializable
+@JsExport
+enum class CredentialMode(val credentialType: CredentialType) {
+    SERVICE_CLIENT_SECRET(CredentialType.SERVICE),
+    SERVICE_CLIENT_CERTIFICATE(CredentialType.SERVICE),
+    USER_INTERACTIVE_BROWSER(CredentialType.USER),
+    USER_USERNAME_PASSWORD(CredentialType.USER)
+}
+
+@Serializable
+@JsExport
 data class CredentialOpts(
     val credentialMode: CredentialMode,
     val secretCredentialOpts: SecretCredentialOpts? = null,
@@ -20,32 +37,21 @@ data class CredentialOpts(
     val usernamePasswordCredentialOpts: UsernamePasswordCredentialOpts? = null
 )
 
-enum class CredentialMode(val credentialType: CredentialType) {
-    SERVICE_CLIENT_SECRET(CredentialType.SERVICE),
-    SERVICE_CLIENT_CERTIFICATE(CredentialType.SERVICE),
-    USER_INTERACTIVE_BROWSER(CredentialType.USER),
-    USER_USERNAME_PASSWORD(CredentialType.USER)
-}
-
+@Serializable
+@JsExport
 enum class CredentialType {
     SERVICE, USER
 }
 
-enum class HSMType {
-    KEYVAULT, MANAGED_HSM
-}
-
-@kotlinx.serialization.Serializable
+@Serializable
+@JsExport
 data class Header(
     val name: String,
     val values: List<String>? = mutableListOf()
 )
 
-private const val SECOND = 1000L
-private const val ONE = 1
-private const val FIFTEEN = 15
-
-@kotlinx.serialization.Serializable
+@Serializable
+@JsExport
 data class ExponentialBackoffRetryOpts(
     val maxRetries: Int? = 10,
     val baseDelayInMS: Long? = ONE * SECOND,
@@ -55,7 +61,8 @@ data class ExponentialBackoffRetryOpts(
 /**
  *  Authenticate with client secret.
  */
-@kotlinx.serialization.Serializable
+@Serializable
+@JsExport
 data class SecretCredentialOpts(
     val clientId: String,
     val clientSecret: String,
@@ -64,7 +71,8 @@ data class SecretCredentialOpts(
 /**
  *  Authenticate with a client certificate.
  */
-@kotlinx.serialization.Serializable
+@Serializable
+@JsExport
 data class CertificateCredentialOpts(
     val clientId: String,
     val pemCertificatePath: String,
@@ -73,7 +81,8 @@ data class CertificateCredentialOpts(
 /**
  * Authenticate interactively in the browser.
  */
-@kotlinx.serialization.Serializable
+@Serializable
+@JsExport
 data class InteractiveBrowserCredentialOpts(
     val clientId: String,
     val redirectUrl: String
@@ -82,7 +91,8 @@ data class InteractiveBrowserCredentialOpts(
 /**
  * Authenticate with username, password.
  */
-@kotlinx.serialization.Serializable
+@Serializable
+@JsExport
 data class UsernamePasswordCredentialOpts(
     val clientId: String,
     val userName: String,

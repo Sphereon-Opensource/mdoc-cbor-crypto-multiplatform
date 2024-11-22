@@ -5,6 +5,8 @@ import com.sphereon.crypto.generic.DigestAlg
 import com.sphereon.crypto.generic.KeyOperations
 import com.sphereon.crypto.generic.KeyType
 import com.sphereon.crypto.generic.SignatureAlgorithm
+import com.sphereon.crypto.jose.JwaAlgorithm
+import com.sphereon.crypto.jose.JwaKeyType
 import kotlinx.coroutines.test.runTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -21,6 +23,7 @@ class AzureKeyVaultProviderTest {
     @BeforeTest
     fun setUp() {
         val azureConfig = AzureKeyvaultClientConfig(
+            applicationId = "azure-keyvault-test", // This can be randomly choosen
             keyvaultUrl = BuildKonfig.AZURE_KEYVAULT_URL!!,
             tenantId = BuildKonfig.AZURE_KEYVAULT_TENANT_ID!!,
             credentialOpts = CredentialOpts(
@@ -30,28 +33,21 @@ class AzureKeyVaultProviderTest {
                     clientSecret = BuildKonfig.AZURE_KEYVAULT_CLIENT_SECRET!!
                 )
             ),
-            hsmType = HSMType.KEYVAULT, // Either KEYVAULT as HSM (FIPS140 Level-2), or MANAGED_HSM
-            applicationId = "azure-keyvault-test", // This can be randomly choosen
             exponentialBackoffRetryOpts = ExponentialBackoffRetryOpts(
                 maxRetries = 10, // let's try max 10 times
                 baseDelayInMS = 500, // Wait 0,5 seconds the first time
                 maxDelayInMS = 15000 // Wait for max 15 seconds eventually
             )
         )
-        azureKeyVaultCryptoProvider = AzureKeyvaultCryptoProvider(
-            id = "azure-keyvault-test",
-            config = azureConfig
-        )
 
-        azureKeyVaultCryptoProvider = AzureKeyvaultCryptoProvider(id = "test-azure-key-vault", config = azureConfig)
+        azureKeyVaultCryptoProvider = AzureKeyvaultCryptoProvider(config = azureConfig)
     }
 
     @Test
     fun testSupportedCurves() {
         val curves = azureKeyVaultCryptoProvider.supportedCurves()
         assertContentEquals(
-            arrayOf(Curve.P_256, Curve.Secp256k1, Curve.P_384, Curve.P_521),
-            curves
+            arrayOf(Curve.P_256, Curve.Secp256k1, Curve.P_384, Curve.P_521), curves
         )
     }
 
@@ -59,8 +55,7 @@ class AzureKeyVaultProviderTest {
     fun testSupportedKeyTypes() {
         val keyTypes = azureKeyVaultCryptoProvider.supportedKeyTypes()
         assertContentEquals(
-            arrayOf(KeyType.EC, KeyType.RSA),
-            keyTypes
+            arrayOf(KeyType.EC, KeyType.RSA), keyTypes
         )
     }
 
@@ -68,30 +63,47 @@ class AzureKeyVaultProviderTest {
     fun testSupportedDigests() {
         val digests = azureKeyVaultCryptoProvider.supportedDigests()
         assertContentEquals(
-            arrayOf(DigestAlg.SHA256, DigestAlg.SHA384, DigestAlg.SHA512),
-            digests
+            arrayOf(DigestAlg.SHA256, DigestAlg.SHA384, DigestAlg.SHA512), digests
         )
     }
 
     @Test
-    fun testGenerateECKeyAsync() = runTest {
-        val managedKeyPair = azureKeyVaultCryptoProvider.generateKeyAsync(alg = SignatureAlgorithm.ECDSA_SHA256, keyOperations = arrayOf(
-            KeyOperations.SIGN, KeyOperations.VERIFY))
+    fun testGenerateKeyAsyncECDSA_SHA256() = runTest {
+        val managedKeyPair = azureKeyVaultCryptoProvider.generateKeyAsync(
+            alg = SignatureAlgorithm.ECDSA_SHA256, keyOperations = arrayOf(
+                KeyOperations.SIGN, KeyOperations.VERIFY
+            )
+        )
         assertNotNull(managedKeyPair)
         assertNotNull(managedKeyPair.cborToManagedKeyInfo().key.kid)
-        println(managedKeyPair)
-        println(managedKeyPair.jose)
-
-        assertEquals("EC", managedKeyPair.jose.publicJwk.kty.toString())
+        assertEquals(JwaKeyType.EC, managedKeyPair.jose.publicJwk.kty)
+        assertEquals(JwaAlgorithm.ES256, managedKeyPair.jose.publicJwk.alg)
     }
 
     @Test
-    fun testGenerateRSAKeyAsync() = runTest {
-        val managedKeyPair = azureKeyVaultCryptoProvider.generateKeyAsync(alg = SignatureAlgorithm.RSA_SHA256, keyOperations = arrayOf(
-            KeyOperations.SIGN, KeyOperations.VERIFY, KeyOperations.WRAP_KEY, KeyOperations.UNWRAP_KEY))
+    fun testGenerateKeyAsyncECDSA_SHA384() = runTest {
+        val managedKeyPair = azureKeyVaultCryptoProvider.generateKeyAsync(
+            alg = SignatureAlgorithm.ECDSA_SHA384, keyOperations = arrayOf(
+                KeyOperations.SIGN, KeyOperations.VERIFY
+            )
+        )
         assertNotNull(managedKeyPair)
         assertNotNull(managedKeyPair.cborToManagedKeyInfo().key.kid)
-        assertEquals("RSA", managedKeyPair.jose.publicJwk.kty.toString())
+        assertEquals(JwaKeyType.EC, managedKeyPair.jose.publicJwk.kty)
+        assertEquals(JwaAlgorithm.ES384, managedKeyPair.jose.publicJwk.alg)
+    }
+
+    @Test
+    fun testGenerateKeyAsyncECDSA_SHA512() = runTest {
+        val managedKeyPair = azureKeyVaultCryptoProvider.generateKeyAsync(
+            alg = SignatureAlgorithm.ECDSA_SHA512, keyOperations = arrayOf(
+                KeyOperations.SIGN, KeyOperations.VERIFY
+            )
+        )
+        assertNotNull(managedKeyPair)
+        assertNotNull(managedKeyPair.cborToManagedKeyInfo().key.kid)
+        assertEquals(JwaKeyType.EC, managedKeyPair.jose.publicJwk.kty)
+        assertEquals(JwaAlgorithm.ES512, managedKeyPair.jose.publicJwk.alg)
     }
 
     @Test
@@ -99,9 +111,13 @@ class AzureKeyVaultProviderTest {
         val managedKeyPair = azureKeyVaultCryptoProvider.generateKeyAsync(alg = SignatureAlgorithm.ECDSA_SHA256)
         val keyInfo = managedKeyPair.joseToManagedKeyInfo()
         assertNotNull(keyInfo)
-        val signature = azureKeyVaultCryptoProvider.createRawSignatureAsync(keyInfo = keyInfo, input = "test".encodeToByteArray(), false)
+        val signature = azureKeyVaultCryptoProvider.createRawSignatureAsync(
+            keyInfo = keyInfo, input = "test".encodeToByteArray(), false
+        )
         assertNotNull(signature)
-        val verification = azureKeyVaultCryptoProvider.isValidRawSignatureAsync(keyInfo = keyInfo, signature = signature, input = "test".encodeToByteArray())
+        val verification = azureKeyVaultCryptoProvider.isValidRawSignatureAsync(
+            keyInfo = keyInfo, signature = signature, input = "test".encodeToByteArray()
+        )
         assertTrue(verification)
     }
 
@@ -110,19 +126,23 @@ class AzureKeyVaultProviderTest {
         val managedKeyPair = azureKeyVaultCryptoProvider.generateKeyAsync(alg = SignatureAlgorithm.ECDSA_SHA256)
         val keyInfo = managedKeyPair.joseToManagedKeyInfo()
         assertNotNull(keyInfo)
-        val signature = azureKeyVaultCryptoProvider.createRawSignatureAsync(keyInfo = keyInfo, input = "test".encodeToByteArray(), false)
+        val signature = azureKeyVaultCryptoProvider.createRawSignatureAsync(
+            keyInfo = keyInfo, input = "test".encodeToByteArray(), false
+        )
         assertNotNull(signature)
-        val verification = azureKeyVaultCryptoProvider.isValidRawSignatureAsync(keyInfo = keyInfo, signature = signature, input = "test2".encodeToByteArray())
+        val verification = azureKeyVaultCryptoProvider.isValidRawSignatureAsync(
+            keyInfo = keyInfo, signature = signature, input = "test2".encodeToByteArray()
+        )
         assertFalse(verification)
     }
 
     @Test
-    fun testGenerateKeyThrowsExceptionForUnsupportedCurve() = runTest {
+    fun testGenerateKeyThrowsExceptionForUnsupportedAlgorithm() = runTest {
         val unsupportedAlg = SignatureAlgorithm.ED25519
         val exception = assertFailsWith<IllegalArgumentException> {
             azureKeyVaultCryptoProvider.generateKeyAsync(alg = unsupportedAlg)
         }
-        assertEquals("Curve is not supported by Azure Key Vault", exception.message)
+        assertEquals("Signature algorithm ED25519 is not supported by Azure Key Vault", exception.message)
     }
 
     @Test
@@ -132,15 +152,8 @@ class AzureKeyVaultProviderTest {
             arrayOf(
                 SignatureAlgorithm.ECDSA_SHA256,
                 SignatureAlgorithm.ECDSA_SHA384,
-                SignatureAlgorithm.ECDSA_SHA512,
-                SignatureAlgorithm.RSA_SHA256,
-                SignatureAlgorithm.RSA_SHA384,
-                SignatureAlgorithm.RSA_SHA512,
-                SignatureAlgorithm.RSA_SSA_PSS_SHA256_MGF1,
-                SignatureAlgorithm.RSA_SSA_PSS_SHA384_MGF1,
-                SignatureAlgorithm.RSA_SSA_PSS_SHA512_MGF1
-            ),
-            algorithms
+                SignatureAlgorithm.ECDSA_SHA512
+            ), algorithms
         )
     }
 }
