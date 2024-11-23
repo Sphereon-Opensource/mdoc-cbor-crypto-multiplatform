@@ -1,7 +1,9 @@
 import com.sphereon.crypto.IKeyInfo
+import com.sphereon.crypto.ManagedKeyInfo
 import com.sphereon.crypto.generic.KeyOperations
 import com.sphereon.crypto.generic.ManagedKeyPair
 import com.sphereon.crypto.generic.SignatureAlgorithm
+import com.sphereon.crypto.jose.Jwk
 import com.sphereon.crypto.jose.JwkUse
 import com.sphereon.crypto.kms.azure.AzureIdentity
 import com.sphereon.crypto.kms.azure.AzureKeyVaultCryptoProvider
@@ -86,7 +88,7 @@ class AzureKeyVaultCryptoProviderJS(
     }
 
     @JsName("fetchKeyAsync")
-    fun fetchKeyAsyncJS(keyInfo: String): Promise<ManagedKeyPair> {
+    fun fetchKeyAsyncJS(keyInfo: String): Promise<ManagedKeyInfo<Jwk>> {
         return scope.promise {
             keyClient.fetchKeyAsync(keyInfo)
         }

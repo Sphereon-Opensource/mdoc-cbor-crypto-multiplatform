@@ -2,11 +2,14 @@ package com.sphereon.crypto.kms.azure
 
 import com.sphereon.crypto.CoseJoseKeyMappingService
 import com.sphereon.crypto.IKeyInfo
+import com.sphereon.crypto.ManagedKeyInfo
+import com.sphereon.crypto.ResolvedKeyInfo
 import com.sphereon.crypto.generic.CoseKeyPair
 import com.sphereon.crypto.generic.JoseKeyPair
 import com.sphereon.crypto.generic.KeyOperations
 import com.sphereon.crypto.generic.ManagedKeyPair
 import com.sphereon.crypto.generic.SignatureAlgorithm
+import com.sphereon.crypto.jose.Jwk
 import com.sphereon.crypto.jose.JwkUse
 import com.sphereon.crypto.sign.model.SignInput
 import com.sphereon.crypto.sign.model.SignOutput
@@ -122,19 +125,16 @@ actual class AzureKeyVaultCryptoProvider actual constructor(
         return verifyResult.result
     }
 
-    suspend fun fetchKeyAsync(keyRef: String): ManagedKeyPair {
+    suspend fun fetchKeyAsync(keyRef: String): ManagedKeyInfo<Jwk> {
         val keyVaultKey = keyClient.getKey(keyRef).await()
         val keyVaultJwk = keyVaultKey.toJwk()
-        val publicCoseKey = CoseJoseKeyMappingService.toCoseKey(keyVaultJwk)
-        val managedKeyPair = ManagedKeyPair(
+        val managedKeyInfo = ManagedKeyInfo(
             kms = getId(),
             kmsKeyRef = keyVaultKey.name,
-            kid = keyVaultJwk.kid,
-            jose = JoseKeyPair(null, keyVaultJwk),
-            cose = CoseKeyPair(null, publicCoseKey)
+            resolvedKeyInfo = ResolvedKeyInfo.Static.fromKey(keyVaultJwk),
         )
 
-        return managedKeyPair
+        return managedKeyInfo
     }
 
     override suspend fun createSignature(
