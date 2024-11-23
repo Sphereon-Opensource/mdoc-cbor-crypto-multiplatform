@@ -18,7 +18,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class AzureKeyVaultProviderTest {
-    private lateinit var azureKeyVaultCryptoProvider: AzureKeyvaultCryptoProvider
+    private lateinit var azureKeyVaultCryptoProvider: AzureKeyVaultCryptoProvider
 
     @BeforeTest
     fun setUp() {
@@ -40,7 +40,7 @@ class AzureKeyVaultProviderTest {
             )
         )
 
-        azureKeyVaultCryptoProvider = AzureKeyvaultCryptoProvider(config = azureConfig)
+        azureKeyVaultCryptoProvider = AzureKeyVaultCryptoProvider(config = azureConfig)
     }
 
     @Test

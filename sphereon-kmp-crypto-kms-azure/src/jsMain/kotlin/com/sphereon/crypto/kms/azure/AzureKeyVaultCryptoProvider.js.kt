@@ -47,7 +47,8 @@ external class AzureKeyvaultKeys(url: String, credential: AzureIdentity.ClientSe
     }
 }
 
-actual class AzureKeyvaultCryptoProvider actual constructor(
+@JsExport.Ignore
+actual class AzureKeyVaultCryptoProvider actual constructor(
     config: AzureKeyvaultClientConfig
 ) : BaseAzureKeyvaultCryptoProvider(config.applicationId) {
     private val keyClient: AzureKeyvaultKeys.KeyClient // Representing the Azure Key Vault client
@@ -119,6 +120,21 @@ actual class AzureKeyvaultCryptoProvider actual constructor(
         val verifyResult =
             cryptographyClient.verifyData(azureKey.key.crv.toSignatureAlgorithm(), input, signature).await()
         return verifyResult.result
+    }
+
+    suspend fun fetchKeyAsync(keyRef: String): ManagedKeyPair {
+        val keyVaultKey = keyClient.getKey(keyRef).await()
+        val keyVaultJwk = keyVaultKey.toJwk()
+        val publicCoseKey = CoseJoseKeyMappingService.toCoseKey(keyVaultJwk)
+        val managedKeyPair = ManagedKeyPair(
+            kms = getId(),
+            kmsKeyRef = keyVaultKey.name,
+            kid = keyVaultJwk.kid,
+            jose = JoseKeyPair(null, keyVaultJwk),
+            cose = CoseKeyPair(null, publicCoseKey)
+        )
+
+        return managedKeyPair
     }
 
     override suspend fun createSignature(

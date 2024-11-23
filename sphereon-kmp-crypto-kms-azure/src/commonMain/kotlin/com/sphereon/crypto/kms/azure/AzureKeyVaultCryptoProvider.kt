@@ -1,5 +1,5 @@
 package com.sphereon.crypto.kms.azure
 
-expect class AzureKeyvaultCryptoProvider(
+expect class AzureKeyVaultCryptoProvider(
     config: AzureKeyvaultClientConfig
 ) : BaseAzureKeyvaultCryptoProvider
