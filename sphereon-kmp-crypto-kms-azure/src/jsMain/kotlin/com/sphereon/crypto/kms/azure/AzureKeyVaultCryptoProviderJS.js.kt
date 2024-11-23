@@ -5,7 +5,7 @@ import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.crypto.jose.JwkUse
 import com.sphereon.crypto.kms.azure.AzureIdentity
 import com.sphereon.crypto.kms.azure.AzureKeyVaultCryptoProvider
-import com.sphereon.crypto.kms.azure.AzureKeyvaultClientConfig
+import com.sphereon.crypto.kms.azure.AzureKeyVaultClientConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -15,7 +15,7 @@ import kotlin.js.Promise
 @JsExport
 @JsName("AzureKeyVaultCryptoProvider")
 class AzureKeyVaultCryptoProviderJS(
-    config: AzureKeyvaultClientConfig
+    config: AzureKeyVaultClientConfig
 ) {
     private val keyClient: AzureKeyVaultCryptoProvider
     private val clientSecretCredential: AzureIdentity.ClientSecretCredential

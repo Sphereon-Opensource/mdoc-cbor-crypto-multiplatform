@@ -49,7 +49,7 @@ external class AzureKeyVaultKeys(url: String, credential: AzureIdentity.ClientSe
 
 @JsExport.Ignore
 actual class AzureKeyVaultCryptoProvider actual constructor(
-    config: AzureKeyvaultClientConfig
+    config: AzureKeyVaultClientConfig
 ) : BaseAzureKeyvaultCryptoProvider(config.applicationId) {
     private val keyClient: AzureKeyVaultKeys.KeyClient // Representing the Azure Key Vault client
     private val clientSecretCredential: AzureIdentity.ClientSecretCredential

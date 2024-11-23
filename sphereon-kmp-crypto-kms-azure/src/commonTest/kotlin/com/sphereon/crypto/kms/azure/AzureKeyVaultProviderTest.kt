@@ -22,7 +22,7 @@ class AzureKeyVaultProviderTest {
 
     @BeforeTest
     fun setUp() {
-        val azureConfig = AzureKeyvaultClientConfig(
+        val azureConfig = AzureKeyVaultClientConfig(
             applicationId = "azure-keyvault-test", // This can be randomly choosen
             keyvaultUrl = BuildKonfig.AZURE_KEYVAULT_URL!!,
             tenantId = BuildKonfig.AZURE_KEYVAULT_TENANT_ID!!,

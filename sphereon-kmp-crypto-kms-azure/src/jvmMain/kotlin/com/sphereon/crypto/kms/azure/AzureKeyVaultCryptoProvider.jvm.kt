@@ -30,7 +30,7 @@ import java.security.MessageDigest
 private val logger = Logger("sphereon:kmp:kms:azure-keyvault")
 
 actual class AzureKeyVaultCryptoProvider actual constructor(
-    config: AzureKeyvaultClientConfig
+    config: AzureKeyVaultClientConfig
 ) : BaseAzureKeyvaultCryptoProvider(config.applicationId) {
     private val keyClient: KeyAsyncClient
 
