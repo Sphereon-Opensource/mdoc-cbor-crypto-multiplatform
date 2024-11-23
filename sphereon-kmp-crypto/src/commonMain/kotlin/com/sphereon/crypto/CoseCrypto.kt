@@ -42,7 +42,8 @@ interface ICoseCryptoCallbackService : ICoseCryptoCallbackMarkerType {
 
     suspend fun verify1(
         input: CoseSign1Cbor<*>,
-        keyInfo: IKeyInfo<*>
+        keyInfo: IKeyInfo<*>,
+        requireX5Chain: Boolean = true
     ): IVerifySignatureResult<ICoseKeyCbor>
 
     suspend fun mac0(
@@ -65,13 +66,13 @@ interface ICoseCryptoService : ICoseCryptoMarkerType {
     suspend fun <CborType> sign1(
         input: CoseSign1InputCbor,
         keyInfo: IKeyInfo<*>? = null,
-        requireX5Chain: Boolean
+        requireX5Chain: Boolean = true
     ): CoseSign1Result<CborType>
 
     suspend fun verify1(
         input: CoseSign1Cbor<*>,
         keyInfo: IKeyInfo<*>? = null,
-        requireX5Chain: Boolean
+        requireX5Chain: Boolean = true
     ): IVerifySignatureResult<ICoseKeyCbor>
 
 

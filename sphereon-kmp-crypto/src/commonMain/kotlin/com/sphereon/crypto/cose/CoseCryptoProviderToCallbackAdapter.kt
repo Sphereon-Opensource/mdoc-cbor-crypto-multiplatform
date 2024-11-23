@@ -67,7 +67,7 @@ class CoseCryptoProviderToCallbackAdapter(
      * @param keyInfo The key information used for verification.
      * @return The result of the signature verification.
      */
-    override suspend fun verify1(input: CoseSign1Cbor<*>, keyInfo: IKeyInfo<*>): IVerifySignatureResult<ICoseKeyCbor> {
+    override suspend fun verify1(input: CoseSign1Cbor<*>, keyInfo: IKeyInfo<*>, requireX5Chain: Boolean): IVerifySignatureResult<ICoseKeyCbor> {
         val resolvedKeyInfo = this.resolvePublicKeyAsync(keyInfo)
         val key = resolvedKeyInfo.key
         val alg = resolvedKeyInfo.signatureAlgorithm ?: key.getSignatureAlgorithm() ?: throw IllegalArgumentException("No alg was supplied for key")

@@ -12,7 +12,7 @@ actual sealed interface IOid4VPFormat {
 
     @SerialName("vc+sd-jwt")
     actual val vc_sd_jwt: IOid4VPSupportedAlgorithm?
-    actual fun hasFormat(format: Oid4VPFormatIdentifier): Boolean
+//    actual fun hasFormat(format: Oid4VPFormatIdentifier): Boolean
 }
 
 actual sealed interface IOid4VPSupportedAlgorithm {

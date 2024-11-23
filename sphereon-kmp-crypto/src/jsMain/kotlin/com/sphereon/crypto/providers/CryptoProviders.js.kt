@@ -24,11 +24,16 @@ class CoseCryptoProviderToCallbackAdapterJS(keyManagerService: IKeyManagerServic
     private val delegate = CoseCryptoProviderToCallbackAdapter(keyManagerService)
 
     override fun signAsync(input: ToBeSignedCbor, requireX5Chain: Boolean): Promise<ByteArray> {
-        return CoroutineScope(CoroutineName(COSE_CRYPTO_ADAPTER_JS)).async { delegate.sign(input = input, requireX5Chain = requireX5Chain) }.asPromise()
+        return CoroutineScope(CoroutineName(COSE_CRYPTO_ADAPTER_JS)).async { delegate.sign(input = input, requireX5Chain = requireX5Chain) }
+            .asPromise()
     }
 
-    override fun verify1Async(input: CoseSign1Cbor<*>, keyInfo: IKeyInfo<ICoseKeyCbor>): Promise<IVerifySignatureResult<ICoseKeyCbor>> {
-        return CoroutineScope(CoroutineName(COSE_CRYPTO_ADAPTER_JS)).async { delegate.verify1(input, keyInfo) }.asPromise()
+    override fun verify1Async(
+        input: CoseSign1Cbor<*>,
+        keyInfo: IKeyInfo<ICoseKeyCbor>,
+        requireX5Chain: Boolean
+    ): Promise<IVerifySignatureResult<ICoseKeyCbor>> {
+        return CoroutineScope(CoroutineName(COSE_CRYPTO_ADAPTER_JS)).async { delegate.verify1(input = input, keyInfo = keyInfo, requireX5Chain = requireX5Chain) }.asPromise()
     }
 
     override fun <KT : IKey> resolvePublicKeyAsync(keyInfo: IKeyInfo<KT>): Promise<IResolvedKeyInfo<KT>> {

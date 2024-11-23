@@ -152,7 +152,7 @@ expect sealed interface IOid4VPFormat {
     @SerialName("vc+sd-jwt")
     val vc_sd_jwt: IOid4VPSupportedAlgorithm?
 
-    fun hasFormat(format: Oid4VPFormatIdentifier): Boolean
+//    fun hasFormat(format: Oid4VPFormatIdentifier): Boolean
 }
 
 @Serializable
@@ -176,7 +176,7 @@ data class Oid4VPFormat(
         }
     }
 
-    override fun hasFormat(format: Oid4VPFormatIdentifier) = Json.encodeToString(this).contains(format.value)
+    fun hasFormat(format: Oid4VPFormatIdentifier) = Json.encodeToString(this).contains(format.value)
 
 
     object Static {

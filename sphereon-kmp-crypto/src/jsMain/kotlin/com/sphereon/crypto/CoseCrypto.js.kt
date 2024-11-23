@@ -29,7 +29,8 @@ external interface ICoseCryptoCallbackJS : ICoseCryptoCallbackMarkerType {
     @JsName("verify1Async")
     fun verify1Async(
         input: CoseSign1Cbor<*>,
-        keyInfo: IKeyInfo<ICoseKeyCbor>
+        keyInfo: IKeyInfo<ICoseKeyCbor>,
+        requireX5Chain: Boolean
     ): Promise<IVerifySignatureResult<ICoseKeyCbor>>
 
     /*@JsName("mac0Async")
@@ -165,7 +166,7 @@ class CoseCryptoServiceJS(
                     critical = true
                 )
             }
-            return@async platformCallback.verify1Async(input = input, keyInfo = info).await()
+            return@async platformCallback.verify1Async(input = input, keyInfo = info, requireX5Chain = requireX5Chain).await()
         }.asPromise()
     }
 
