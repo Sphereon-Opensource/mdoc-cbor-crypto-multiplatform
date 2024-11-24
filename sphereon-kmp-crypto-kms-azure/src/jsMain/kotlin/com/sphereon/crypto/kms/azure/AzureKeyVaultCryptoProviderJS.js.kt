@@ -68,7 +68,7 @@ class AzureKeyVaultCryptoProviderJS(
         }
     }
 
-    data class IsValidRawSignatureRequest(
+    class IsValidRawSignatureRequest(
         val keyInfo: IKeyInfo<*>,
         val input: ByteArray,
         val signature: ByteArray
