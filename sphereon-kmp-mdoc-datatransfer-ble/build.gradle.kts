@@ -8,6 +8,7 @@ plugins {
     kotlin("plugin.serialization")
     id("io.kotest.multiplatform")
     id("module.publication")
+    id("com.android.library") version libs.versions.agp
 }
 
 
@@ -35,6 +36,7 @@ repositories {
     mavenLocal()
     mavenCentral()
     gradlePluginPortal()
+    google()
     maven {
         url = uri("https://oss.sonatype.org/content/repositories/snapshots")
         name = "bigNum"
@@ -59,14 +61,14 @@ kotlin {
             }
         }
     }
-    /*  androidTarget {
-          publishLibraryVariants("release")
-          compilations.all {
-              kotlinOptions {
-                  jvmTarget = JavaVersion.VERSION_17.toString()
-              }
-          }
-      }*/
+    androidTarget {
+        publishLibraryVariants("debug", "release")
+        compilations.all {
+            kotlinOptions {
+                jvmTarget = JavaVersion.VERSION_17.toString()
+            }
+        }
+    }
     js(IR) {
         moduleName = "@sphereon/kmp-mdoc-datatransfer-ble"
         nodejs {
@@ -139,6 +141,19 @@ kotlin {
         val jvmTest by getting {
             dependencies {
                 implementation(libs.whyoleg.cryptography.provider.jdk)
+                implementation(projects.sphereonKmpCryptoKms)
+            }
+        }
+
+        val androidMain by getting {
+            dependencies {
+
+            }
+        }
+        val androidTest by getting {
+            dependencies {
+                implementation(libs.whyoleg.cryptography.provider.jdk)
+                implementation(projects.sphereonKmpCryptoKms)
             }
         }
         val jsMain by getting {
@@ -161,5 +176,23 @@ kotlin {
              dependencies {}
          }
          val nativeTest by getting*/
+    }
+}
+
+
+android {
+    namespace = "com.sphereon.ble"
+    compileSdk = 31
+    sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
+
+    defaultConfig {
+        minSdk = 21 // Set according to your minimum supported version
+    }
+
+    buildTypes {
+        getByName("release") {
+            isMinifyEnabled = false
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
     }
 }

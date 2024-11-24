@@ -51,6 +51,7 @@ include(
     "sphereon-kmp-common",
     "sphereon-kmp-cbor",
     "sphereon-kmp-crypto",
+//    "sphereon-kmp-ble",
     "sphereon-kmp-crypto-kms",
     "sphereon-kmp-crypto-kms-azure",
     "sphereon-kmp-ades-client",

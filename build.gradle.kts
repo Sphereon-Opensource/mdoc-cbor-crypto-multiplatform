@@ -11,6 +11,8 @@ plugins {
 //    kotlin("jvm") apply false
     id("module.publication") apply false
     kotlin("jvm") version libs.versions.kotlin
+    id("com.android.library") version libs.versions.agp apply false
+//    alias(libs.plugins.android.library) apply false
 }
 
 
@@ -21,6 +23,7 @@ ksp {
 repositories {
     mavenLocal()
     mavenCentral()
+    google()
     gradlePluginPortal()
     maven {
         url = uri("https://raw.githubusercontent.com/a-sit-plus/gradle-conventions-plugin/mvn/repo")
