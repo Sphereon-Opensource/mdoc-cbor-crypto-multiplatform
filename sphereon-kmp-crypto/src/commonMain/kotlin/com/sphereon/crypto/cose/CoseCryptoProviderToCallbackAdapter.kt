@@ -53,10 +53,10 @@ class CoseCryptoProviderToCallbackAdapter(
      * @param input The data to be signed, along with the key and algorithm information.
      * @return The generated signature as a ByteArray.
      */
-    override suspend fun sign(input: ToBeSignedCbor, requireX5Chain: Boolean): ByteArray {
+    override suspend fun sign(input: ToBeSignedCbor, requireX5Chain: Boolean?): ByteArray {
         val keyInfo = input.keyInfo
         val alg = keyInfo.signatureAlgorithm ?: input.alg
-        return assertedSignatureProvider(alg = alg, kms = keyInfo.kms).createRawSignatureAsync(keyInfo, input.value, requireX5Chain)
+        return assertedSignatureProvider(alg = alg, kms = keyInfo.kms).createRawSignatureAsync(keyInfo, input.value, requireX5Chain == true)
 
     }
 
@@ -67,7 +67,7 @@ class CoseCryptoProviderToCallbackAdapter(
      * @param keyInfo The key information used for verification.
      * @return The result of the signature verification.
      */
-    override suspend fun verify1(input: CoseSign1Cbor<*>, keyInfo: IKeyInfo<*>, requireX5Chain: Boolean): IVerifySignatureResult<ICoseKeyCbor> {
+    override suspend fun verify1(input: CoseSign1Cbor<*>, keyInfo: IKeyInfo<*>, requireX5Chain: Boolean?): IVerifySignatureResult<ICoseKeyCbor> {
         val resolvedKeyInfo = this.resolvePublicKeyAsync(keyInfo)
         val key = resolvedKeyInfo.key
         val alg = resolvedKeyInfo.signatureAlgorithm ?: key.getSignatureAlgorithm() ?: throw IllegalArgumentException("No alg was supplied for key")

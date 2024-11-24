@@ -45,7 +45,7 @@ actual external interface IJwk: IKey {
  *
  * ordered alphabetically [RFC7638 s3](https://www.rfc-editor.org/rfc/rfc7638.html#section-3)
  */
-actual external interface IJwkJson: IKey {
+actual external interface IJwkDTO: IKey {
     actual override val alg: String?
     actual override val crv: String?
     actual override val d: String?

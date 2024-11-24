@@ -1,14 +1,15 @@
-package com.sphereon.mdoc
+package com.sphereon.mdoc.data
 
 import com.sphereon.crypto.cose.COSE_Sign1
 import com.sphereon.crypto.cose.ICoseKeyCbor
 import com.sphereon.crypto.IKeyInfo
 import com.sphereon.crypto.generic.IVerifyResults
 import com.sphereon.kmp.DateTimeUtils
+import com.sphereon.kmp.LocalDateTimeKMP
 import com.sphereon.kmp.getDateTime
 import com.sphereon.mdoc.data.MdocVerification
 import com.sphereon.mdoc.data.MdocVerificationTypes
-import com.sphereon.mdoc.data.Validations
+import com.sphereon.mdoc.data.MdocValidations
 import com.sphereon.mdoc.data.device.DocumentCbor
 import com.sphereon.mdoc.data.mso.MobileSecurityObjectCbor
 import kotlinx.coroutines.CoroutineName
@@ -37,7 +38,8 @@ import kotlin.js.Promise
  * — the 'validUntil' element shall be equal or later than the current timestamp.
  */
 @JsExport
-object ValidationsJS {
+@JsName("MdocValidations")
+object MdocValidationsJS {
     private val NAME = "ValidationsJS"
 
 
@@ -47,6 +49,7 @@ object ValidationsJS {
         coseCryptoService: ICoseCryptoService = CryptoService.COSE,*/
         keyInfo: IKeyInfo<ICoseKeyCbor>? = null,
         trustedCerts: Array<String>? = null,
+        verificationTime: LocalDateTimeKMP? = LocalDateTimeKMP.Static.now(),
         allowExpiredDocuments: Boolean? = false,
         dateTimeUtils: DateTimeUtils = getDateTime(),
         timeZoneId: String? = null,
@@ -59,6 +62,7 @@ object ValidationsJS {
         coseCryptoService = coseCryptoService,*/
         keyInfo = keyInfo,
         trustedCerts = trustedCerts,
+        verificationTime = verificationTime,
         dateTimeUtils = dateTimeUtils,
         timeZoneId = timeZoneId,
         clockSkewAllowedInSec = clockSkewAllowedInSec,
@@ -71,6 +75,7 @@ object ValidationsJS {
         coseCryptoService: CoseCryptoService = CryptoService.COSE,*/
         keyInfo: IKeyInfo<ICoseKeyCbor>? = null,
         trustedCerts: Array<String>? = null,
+        verificationTime: LocalDateTimeKMP? = LocalDateTimeKMP.Static.now(),
         allowExpiredDocuments: Boolean? = false,
         dateTimeUtils: DateTimeUtils = getDateTime(),
         timeZoneId: String? = null,
@@ -83,6 +88,7 @@ object ValidationsJS {
         coseCryptoService = coseCryptoService,*/
         keyInfo = keyInfo,
         trustedCerts = trustedCerts,
+        verificationTime = verificationTime,
         dateTimeUtils = dateTimeUtils,
         timeZoneId = timeZoneId,
         clockSkewAllowedInSec = clockSkewAllowedInSec,
@@ -98,12 +104,13 @@ object ValidationsJS {
         coseCryptoService: CoseCryptoService = CryptoService.COSE,*/
         keyInfo: IKeyInfo<ICoseKeyCbor>? = null,
         trustedCerts: Array<String>? = null,
+        verificationTime: LocalDateTimeKMP? = LocalDateTimeKMP.Static.now(),
         allowExpiredDocuments: Boolean? = false,
         dateTimeUtils: DateTimeUtils = getDateTime(),
         timeZoneId: String? = null,
         clockSkewAllowedInSec: Int = 120,
     ): Promise<IVerifyResults<ICoseKeyCbor>> = CoroutineScope(context = CoroutineName(NAME)).promise {
-        Validations.withParams(
+        MdocValidations.withParams(
             issuerAuth = issuerAuth,
             document = document,
             mdocVerificationTypes = mdocVerificationTypes,
@@ -111,6 +118,7 @@ object ValidationsJS {
             coseCryptoService = coseCryptoService,*/
             keyInfo = keyInfo,
             trustedCerts = trustedCerts,
+            verificationTime = verificationTime,
             dateTimeUtils = dateTimeUtils,
             timeZoneId = timeZoneId,
             clockSkewAllowedInSec = clockSkewAllowedInSec,

@@ -1,11 +1,14 @@
 package com.sphereon.crypto.jose
 
 import com.sphereon.crypto.IKey
+import com.sphereon.crypto.IKeyDTO
 import com.sphereon.crypto.PKIException
 import com.sphereon.crypto.cose.CoseKeyCbor
 import com.sphereon.crypto.cose.CoseKeyJson
 import com.sphereon.crypto.cose.ICoseKeyCbor
+import com.sphereon.crypto.cose.ICoseKeyCborDTO
 import com.sphereon.crypto.cose.ICoseKeyJson
+import com.sphereon.crypto.cose.ICoseKeyJsonDTO
 import com.sphereon.crypto.generic.KeyOperations
 import com.sphereon.crypto.generic.KeyType
 import com.sphereon.crypto.generic.SignatureAlgorithm
@@ -41,7 +44,7 @@ This interface defines the properties of a JWK as specified by the JSON Web Key 
  *  key parameters used in various algorithms.
 
  */
-expect interface IJwkJson : IKey {
+expect interface IJwkDTO : IKeyDTO {
     /**
      * The algorithm name used for cryptographic operations.
      * The value may be null if the algorithm is not specified or initialized.
@@ -810,7 +813,7 @@ data class Jwk(
          * @param jwk The JSON representation of the JWK.
          * @return The Jwk object.
          */
-        fun fromJson(jwk: IJwkJson): Jwk = with(jwk) {
+        fun fromDTO(jwk: IJwkDTO): Jwk = with(jwk) {
             return Jwk(
                 alg = JwaAlgorithm.Static.fromValue(alg),
                 crv = JwaCurve.Static.fromValue(crv),
@@ -866,8 +869,8 @@ data class Jwk(
          * @param jwk The `IJwk` instance to be converted.
          * @return The equivalent `Jwk` instance with the same properties.
          */
-        fun fromDTO(jwk: IJwk): Jwk = with(jwk) {
-            return@fromDTO Jwk(
+        fun from(jwk: IJwk): Jwk = with(jwk) {
+            return@from Jwk(
                 alg = alg,
                 crv = crv,
                 d = d,
@@ -893,7 +896,7 @@ data class Jwk(
          * @param coseKey the COSE key JSON object to convert.
          * @return the resulting JWK.
          */
-        fun fromCoseKeyJson(coseKey: ICoseKeyJson): Jwk {
+        fun fromCoseKeyJson(coseKey: ICoseKeyJsonDTO): Jwk {
             with(coseKey) {
                 val kty = kty.toJoseKeyType()
                 return Builder()
@@ -924,7 +927,7 @@ data class Jwk(
          * a COSE key encoded in CBOR format.
          * @return The JSON representation of the COSE key.
          */
-        fun fromCoseKey(coseKey: ICoseKeyCbor) = fromCoseKeyJson(CoseKeyCbor.Static.fromDTO(coseKey).toJson())
+        fun fromCoseKey(coseKey: ICoseKeyCborDTO) = fromCoseKeyJson(CoseKeyCbor.Static.fromDTO(coseKey).toJson())
 
     }
 
@@ -964,6 +967,16 @@ enum class JwkUse(val value: String) {
     enc("enc")
 }
 
+/**
+ * Generates a JWK (JSON Web Key) thumbprint based on the key type and its parameters.
+ *
+ * The function creates a subset of the JWK containing essential fields based on the key type
+ * (RSA or EC) and then calculates a hash of the JSON-encoded subset. This hash is converted
+ * to a Base64 URL-encoded string to produce the thumbprint.
+ *
+ * @param jwk The JWK object containing key information.
+ * @return A Base64 URL-encoded string representing the JWK thumbprint.
+ */
 fun generateJwkThumbprint(jwk: IJwk): String {
     val jwkSubset = when (jwk.kty) {
         JwaKeyType.RSA -> mapOf(

@@ -8,11 +8,10 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlin.js.JsExport
 
-
 /**
  * Represents an interface for a cryptographic key.
  */
-expect interface IKey {
+expect interface IKeyDTO {
 
     /**
      * Represents the key type for the implementation of the IKey interface.
@@ -102,6 +101,13 @@ expect interface IKey {
      * certain cryptographic operations or key management tasks.
      */
     val additional: Any?
+}
+
+
+/**
+ * Represents an interface for a cryptographic key.
+ */
+expect interface IKey: IKeyDTO {
 
     /**
      * Maps key types to their appropriate values for COSE/JWA implementations.
@@ -138,6 +144,7 @@ expect interface IKey {
     fun getYAsString(): String?
 
     fun toPublicKey(): IKey
+
 }
 
 @JsExport

@@ -1,8 +1,17 @@
 package com.sphereon.crypto
 
 
+
+/**
+ * CryptoServicesJS provides cryptographic services including X.509, COSE, and key mappings
+ * with JavaScript callbacks to fit the JS ecosystem.
+ *
+ * This is the central entry point for external code to perform cose, X.509 actions
+ */
 @JsExport
+@JsName("CryptoServices")
 object CryptoServicesJS {
+    // The Javascript version exposes it with JS callbacks compared to the default CryptoServices
     fun x509(platformCallback: IX509ServiceJS  = DefaultCallbacks.x509(), trustedCerts: Set<String>? = null) = X509ServiceJS(platformCallback, trustedCerts)
     fun cose(platformCallback: ICoseCryptoCallbackJS = DefaultCallbacks.coseCrypto()) = CoseCryptoServiceJS(platformCallback)
     fun mappings() = CoseJoseKeyMappingService

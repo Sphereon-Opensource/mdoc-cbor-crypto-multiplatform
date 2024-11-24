@@ -18,6 +18,7 @@ import com.sphereon.crypto.X509VerificationProfile
 import com.sphereon.crypto.X509VerificationResult
 import com.sphereon.crypto.coseCryptoService
 import com.sphereon.kmp.DateTimeUtils
+import com.sphereon.kmp.LocalDateTimeKMP
 import com.sphereon.kmp.getDateTime
 import com.sphereon.kmp.toLocalDateTimeKMP
 import com.sphereon.mdoc.MdocConst
@@ -127,6 +128,7 @@ object IssuerAuthValidation {
      */
     suspend fun verifyValidityInfo(
         issuerAuth: COSE_Sign1<MobileSecurityObjectCbor>,
+        verificationTime: LocalDateTimeKMP = LocalDateTimeKMP.Static.now(),
         allowExpiredDocuments: Boolean? = false,
         dateTimeUtils: DateTimeUtils = getDateTime(),
         timeZoneId: String? = null,
@@ -147,7 +149,7 @@ object IssuerAuthValidation {
         val signed = mso.validityInfo.signed.cborTDateToEpochSeconds(dateTimeUtils, timeZoneId).toLong()
         val validFrom = mso.validityInfo.validFrom.cborTDateToEpochSeconds(dateTimeUtils, timeZoneId).toLong()
         val validUntil = mso.validityInfo.validUntil.cborTDateToEpochSeconds(dateTimeUtils, timeZoneId).toLong()
-        val nowStr = now.toLocalDateTimeKMP(dateTimeUtils).localDateToDateStringISO(dateTimeUtils, timeZoneId)
+        val verificationAt = verificationTime.localDateToDateStringISO(dateTimeUtils, timeZoneId)
         val validFromStr =
             validFrom.toLocalDateTimeKMP(dateTimeUtils).localDateToDateStringISO(dateTimeUtils, timeZoneId)
         val validUntilStr =
@@ -180,7 +182,7 @@ object IssuerAuthValidation {
             return VerifyResult(
                 error = true,
                 critical = true,
-                message = "The document is not yet valid. Current date/time: $nowStr and valid From $validFromStr",
+                message = "The document is not yet valid. Current date/time: $verificationAt and valid From $validFromStr",
                 name = MdocConst.MDOC_LITERAL
             ).also { MdocConst.LOG.error("Error validating MSO validFrom against current time: $it") }
         }
@@ -188,11 +190,11 @@ object IssuerAuthValidation {
         // the 'validUntil' element shall be equal or later than the current timestamp.
 
         if (validUntil < now - clockSkewAllowedInSec) {
-            val datesEqaul = nowStr == validUntilStr
+            val datesEqaul = verificationAt == validUntilStr
             return VerifyResult(
                 error = true,
                 critical = allowExpiredDocuments != true,
-                message = "The document is not valid anymore. Current date/time: $nowStr ${if (datesEqaul) "(${now})" else ""} and valid Until $validUntilStr ${if (datesEqaul) "(${validUntil})" else ""}",
+                message = "The document is not valid anymore. Current date/time: $verificationAt ${if (datesEqaul) "(${now})" else ""} and valid Until $validUntilStr ${if (datesEqaul) "(${validUntil})" else ""}",
                 name = MdocConst.MDOC_LITERAL
             ).also { MdocConst.LOG.error("Error validating MSO validUntil against current time: $it") }
         }

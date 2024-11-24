@@ -8,7 +8,7 @@ import com.sphereon.crypto.cose.CoseKeyJson
 import com.sphereon.crypto.cose.ICoseKeyCbor
 import com.sphereon.crypto.cose.ICoseKeyJson
 import com.sphereon.crypto.jose.IJwk
-import com.sphereon.crypto.jose.IJwkJson
+import com.sphereon.crypto.jose.IJwkDTO
 import com.sphereon.crypto.jose.Jwk
 import com.sphereon.crypto.jose.cborToJwk
 import com.sphereon.crypto.jose.jsonToJwk
@@ -33,9 +33,9 @@ object CoseJoseKeyMappingService {
         is CoseKeyCbor -> key.cborToJwk()
         is CoseKeyJson -> key.jsonToJwk()
         is ICoseKeyCbor -> CoseKeyCbor.Static.fromDTO(key).cborToJwk()
-        is ICoseKeyJson -> CoseKeyJson.Static.fromDTO(key).jsonToJwk()
-        is IJwk -> Jwk.Static.fromDTO(key)
-        is IJwkJson -> Jwk.Static.fromJson(key)
+        is ICoseKeyJson -> CoseKeyJson.Static.fromJsonDTO(key).jsonToJwk()
+        is IJwk -> Jwk.Static.from(key)
+        is IJwkDTO -> Jwk.Static.fromDTO(key)
         else -> throw IllegalArgumentException("Cannot convert key to jose/jwk")
     }
 
@@ -163,9 +163,9 @@ object CoseJoseKeyMappingService {
         is CoseKeyCbor -> key
         is Jwk -> key.jwkToCoseKeyCbor()
         is CoseKeyJson -> key.toCbor()
-        is IJwk -> Jwk.Static.fromDTO(key).jwkToCoseKeyCbor()
-        is IJwkJson -> Jwk.Static.fromJson(key).jwkToCoseKeyCbor()
-        is ICoseKeyJson -> CoseKeyJson.Static.fromDTO(key).toCbor()
+        is IJwk -> Jwk.Static.from(key).jwkToCoseKeyCbor()
+        is IJwkDTO -> Jwk.Static.fromDTO(key).jwkToCoseKeyCbor()
+        is ICoseKeyJson -> CoseKeyJson.Static.fromJsonDTO(key).toCbor()
         is ICoseKeyCbor -> CoseKeyCbor.Static.fromDTO(key)
         else -> throw IllegalArgumentException("Cannot convert key to cbor")
     }

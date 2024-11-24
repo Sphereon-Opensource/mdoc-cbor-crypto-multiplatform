@@ -1,6 +1,7 @@
 package com.sphereon.crypto
 
 import com.sphereon.crypto.generic.IVerifyResult
+import com.sphereon.kmp.LocalDateTimeKMP
 
 actual fun <PlatformCallback: IX509ServiceMarkerType> x509Service(
     platformCallback: PlatformCallback,
@@ -15,4 +16,5 @@ actual interface IX509VerificationResult<out KeyType : IKey> : IVerifyResult {
     actual val publicKey: KeyType?
     actual val publicKeyAlgorithm: String?
     actual val publicKeyParams: Any?
+    actual val verificationTime: LocalDateTimeKMP
 }

@@ -1,5 +1,6 @@
 package com.sphereon.kmp
 
+import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
@@ -52,6 +53,9 @@ class LocalDateTimeKMP(
     }
 
     object Static {
+        fun now() = nowWithTimezone()
+        fun nowWithTimezone(utils: DateTimeUtils = DateTimeUtils.Static.DEFAULT, timeZoneId: String? = null) = utils.dateTime(timeZoneId)
+
         fun fromString(value: String): LocalDateTimeKMP {
             val datetime: LocalDateTime = if (value.lowercase().endsWith('z')) {
                 val instant = Instant.parse(value)

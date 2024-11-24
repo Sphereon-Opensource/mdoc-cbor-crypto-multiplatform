@@ -23,7 +23,7 @@ private const val COSE_CRYPTO_ADAPTER_JS = "CoseCryptoAdapterJS"
 class CoseCryptoProviderToCallbackAdapterJS(keyManagerService: IKeyManagerService) : ICoseCryptoCallbackJS {
     private val delegate = CoseCryptoProviderToCallbackAdapter(keyManagerService)
 
-    override fun signAsync(input: ToBeSignedCbor, requireX5Chain: Boolean): Promise<ByteArray> {
+    override fun signAsync(input: ToBeSignedCbor, requireX5Chain: Boolean?): Promise<ByteArray> {
         return CoroutineScope(CoroutineName(COSE_CRYPTO_ADAPTER_JS)).async { delegate.sign(input = input, requireX5Chain = requireX5Chain) }
             .asPromise()
     }
@@ -31,7 +31,7 @@ class CoseCryptoProviderToCallbackAdapterJS(keyManagerService: IKeyManagerServic
     override fun verify1Async(
         input: CoseSign1Cbor<*>,
         keyInfo: IKeyInfo<ICoseKeyCbor>,
-        requireX5Chain: Boolean
+        requireX5Chain: Boolean?
     ): Promise<IVerifySignatureResult<ICoseKeyCbor>> {
         return CoroutineScope(CoroutineName(COSE_CRYPTO_ADAPTER_JS)).async { delegate.verify1(input = input, keyInfo = keyInfo, requireX5Chain = requireX5Chain) }.asPromise()
     }
