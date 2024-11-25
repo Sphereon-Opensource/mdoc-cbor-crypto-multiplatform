@@ -14,6 +14,7 @@ import com.sphereon.mdoc.data.device.DocRequestJson
 import com.sphereon.mdoc.data.device.IssuerSignedItemCbor
 import com.sphereon.mdoc.data.device.IssuerSignedItemJson
 import com.sphereon.mdoc.data.mdl.DataElementDef
+import com.sphereon.mdoc.oid4vp.Oid4VPFormatIdentifier.entries
 import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
@@ -45,6 +46,8 @@ expect sealed interface IOid4VPPresentationDefinition {
 data class Oid4VPPresentationDefinition(
     @SerialName("id")
     override val id: String,
+
+
     @SerialName("input_descriptors")
     override val input_descriptors: Array<Oid4VPInputDescriptor>
 ) : IOid4VPPresentationDefinition, HasToJsonString {
@@ -63,6 +66,8 @@ data class Oid4VPPresentationDefinition(
     fun toDocRequestJson(): DocRequestJson = toDocRequest().toJson()
 
 
+    fun toSerializedJson() = oid4vpJsonSerializer.encodeToString(this)
+
     object Static {
         fun fromDTO(presentationDefinition: IOid4VPPresentationDefinition) =
             with(presentationDefinition) {
@@ -73,7 +78,7 @@ data class Oid4VPPresentationDefinition(
             }
     }
 
-    override fun toJsonString() = oid4vpJsonSerializer.encodeToString(this)
+    override fun toJsonString() = toSerializedJson()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -102,10 +107,15 @@ expect sealed interface IOid4VPInputDescriptor {
 @Serializable
 @JsExport
 data class Oid4VPInputDescriptor(
+
     @SerialName("id")
     override val id: String,
+
+
     @SerialName("format")
     override val format: Oid4VPFormat,
+
+
     @SerialName("constraints")
     override val constraints: Oid4VPConstraints
 ) : IOid4VPInputDescriptor {
@@ -151,16 +161,14 @@ expect sealed interface IOid4VPFormat {
     // SPHEREON Funke: Experimental credential format extension
     @SerialName("vc+sd-jwt")
     val vc_sd_jwt: IOid4VPSupportedAlgorithm?
-
-//    fun hasFormat(format: Oid4VPFormatIdentifier): Boolean
 }
 
 @Serializable
 @JsExport
 data class Oid4VPFormat(
-    @EncodeDefault(EncodeDefault.Mode.NEVER)
     @SerialName("mso_mdoc") override val mso_mdoc: Oid4VPSupportedAlgorithm? = null,
     // SPHEREON Funke: Experimental credential format extension
+
     @EncodeDefault(EncodeDefault.Mode.NEVER)
     @SerialName("vc+sd-jwt") override val vc_sd_jwt: Oid4VPSupportedAlgorithm? = null
 ) : IOid4VPFormat {
@@ -174,6 +182,15 @@ data class Oid4VPFormat(
         } else if (vc_sd_jwt != null && vc_sd_jwt.algorithmObjects.isEmpty()) {
             throw IllegalArgumentException("requires that vc+sd_jwt contains at least one algorithm")
         }
+    }
+
+    fun validateAlgorithms(): Boolean {
+        if (mso_mdoc != null) {
+            return mso_mdoc.algorithmObjects.isNotEmpty()
+        } else if (vc_sd_jwt != null) {
+            return vc_sd_jwt.algorithmObjects.isNotEmpty()
+        }
+        return false
     }
 
     fun hasFormat(format: Oid4VPFormatIdentifier) = Json.encodeToString(this).contains(format.value)
@@ -199,7 +216,6 @@ expect sealed interface IOid4VPSupportedAlgorithm {
 @Serializable
 @JsExport
 data class Oid4VPSupportedAlgorithm(
-    @SerialName("alg")
     override val alg: Array<String>
 ) : IOid4VPSupportedAlgorithm {
 
@@ -229,6 +245,8 @@ data class Oid4VPSupportedAlgorithm(
 expect sealed interface IOid4VPConstraints {
     @SerialName("limit_disclosure")
     val limit_disclosure: String
+
+    @SerialName("fields")
     val fields: Array<out IOid4VPConstraintField>
 }
 
@@ -237,7 +255,7 @@ expect sealed interface IOid4VPConstraints {
 data class Oid4VPConstraints(
     @SerialName("fields")
     override val fields: Array<Oid4VPConstraintField>,
-    @EncodeDefault(EncodeDefault.Mode.ALWAYS)
+
     @SerialName("limit_disclosure")
     override val limit_disclosure: String = "required"
 ) : IOid4VPConstraints {
@@ -373,9 +391,13 @@ internal object Oid4VPLimitDisclosureSerializer : KSerializer<Oid4VPLimitDisclos
 @JsExport
 @Serializable(with = Oid4VPFormatsSerializer::class)
 enum class Oid4VPFormatIdentifier(val value: String) {
+    @JsName("MSO_MDOC")
+    @SerialName("mso_mdoc")
     MSO_MDOC("mso_mdoc"),
 
     // SPHEREON Funke: Experimental credential format extension
+    @JsName("SD_JWT_VC")
+    @SerialName("vc+sd-jwt")
     SD_JWT_VC("vc+sd-jwt");
 
     object Static {
@@ -411,8 +433,10 @@ expect sealed interface IOid4VPPresentationSubmission {
 data class Oid4VPPresentationSubmission(
     @SerialName("definition_id")
     override val definition_id: String,
+
     @SerialName("id")
     override val id: String,
+
     @SerialName("descriptor_map")
     override val descriptor_map: Array<Oid4vpSubmissionDescriptor>
 ) : IOid4VPPresentationSubmission {
@@ -458,8 +482,10 @@ expect sealed interface IOid4vpSubmissionDescriptor {
 data class Oid4vpSubmissionDescriptor(
     @SerialName("id")
     override val id: String,
+
     @SerialName("format")
     override val format: String,
+
     @SerialName("path")
     override val path: String
 ) : IOid4vpSubmissionDescriptor {
@@ -468,11 +494,11 @@ data class Oid4vpSubmissionDescriptor(
     object Static {
         fun fromInputDescriptor(descriptor: IOid4VPInputDescriptor): Oid4vpSubmissionDescriptor =
             with(descriptor) {
-                val format = if (format.vc_sd_jwt !== null) Oid4VPFormatIdentifier.SD_JWT_VC else Oid4VPFormatIdentifier.MSO_MDOC
-                val path = if (format === Oid4VPFormatIdentifier.MSO_MDOC) "$" else descriptor.constraints.fields[0].path[0] // fixme
+                val formatId = if (format.vc_sd_jwt?.alg?.isNotEmpty() == true) Oid4VPFormatIdentifier.SD_JWT_VC else Oid4VPFormatIdentifier.MSO_MDOC
+                val path = if (formatId == Oid4VPFormatIdentifier.MSO_MDOC) "$" else descriptor.constraints.fields[0].path[0] // fixme
                 Oid4vpSubmissionDescriptor(
                     id = id,
-                    format = format.value,
+                    format = formatId.value,
                     path = path
                 )
             }

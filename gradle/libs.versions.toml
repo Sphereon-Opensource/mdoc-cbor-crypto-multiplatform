@@ -1,11 +1,11 @@
 [versions]
 agp = "8.3.1"
-kotlin = "2.0.20-RC2"
+kotlin = "2.1.0-RC2"
 nexus-publish = "2.0.0-rc-1"
 android-minSdk = "24"
 android-compileSdk = "34"
 kotest = "5.9.0"
-serialization = "1.7.1"
+serialization = "1.7.3"
 coroutines = "1.9.0"
 io = "0.3.4"
 datetime = "0.6.1"

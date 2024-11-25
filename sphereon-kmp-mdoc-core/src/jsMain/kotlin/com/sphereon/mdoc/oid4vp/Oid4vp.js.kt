@@ -11,6 +11,7 @@ actual sealed external interface IOid4VPFormat {
     actual val mso_mdoc: IOid4VPSupportedAlgorithm?
 
     @SerialName("vc+sd-jwt")
+    @JsName("vc_sd_jwt")
     actual val vc_sd_jwt: IOid4VPSupportedAlgorithm?
 //    actual fun hasFormat(format: Oid4VPFormatIdentifier): Boolean
 }
@@ -26,6 +27,7 @@ actual sealed external interface IOid4VPPresentationDefinition {
     @JsName("id")
     actual val id: String
     @SerialName("input_descriptors")
+    @JsName("input_descriptors")
     actual val input_descriptors: Array<out IOid4VPInputDescriptor>
 }
 
@@ -52,8 +54,10 @@ actual sealed external interface IOid4VPConstraints {
 @JsExport
 actual sealed external interface IOid4VPConstraintField {
     @SerialName("path")
+    @JsName("path")
     actual val path: Array<String>
     @SerialName("intent_to_retain")
+    @JsName("intent_to_retain")
     actual val intent_to_retain: Boolean
 }
 
