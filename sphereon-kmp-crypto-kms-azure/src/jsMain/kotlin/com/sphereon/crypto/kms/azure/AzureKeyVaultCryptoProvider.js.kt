@@ -2,11 +2,14 @@ package com.sphereon.crypto.kms.azure
 
 import com.sphereon.crypto.CoseJoseKeyMappingService
 import com.sphereon.crypto.IKeyInfo
+import com.sphereon.crypto.ManagedKeyInfo
+import com.sphereon.crypto.ResolvedKeyInfo
 import com.sphereon.crypto.generic.CoseKeyPair
 import com.sphereon.crypto.generic.JoseKeyPair
 import com.sphereon.crypto.generic.KeyOperations
 import com.sphereon.crypto.generic.ManagedKeyPair
 import com.sphereon.crypto.generic.SignatureAlgorithm
+import com.sphereon.crypto.jose.Jwk
 import com.sphereon.crypto.jose.JwkUse
 import com.sphereon.crypto.sign.model.SignInput
 import com.sphereon.crypto.sign.model.SignOutput
@@ -23,7 +26,7 @@ external object AzureIdentity {
 
 @JsModule("@azure/keyvault-keys")
 @JsNonModule
-external class AzureKeyvaultKeys(url: String, credential: AzureIdentity.ClientSecretCredential) {
+external class AzureKeyVaultKeys(url: String, credential: AzureIdentity.ClientSecretCredential) {
     interface CreateEcKeyOptions {
         var curve: String?
     }
@@ -47,10 +50,11 @@ external class AzureKeyvaultKeys(url: String, credential: AzureIdentity.ClientSe
     }
 }
 
-actual class AzureKeyvaultCryptoProvider actual constructor(
-    config: AzureKeyvaultClientConfig
+@JsExport.Ignore
+actual class AzureKeyVaultCryptoProvider actual constructor(
+    config: AzureKeyVaultClientConfig
 ) : BaseAzureKeyvaultCryptoProvider(config.applicationId) {
-    private val keyClient: AzureKeyvaultKeys.KeyClient // Representing the Azure Key Vault client
+    private val keyClient: AzureKeyVaultKeys.KeyClient // Representing the Azure Key Vault client
     private val clientSecretCredential: AzureIdentity.ClientSecretCredential
 
     init {
@@ -63,7 +67,7 @@ actual class AzureKeyvaultCryptoProvider actual constructor(
                 config.credentialOpts.secretCredentialOpts.clientId,
                 config.credentialOpts.secretCredentialOpts.clientSecret
             )
-        keyClient = AzureKeyvaultKeys.KeyClient(config.keyvaultUrl, clientSecretCredential)
+        keyClient = AzureKeyVaultKeys.KeyClient(config.keyvaultUrl, clientSecretCredential)
     }
 
     override suspend fun generateKeyAsync(
@@ -78,7 +82,7 @@ actual class AzureKeyvaultCryptoProvider actual constructor(
         }
         val keyName = kmsKeyRef ?: "key-${Uuid.v4String()}"
         // TODO: Replace this JS cast with a strongly-typed approach or utility function if possible.
-        val options: AzureKeyvaultKeys.CreateEcKeyOptions = js("{}").unsafeCast<AzureKeyvaultKeys.CreateEcKeyOptions>().apply {
+        val options: AzureKeyVaultKeys.CreateEcKeyOptions = js("{}").unsafeCast<AzureKeyVaultKeys.CreateEcKeyOptions>().apply {
             curve = signatureAlgorithm.curve?.jose?.value
         }
         val keyVaultKey = keyClient.createEcKey(keyName, options).await()
@@ -103,7 +107,7 @@ actual class AzureKeyvaultCryptoProvider actual constructor(
             throw IllegalArgumentException("Key reference is required")
         }
         val azureKey = keyClient.getKey(keyInfo.kmsKeyRef.toString()).await()
-        val cryptographyClient = AzureKeyvaultKeys.CryptographyClient(azureKey, clientSecretCredential)
+        val cryptographyClient = AzureKeyVaultKeys.CryptographyClient(azureKey, clientSecretCredential)
         val signature = cryptographyClient.signData(azureKey.key.crv.toSignatureAlgorithm(), input).await()
         return signature.result
     }
@@ -115,10 +119,22 @@ actual class AzureKeyvaultCryptoProvider actual constructor(
     ): Boolean {
         // TODO: Evaluate update keyInfo interface to use ManagedKey to ensure kmsKeyRef is present.
         val azureKey = keyClient.getKey(keyInfo.kmsKeyRef!!).await()
-        val cryptographyClient = AzureKeyvaultKeys.CryptographyClient(azureKey, clientSecretCredential)
+        val cryptographyClient = AzureKeyVaultKeys.CryptographyClient(azureKey, clientSecretCredential)
         val verifyResult =
             cryptographyClient.verifyData(azureKey.key.crv.toSignatureAlgorithm(), input, signature).await()
         return verifyResult.result
+    }
+
+    suspend fun fetchKeyAsync(keyRef: String): ManagedKeyInfo<Jwk> {
+        val keyVaultKey = keyClient.getKey(keyRef).await()
+        val keyVaultJwk = keyVaultKey.toJwk()
+        val managedKeyInfo = ManagedKeyInfo(
+            kms = getId(),
+            kmsKeyRef = keyVaultKey.name,
+            resolvedKeyInfo = ResolvedKeyInfo.Static.fromKey(keyVaultJwk),
+        )
+
+        return managedKeyInfo
     }
 
     override suspend fun createSignature(

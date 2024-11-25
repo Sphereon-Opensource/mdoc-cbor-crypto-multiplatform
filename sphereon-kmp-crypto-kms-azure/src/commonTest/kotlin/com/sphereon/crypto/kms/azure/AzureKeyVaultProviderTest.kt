@@ -18,11 +18,11 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class AzureKeyVaultProviderTest {
-    private lateinit var azureKeyVaultCryptoProvider: AzureKeyvaultCryptoProvider
+    private lateinit var azureKeyVaultCryptoProvider: AzureKeyVaultCryptoProvider
 
     @BeforeTest
     fun setUp() {
-        val azureConfig = AzureKeyvaultClientConfig(
+        val azureConfig = AzureKeyVaultClientConfig(
             applicationId = "azure-keyvault-test", // This can be randomly choosen
             keyvaultUrl = BuildKonfig.AZURE_KEYVAULT_URL!!,
             tenantId = BuildKonfig.AZURE_KEYVAULT_TENANT_ID!!,
@@ -40,7 +40,7 @@ class AzureKeyVaultProviderTest {
             )
         )
 
-        azureKeyVaultCryptoProvider = AzureKeyvaultCryptoProvider(config = azureConfig)
+        azureKeyVaultCryptoProvider = AzureKeyVaultCryptoProvider(config = azureConfig)
     }
 
     @Test
