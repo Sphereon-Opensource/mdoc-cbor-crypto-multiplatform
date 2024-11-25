@@ -37,6 +37,7 @@ class AzureKeyVaultCryptoProviderJS(
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
+    @JsName("GenerateKeyRequest")
     class GenerateKeyRequest(
         val kmsKeyRef: String? = null,
         val use: JwkUse? = null,
