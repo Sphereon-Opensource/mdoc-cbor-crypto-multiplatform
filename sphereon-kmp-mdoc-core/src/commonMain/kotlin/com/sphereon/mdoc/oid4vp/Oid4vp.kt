@@ -257,6 +257,7 @@ data class Oid4VPConstraints(
     override val fields: Array<Oid4VPConstraintField>,
 
     @SerialName("limit_disclosure")
+    @EncodeDefault(EncodeDefault.Mode.ALWAYS)
     override val limit_disclosure: String = "required"
 ) : IOid4VPConstraints {
     init {
