@@ -227,7 +227,7 @@ data class CoseSign1Cbor<CborType>(
 
     override fun cborBuilder(): CborBuilder<CoseSign1Cbor<CborType>> {
         return CborArray.Static.builder(this).add(CborByteString(protectedHeader.cborEncode()))
-            .add(unprotectedHeader?.toCbor()).add(payload ?: CborNull())
+            .add(unprotectedHeader?.toCbor() ?: CoseHeaderCbor().toCbor()).add(payload ?: CborNull())
             .add(signature)
             .end()
     }

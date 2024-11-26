@@ -1,6 +1,6 @@
 allprojects {
     group = "com.sphereon.kmp"
-    version = "0.2.0-SNAPSHOT.12"
+    version = "0.2.0-SNAPSHOT.15"
 }
 
 plugins {
