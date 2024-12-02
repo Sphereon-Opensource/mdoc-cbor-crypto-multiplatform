@@ -122,7 +122,7 @@ class JWKTest {
     @Test
     fun shouldConvertECJWKToCoseKeyAndBack(): TestResult = runTest {
         val jwk = Jwk(
-            generateKid = true,
+            generateKid = false,
             kty = JwaKeyType.EC,
             crv = JwaCurve.P_256,
             x = "uxHN3W6ehp0VWXKaMNie1J82MVJCFZYScau74o17cx8",

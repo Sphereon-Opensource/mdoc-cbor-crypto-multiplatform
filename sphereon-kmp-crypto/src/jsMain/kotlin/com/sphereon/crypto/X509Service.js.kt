@@ -3,6 +3,8 @@ package com.sphereon.crypto
 import com.sphereon.crypto.generic.IVerifyResult
 import com.sphereon.kmp.LocalDateTimeKMP
 import kotlinx.coroutines.await
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import kotlin.js.Promise
 
 
@@ -156,8 +158,8 @@ internal class X509ServiceJSAdapter(private val x509ServiceJS: X509ServiceJS = X
                 verificationTime = verificationAt
             )
         }
-        val assertedCerts = trustedCerts ?: this.getTrustedCerts()
-        if (assertedCerts.isNullOrEmpty()) {
+        val assertedTrustedCerts = trustedCerts ?: this.getTrustedCerts()
+        if (assertedTrustedCerts.isNullOrEmpty()) {
             return X509VerificationResult(
                 error = true,
                 message = "No trusted certificates have been provided.",
@@ -168,19 +170,20 @@ internal class X509ServiceJSAdapter(private val x509ServiceJS: X509ServiceJS = X
         }
 
         return try {
-            x509ServiceJS.verifyCertificateChainAsync<KeyType>(chainDER, chainPEM, assertedCerts, verificationProfile, verificationAt)
+            x509ServiceJS.verifyCertificateChainAsync<KeyType>(chainDER, chainPEM, assertedTrustedCerts, verificationProfile, verificationAt)
                 .await()
         } catch (e: Exception) {
             CryptoConst.LOG.error(e.message ?: "X509 validation failed", e)
             X509VerificationResult(
                 name = CryptoConst.X509_LITERAL,
                 error = true,
-                message = "Certificate chain verification failed ${e.message}",
+                message = "Certificate chain verification failed with an unexpected error ${e.message}",
+                detailMessage = e.message,
                 critical = true,
                 verificationTime = verificationAt
             )
         }.also {
-            CryptoConst.LOG.info("Verifying certificate chain result: $it")
+            CryptoConst.LOG.info("Verifying certificate chain result: Message: ${it.message} Error: ${it.error} Critical: ${it.critical} Verification time: ${it.verificationTime} Name: ${it.name}")
         }
 
     }
@@ -204,8 +207,16 @@ actual external interface IX509ServiceMarkerType
 
 @JsExport
 actual external interface IX509VerificationResult<out KeyType : IKey> : IVerifyResult {
+    @JsName("publicKey")
+    @SerialName("publicKey")
     actual val publicKey: KeyType?
+    @JsName("publicKeyAlgorithm")
+    @SerialName("publicKeyAlgorithm")
     actual val publicKeyAlgorithm: String?
+    @JsName("publicKeyParams")
+    @SerialName("publicKeyParams")
     actual val publicKeyParams: Any?
+    @JsName("verificationTime")
+    @SerialName("verificationTime")
     actual val verificationTime: LocalDateTimeKMP
 }

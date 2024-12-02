@@ -9,6 +9,9 @@ actual external interface IVerifyResult {
     actual val name: String
     @JsName("error")
     actual val error: Boolean
+    @JsName("detailMessage")
+    actual val detailMessage: String?
+
     @JsName("message")
     actual val message: String?
     @JsName("critical")

@@ -33,6 +33,8 @@ enum class CoseCurve(val curveName: String, val value: Int, keyType: CoseKeyType
         return CborUInt(this.value)
     }
 
+    override fun toString() = "" + value
+
     object Static {
         @JsName("fromValue")
         fun fromValue(value: Int): CoseCurve {

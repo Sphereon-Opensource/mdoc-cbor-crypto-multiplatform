@@ -23,6 +23,7 @@ import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.crypto.jose.Jwk
 import com.sphereon.crypto.jose.generateJwkThumbprint
 import com.sphereon.crypto.jose.jsonToJwk
+import com.sphereon.json.HasToJsonString
 import com.sphereon.json.JsonView
 import com.sphereon.json.cryptoJsonSerializer
 import com.sphereon.kmp.Encoding
@@ -30,6 +31,7 @@ import com.sphereon.kmp.LongKMP
 import com.sphereon.kmp.decodeFrom
 import com.sphereon.kmp.encodeTo
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.encodeToJsonElement
@@ -138,6 +140,7 @@ expect sealed interface ICoseKeyJsonDTO : IKeyDTO {
 @JsExport
 @Serializable
 data class CoseKeyJson(
+    @Transient
     val generateKid: Boolean = false,
     override val kty: CoseKeyType,
     override var kid: String? = null,
@@ -153,7 +156,7 @@ data class CoseKeyJson(
     override val d: String? = null,
     override val x5chain: Array<String>? = null,
     override val additional: JsonObject? = null
-) : JsonView(), ICoseKeyJson {
+) : JsonView(), ICoseKeyJson, HasToJsonString {
     init {
         if (this.kid == null && generateKid) {
             this.kid = determineKid()
@@ -164,28 +167,6 @@ data class CoseKeyJson(
 
     private fun determineKid() = generateJwkThumbprint(jsonToJwk())
 
-    /**
-     * Converts the current object to a JSON element using the cryptoJsonSerializer
-     * for serialization. This method leverages the encodeToJsonElement function
-     * to produce the JSON representation of the object.
-     *
-     * @return JSON representation of the current object as a JsonElement
-     */
-    fun toDto() = cryptoJsonSerializer.encodeToJsonElement(this)
-    /* :ICoseKeyJson {
-       cryptoJsonSerializer.encodeToDynamic(CoseKeyJson::serializer, this)
-       override val kty = this@CoseKeyJson.kty
-       override val kid = this@CoseKeyJson.kid
-       override val alg = this@CoseKeyJson.alg
-       override val key_ops = this@CoseKeyJson.key_ops
-       override val baseIV = this@CoseKeyJson.baseIV
-       override val crv = this@CoseKeyJson.crv
-       override val x = this@CoseKeyJson.x
-       override val y = this@CoseKeyJson.y
-       override val d = this@CoseKeyJson.d
-       override val x5chain = this@CoseKeyJson.x5chain
-       override val additional = this@CoseKeyJson.additional
-   }*/
 
     /**
      * Maps the current algorithm to a predefined AlgorithmMapping based on its CoSE value.
@@ -234,6 +215,30 @@ data class CoseKeyJson(
     override fun toPublicKey() = copy(d = null)
 
     /**
+     * Converts the current object to a JSON element using the cryptoJsonSerializer
+     * for serialization. This method leverages the encodeToJsonElement function
+     * to produce the JSON representation of the object.
+     *
+     * @return JSON representation of the current object as a JsonElement
+     */
+    fun toJsonObject() = cryptoJsonSerializer.encodeToJsonElement(this)
+    /* :ICoseKeyJson {
+       cryptoJsonSerializer.encodeToDynamic(CoseKeyJson::serializer, this)
+       override val kty = this@CoseKeyJson.kty
+       override val kid = this@CoseKeyJson.kid
+       override val alg = this@CoseKeyJson.alg
+       override val key_ops = this@CoseKeyJson.key_ops
+       override val baseIV = this@CoseKeyJson.baseIV
+       override val crv = this@CoseKeyJson.crv
+       override val x = this@CoseKeyJson.x
+       override val y = this@CoseKeyJson.y
+       override val d = this@CoseKeyJson.d
+       override val x5chain = this@CoseKeyJson.x5chain
+       override val additional = this@CoseKeyJson.additional
+   }*/
+
+
+    /**
      * Serializes the current object to a JSON string using the provided cryptoJsonSerializer.
      *
      * @return A JSON string representation of the current object.
@@ -246,7 +251,7 @@ data class CoseKeyJson(
      * @return an instance of `CoseKeyCbor` containing the CBOR-encoded key data.
      */
     override fun toCbor(): CoseKeyCbor =
-        CoseKeyCbor.Builder().withKty(kty).withKid(kid).withAlg(alg).withKeyOps(key_ops).withBaseIV(baseIV)
+        CoseKeyCbor.Builder().withKty(kty).withKid(kid, false).withAlg(alg).withKeyOps(key_ops).withBaseIV(baseIV)
             .withCrv(crv).withX(x).withY(y).withD(d).withX5Chain(x5chain).build() // todo: additional
 
     /**
