@@ -453,7 +453,7 @@ data class Jwk(
         return x5c
     }
 
-    override fun getKidAsString(generate: Boolean) = kid ?: if (generateKid) determineKid() else kid
+    override fun getKidAsString(generate: Boolean) = kid ?: if (generate) determineKid() else kid
     override fun getXAsString() = x
 
     override fun getYAsString() = y

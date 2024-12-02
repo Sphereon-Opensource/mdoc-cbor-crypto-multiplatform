@@ -11,8 +11,8 @@ import com.sphereon.crypto.cose.CoseSign1Cbor
 import com.sphereon.crypto.cose.CoseSign1InputCbor
 import com.sphereon.crypto.cose.ICoseKeyCbor
 import com.sphereon.crypto.cose.ToBeSignedCbor
-import com.sphereon.crypto.generic.Certificate
 import com.sphereon.crypto.generic.IVerifySignatureResult
+import com.sphereon.crypto.generic.KeyType
 import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.crypto.generic.VerifySignatureResult
 import com.sphereon.kmp.Encoding
@@ -181,7 +181,8 @@ abstract class AbstractCoseCryptoService<CallbackServiceType>(
         var x5chain = protectedHeader?.x5chain ?: unprotectedHeader?.x5chain
         val sigAlg = protectedHeader?.alg ?: unprotectedHeader?.alg ?: keyInfo?.signatureAlgorithm?.cose
         val kid =
-            keyInfo?.kid ?: protectedHeader?.kid?.encodeTo(Encoding.BASE64URL) ?: unprotectedHeader?.kid?.encodeTo(Encoding.BASE64URL)
+            keyInfo?.kid ?: protectedHeader?.kid?.encodeTo(Encoding.UTF8) ?: unprotectedHeader?.kid?.encodeTo(Encoding.UTF8)
+
 
         var keyInfoWithKey = keyInfo
         if (keyInfo === null && x5chain !== null) {
@@ -189,12 +190,13 @@ abstract class AbstractCoseCryptoService<CallbackServiceType>(
                 // Let's create a key info for platform specific code from the x5chain
                 // TODO: We should also get the leaf cert and fill the rest
                 println("TODO: Key derived from x5chain, but we do not convert all properties to a Cborkey yet!")
-
+                val signatureAlgorithm = SignatureAlgorithm.Static.fromCose(sigAlg)
                 keyInfoWithKey = KeyInfo(
-                    key = CoseKeyCbor(x5chain = x5chain, kty = sigAlg.keyType.toCbor(), kid = kid?.toCborByteString(Encoding.BASE64URL)),
+                    key = CoseKeyCbor(x5chain = x5chain, kty = sigAlg.keyType.toCbor(), kid = kid?.toCborByteString(Encoding.UTF8), crv = sigAlg.curve?.toCbor()),
                     x5c = x5chain.encodeToBase64Array(false),
-                    signatureAlgorithm = SignatureAlgorithm.Static.fromCose(sigAlg),
-                    kid = kid
+                    signatureAlgorithm = signatureAlgorithm,
+                    kid = kid,
+                    keyType = KeyType.Static.fromCose(sigAlg.keyType)
                 )
             }
         }

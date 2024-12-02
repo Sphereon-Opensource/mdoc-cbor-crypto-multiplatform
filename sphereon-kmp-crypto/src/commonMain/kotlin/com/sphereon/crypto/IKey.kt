@@ -412,7 +412,7 @@ data class ResolvedKeyInfo<KT : IKey>(
                     kmsKeyRef = kmsKeyRef,
                     keyVisibility = keyVisibility ?: KeyVisibility.PUBLIC,
                     signatureAlgorithm = signatureAlgorithm,
-                    keyType = key?.getKty() ?: dto.keyType,
+                    keyType = dto.keyType ?: key?.getKty()
                 )
             }
 
