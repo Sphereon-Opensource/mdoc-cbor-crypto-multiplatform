@@ -119,7 +119,7 @@ object MdocValidations {
                         name = MdocConst.MDOC_LITERAL,
                         critical = true,
                         error = true,
-                        message = "Either an mdoc or an issuerAith object needs to be provided for verification"
+                        message = "Either an mdoc or an issuerAuth object needs to be provided for verification"
                     )
                 )
             )

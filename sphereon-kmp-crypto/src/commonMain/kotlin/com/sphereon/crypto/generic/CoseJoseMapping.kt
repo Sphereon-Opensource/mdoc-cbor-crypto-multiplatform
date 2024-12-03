@@ -89,7 +89,7 @@ sealed class KeyType(private val coseKeyType: CoseKeyType, private val joseKeyTy
          * @param cose The `CoseKeyType` object that needs to be converted to a JOSE key type.
          * @throws IllegalArgumentException If the provided `CoseKeyType` does not have a corresponding JOSE key type.
          */
-        fun toJose(cose: CoseKeyType) = asList.find { it.coseKeyType === cose }?.joseKeyType
+        fun toJose(cose: CoseKeyType) = asList.find { it.coseKeyType == cose || it.coseKeyType.toString() == cose.toString() }?.joseKeyType
             ?: throw IllegalArgumentException("coseKeyType $cose not found")
 
         /**
@@ -99,7 +99,7 @@ sealed class KeyType(private val coseKeyType: CoseKeyType, private val joseKeyTy
          * @return The corresponding CoseKeyType.
          * @throws IllegalArgumentException If the provided JWA key type cannot be found.
          */
-        fun toCose(jose: JwaKeyType) = asList.find { it.joseKeyType === jose }?.coseKeyType
+        fun toCose(jose: JwaKeyType) = asList.find { it.joseKeyType == jose || it.joseKeyType.toString() == jose.toString() }?.coseKeyType
             ?: throw IllegalArgumentException("joseKeyType $jose not found")
 
         /**
@@ -107,7 +107,7 @@ sealed class KeyType(private val coseKeyType: CoseKeyType, private val joseKeyTy
          *
          * @param jose The `JwaKeyType` to find the corresponding `KeyTypeMapping`.
          * @throws IllegalArgumentException if the given `jose` key type*/
-        fun fromJose(jose: JwaKeyType) = asList.find { it.joseKeyType === jose } ?: throw IllegalArgumentException("joseKeyType $jose not found")
+        fun fromJose(jose: JwaKeyType) = asList.find { it.joseKeyType == jose || it.joseKeyType.toString() == jose.toString() } ?: throw IllegalArgumentException("joseKeyType $jose not found")
 
         /**
          * Converts a given CoseKeyType to a specific instance if found in the list.
@@ -115,7 +115,7 @@ sealed class KeyType(private val coseKeyType: CoseKeyType, private val joseKeyTy
          * @param cose the CoseKeyType to be converted.
          * @throws IllegalArgumentException if the specified CoseKeyType is not found in the list.
          */
-        fun fromCose(cose: CoseKeyType) = asList.find { it.coseKeyType === cose } ?: throw IllegalArgumentException("coseKeyType $cose not found")
+        fun fromCose(cose: CoseKeyType) = asList.find { it.coseKeyType == cose || it.coseKeyType.toString() == cose.toString() } ?: throw IllegalArgumentException("coseKeyType $cose not found")
 
         /**
          * Converts a given key type (kty) to a corresponding JSON Web Algorithm (JWA) key type.
@@ -478,7 +478,7 @@ sealed class SignatureAlgorithm(
          * @param jose The JWA algorithm to match.
          * @return The corresponding algorithm mapping, or null if not found.
          */
-        fun fromJose(jose: JwaAlgorithm?) = asList.find { it.joseAlgorithm == jose } ?: throw IllegalArgumentException("jose alg $jose not found")
+        fun fromJose(jose: JwaAlgorithm?) = asList.find { it.joseAlgorithm == jose ||  it.joseAlgorithm.toString() == jose.toString()  } ?: throw IllegalArgumentException("jose alg $jose not found")
 
         /**
          * Converts a given COSE algorithm to its corresponding internal representation.
@@ -486,7 +486,7 @@ sealed class SignatureAlgorithm(
          * @param cose the COSE algorithm to be converted.
          * @return the internal representation of the given COSE algorithm if found, null otherwise.
          */
-        fun fromCose(cose: CoseAlgorithm?) = asList.find { it.coseAlgorithm == cose } ?: throw IllegalArgumentException("cose alg $cose not found")
+        fun fromCose(cose: CoseAlgorithm?) = asList.find { it.coseAlgorithm == cose || it.coseAlgorithm.toString() == cose.toString() } ?: throw IllegalArgumentException("cose alg $cose not found")
 
         /**
          * Converts a provided algorithm representation to a `JwaAlgorithm`.
@@ -672,9 +672,9 @@ sealed class Curve(
          */
         val asList = listOf(P_256, P_384, P_521, Secp256k1, Ed25519, X25519)
 
-        fun fromJose(jose: JwaCurve?) = asList.find { it.joseCurve == jose } ?: throw IllegalArgumentException("jose curve $jose not found")
+        fun fromJose(jose: JwaCurve?) = asList.find { it.joseCurve == jose || it.joseCurve.toString() == jose.toString() } ?: throw IllegalArgumentException("jose curve $jose not found")
 
-        fun fromCose(cose: CoseCurve?) = asList.find { it.coseCurve == cose } ?: throw IllegalArgumentException("cose curve $cose not found")
+        fun fromCose(cose: CoseCurve?) = asList.find { it.coseCurve == cose || it.coseCurve.toString() == cose.toString() } ?: throw IllegalArgumentException("cose curve $cose not found")
 
         /**
          * Converts a given COSE curve to its corresponding JOSE curve.
@@ -876,7 +876,7 @@ sealed class KeyOperations(
          * @throws IllegalArgumentException if the provided `JoseKeyOperations` value does not map to any `KeyOperationsMapping` instance.
          */
         fun fromJose(jose: JoseKeyOperations) =
-            asList.find { it.joseKeyOperations === jose } ?: throw IllegalArgumentException("Illegal key operation $jose")
+            asList.find { it.joseKeyOperations == jose || it.joseKeyOperations.toString() == jose.toString() } ?: throw IllegalArgumentException("Illegal key operation $jose")
 
         /**
          * Converts a COSE key operation to its corresponding KeyOperation object.
@@ -886,7 +886,7 @@ sealed class KeyOperations(
          * @return The corresponding KeyOperation object.
          */
         fun fromCose(cose: CoseKeyOperations) =
-            asList.find { it.coseKeyOperations === cose } ?: throw IllegalArgumentException("Illegal key operation $cose")
+            asList.find { it.coseKeyOperations == cose || it.coseKeyOperations.toString() == cose.toString() } ?: throw IllegalArgumentException("Illegal key operation $cose")
 
         /**
          * Converts a given COSE key operation to its equivalent JOSE key operation.
@@ -895,7 +895,7 @@ sealed class KeyOperations(
          * @throws IllegalArgumentException if the corresponding JOSE key operation is not found.
          * @return The equivalent JOSE key operation.
          */
-        fun toJose(cose: CoseKeyOperations) = asList.find { it.coseKeyOperations === cose }?.joseKeyOperations
+        fun toJose(cose: CoseKeyOperations) = asList.find { it.coseKeyOperations == cose || it.coseKeyOperations.toString() == cose.toString() }?.joseKeyOperations
             ?: throw IllegalArgumentException("cose Curve $cose not found")
 
         /**
@@ -905,7 +905,7 @@ sealed class KeyOperations(
          * @return The corresponding COSE key operation.
          * @throws IllegalArgumentException if the specified JOSE key operation is not found.
          */
-        fun toCose(jose: JoseKeyOperations) = asList.find { it.joseKeyOperations === jose }?.coseKeyOperations
+        fun toCose(jose: JoseKeyOperations) = asList.find { it.joseKeyOperations == jose || it.joseKeyOperations.toString() == jose.toString() }?.coseKeyOperations
             ?: throw IllegalArgumentException("jose Curve $jose not found")
     }
 }

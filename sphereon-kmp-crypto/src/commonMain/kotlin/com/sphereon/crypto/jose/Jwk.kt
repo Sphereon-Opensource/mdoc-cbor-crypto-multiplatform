@@ -21,12 +21,15 @@ import com.sphereon.crypto.generic.toJoseCurve
 import com.sphereon.crypto.generic.toJoseKeyOperations
 import com.sphereon.crypto.generic.toJoseKeyType
 import com.sphereon.crypto.generic.toJoseSignatureAlgorithm
+import com.sphereon.json.HasToJsonDTO
+import com.sphereon.json.HasToJsonString
 import com.sphereon.json.cryptoJsonSerializer
 import com.sphereon.kmp.Encoding
 import com.sphereon.kmp.decodeFrom
 import com.sphereon.kmp.encodeToBase64Url
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -368,6 +371,7 @@ expect interface IJwk : IKey {
 @JsExport
 @Serializable
 data class Jwk(
+    @Transient
     private val generateKid: Boolean = false,
     override val alg: JwaAlgorithm? = null,
     override val crv: JwaCurve? = null,
@@ -387,7 +391,7 @@ data class Jwk(
     @SerialName("x5t#S256")
     override val x5t_S256: String? = null,
     override val y: String? = null,
-) : IJwk {
+) : IJwk, HasToJsonString, HasToJsonDTO {
 
     init {
         if (kid === null && generateKid) {
@@ -449,7 +453,7 @@ data class Jwk(
         return x5c
     }
 
-    override fun getKidAsString(generate: Boolean) = kid ?: if (generateKid) determineKid() else kid
+    override fun getKidAsString(generate: Boolean) = kid ?: if (generate) determineKid() else kid
     override fun getXAsString() = x
 
     override fun getYAsString() = y
@@ -772,7 +776,7 @@ data class Jwk(
 //                    .withE(e)
 //                    .withK(k)
             .withKeyOps(key_ops?.map { it.toCoseKeyOperations() }?.toTypedArray())
-            .withKid(kid)
+            .withKid(kid, false)
 //                    .withN(n)
 //                    .withUse(use)
             .withX(x)
@@ -799,7 +803,11 @@ data class Jwk(
      *
      * @return The JSON object representation of the current object.
      */
-    fun toJsonObject() = cryptoJsonSerializer.encodeToJsonElement(serializer(), this).jsonObject
+    fun toJsonObject() = cryptoJsonSerializer.encodeToJsonElement(serializer(), this)
+
+    override fun toJsonString() = cryptoJsonSerializer.encodeToString(serializer(), this)
+
+    override fun <T> toJsonDTO() = com.sphereon.json.toJsonDTO<T>(this)
 
 
     /**
@@ -907,7 +915,7 @@ data class Jwk(
 //                    .withE(e)
 //                    .withK(k)
                     .withKeyOps(key_ops?.map { it.toJoseKeyOperations() }?.toTypedArray())
-                    .withKid(kid)
+                    .withKid(kid, false)
 //                    .withN(n)
 //                    .withUse(use)
                     .withX(x)

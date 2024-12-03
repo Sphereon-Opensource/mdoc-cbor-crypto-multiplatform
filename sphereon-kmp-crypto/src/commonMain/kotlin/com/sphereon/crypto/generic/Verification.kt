@@ -26,6 +26,9 @@ expect interface IVerifyResult {
      * An optional message that provides additional information about the verification result.
      */
     val message: String?
+
+    val detailMessage: String?
+
     /**
      * Indicates whether the condition is critical.
      *
@@ -148,6 +151,7 @@ open class VerifyResult(
     override val name: String,
     override val error: Boolean,
     override val message: String? = null,
+    override val detailMessage: String? = null,
     override val critical: Boolean = true
 ) : IVerifyResult {
 
@@ -202,7 +206,7 @@ open class VerifyResult(
          * @param dto The IVerifyResult instance to be converted.
          * @return A new VerifyResult instance containing the data from the given IVerifyResult.
          */
-        fun fromDTO(dto: IVerifyResult) = with(dto) { VerifyResult(name = name, error = error, message = message, critical = critical) }
+        fun fromDTO(dto: IVerifyResult) = with(dto) { VerifyResult(name = name, error = error, message = message, detailMessage = detailMessage, critical = critical) }
     }
 }
 

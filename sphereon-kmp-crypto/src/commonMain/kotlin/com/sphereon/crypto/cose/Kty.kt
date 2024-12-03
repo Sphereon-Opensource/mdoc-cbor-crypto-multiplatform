@@ -27,6 +27,8 @@ enum class CoseKeyType(val value: Int, val description: String) {
         return CborUInt(this.value)
     }
 
+    override fun toString() = "" + value
+
     object Static {
         @JsName("fromValue")
         fun fromValue(value: LongKMP): CoseKeyType {

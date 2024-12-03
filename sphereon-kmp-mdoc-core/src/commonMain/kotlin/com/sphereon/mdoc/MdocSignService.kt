@@ -2,9 +2,9 @@ package com.sphereon.mdoc
 
 
 import com.sphereon.cbor.CborByteString
-import com.sphereon.cbor.CborEncodedItem
 import com.sphereon.cbor.encodeToCborByteArray
 import com.sphereon.cbor.toCborByteString
+import com.sphereon.crypto.CoseJoseKeyMappingService
 import com.sphereon.crypto.CoseJoseKeyMappingService.toResolvedCoseKeyInfo
 import com.sphereon.crypto.CoseJoseKeyMappingService.toResolvedKeyInfo
 import com.sphereon.crypto.CoseSign1Result
@@ -19,8 +19,10 @@ import com.sphereon.crypto.ResolvedKeyInfo
 import com.sphereon.crypto.cose.CoseAlgorithm
 import com.sphereon.crypto.cose.CoseHeaderCbor
 import com.sphereon.crypto.cose.CoseKeyCbor
+import com.sphereon.crypto.cose.CoseKeyType
 import com.sphereon.crypto.cose.CoseSign1InputCbor
 import com.sphereon.crypto.cose.ICoseKeyCbor
+import com.sphereon.crypto.generic.KeyType
 import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.kmp.Encoding
 import com.sphereon.mdoc.MdocSignService.Static.getSuppliedOrMSODerivedCborKeyInfo
@@ -47,15 +49,21 @@ class MdocSignService(val cryptoCallbackService: ICoseCryptoCallbackService = De
                         ?: keyInfo?.signatureAlgorithm,
                 )
             }
-            val key = keyInfo?.key ?: msoInfo?.key
+            val signatureAlgorithm = msoInfo?.signatureAlgorithm ?: keyInfo?.signatureAlgorithm ?: keyInfo?.key?.getSignatureAlgorithm() // The above object already takes passed in sig algo into account as fallback
+            val key = (keyInfo?.key?.let{CoseJoseKeyMappingService.toCoseKey(it)} ?: msoInfo?.key)
             if (key == null) {
                 throw IllegalArgumentException("No key information provided and it could not be derived from the Mobile Security Object")
             }
-            val signatureAlgorithm = msoInfo?.signatureAlgorithm // The above object already takes passed in sig algo into account as fallback
+            val kty = signatureAlgorithm?.cose?.keyType?.toCbor() ?: key.kty ?: throw IllegalArgumentException("kty could not be resolved for Cbor Key!")
+            val crv = key.crv ?: signatureAlgorithm?.cose?.curve?.toCbor()
+            val resolvedKey = key.copy(kid = key.kid ?: msoInfo?.kid?.toCborByteString() ?: keyInfo?.kid?.toCborByteString(), kty = kty, crv = crv )
+
             if (keyInfo != null) {
-                return toResolvedCoseKeyInfo(toResolvedKeyInfo(keyInfo, key)).copy(
+                return toResolvedCoseKeyInfo(toResolvedKeyInfo(keyInfo, resolvedKey)).copy(
                     signatureAlgorithm = signatureAlgorithm,
-                    kid = keyInfo.kid ?: msoInfo?.kid
+                    kid = keyInfo.kid ?: msoInfo?.kid,
+                    keyType = KeyType.Static.fromCose(CoseKeyType.Static.fromValue(kty.value)),
+                    x5c = resolvedKey.getX509CertificateChain() ?: keyInfo.x5c,
                 )
             } else if (msoInfo == null) {
                 throw IllegalArgumentException("No key information provided and it could not be derived from the Mobile Security Object")

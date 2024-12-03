@@ -26,6 +26,8 @@ enum class CoseKeyOperations(val paramName: String, val value: Int, val descript
         return CborUInt(this.value)
     }
 
+    override fun toString() = value.toString()
+
     object Static {
         @JsName("fromValue")
         fun fromValue(value: Int): CoseKeyOperations {

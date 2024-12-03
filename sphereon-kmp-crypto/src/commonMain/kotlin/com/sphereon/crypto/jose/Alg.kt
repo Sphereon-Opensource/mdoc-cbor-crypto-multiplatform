@@ -74,6 +74,8 @@ enum class JwaAlgorithm(
             return JwaAlgorithm.entries.find { entry -> entry.value == value }
         }
     }
+
+    override fun toString() = value
 }
 
 
