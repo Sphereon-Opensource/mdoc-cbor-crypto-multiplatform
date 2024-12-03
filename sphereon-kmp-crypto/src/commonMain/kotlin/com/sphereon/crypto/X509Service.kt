@@ -2,6 +2,8 @@ package com.sphereon.crypto
 
 import com.sphereon.crypto.generic.IVerifyResult
 import com.sphereon.crypto.generic.VerifyResult
+import com.sphereon.kmp.LocalDateTimeKMP
+import kotlinx.serialization.SerialName
 import kotlin.js.JsExport
 
 @JsExport
@@ -23,7 +25,8 @@ interface IX509Service : IX509ServiceMarkerType {
         chainDER: Array<ByteArray>? = null,
         chainPEM: Array<String>? = null,
         trustedCerts: Array<String>? = getTrustedCerts(),
-        verificationProfile: X509VerificationProfile = X509VerificationProfile.RFC_5280,
+        verificationProfile: X509VerificationProfile? = X509VerificationProfile.RFC_5280,
+        verificationTime: LocalDateTimeKMP? = LocalDateTimeKMP.Static.now()
     ): IX509VerificationResult<KeyType>
 }
 
@@ -31,19 +34,28 @@ expect interface IX509VerificationResult<out KeyType : IKey> : IVerifyResult {
     val publicKey: KeyType?
     val publicKeyAlgorithm: String?
     val publicKeyParams: Any?
+    val verificationTime: LocalDateTimeKMP
 }
 
 @JsExport
 class X509VerificationResult<KeyType : IKey>(
+    @SerialName("publicKey")
     override val publicKey: KeyType? = null,
+    @SerialName("publicKeyAlgorithm")
     override val publicKeyAlgorithm: String? = null,
+    @SerialName("publicKeyParams")
     override val publicKeyParams: Any? = null,
     name: String = CryptoConst.X509_LITERAL,
+    @SerialName("verificationTime")
+    override val verificationTime: LocalDateTimeKMP = LocalDateTimeKMP.Static.now(),
     critical: Boolean,
     message: String?,
+    detailMessage: String? = null,
     error: Boolean
-) : IX509VerificationResult<KeyType>,VerifyResult(name = name, critical = critical, message = message, error = error)  {
-
+) : IX509VerificationResult<KeyType>,VerifyResult(name = name, critical = critical, message = message, detailMessage = detailMessage, error = error)  {
+    fun toJsonString(): String {
+        return """{"publicKey":"${publicKey.toString()}", "publicKeyAlgorithm":"${publicKeyAlgorithm.toString()}", "publicKeyParams":"$publicKeyParams", "verificationTime":"${verificationTime}", "name":"$name", "critical":"$critical", "message":"$message", "detailMessage":"$detailMessage", "error":"${error}"}"""
+    }
 }
 
 /**
@@ -98,14 +110,18 @@ class X509Service(val platformCallback: IX509Service = DefaultCallbacks.x509(), 
         chainDER: Array<ByteArray>?,
         chainPEM: Array<String>?,
         trustedCerts: Array<String>?,
-        verificationProfile: X509VerificationProfile
+        verificationProfile: X509VerificationProfile?,
+        verificationTime: LocalDateTimeKMP?
+
     ): IX509VerificationResult<KeyType> {
+        val verificationAt = verificationTime ?: LocalDateTimeKMP.Static.now()
         if (!this.isEnabled()) {
             return X509VerificationResult<KeyType>(
                 name = "x509",
                 message = "X509 verification has been disabled",
                 error = false,
-                critical = false
+                critical = false,
+                verificationTime = verificationAt
             )
 
         }
@@ -116,9 +132,10 @@ class X509Service(val platformCallback: IX509Service = DefaultCallbacks.x509(), 
                 error = true,
                 message = "No trusted certificates have been provided.",
                 critical = true,
-                name = CryptoConst.X509_LITERAL
+                name = CryptoConst.X509_LITERAL,
+                verificationTime = verificationAt
             )
         }
-        return platformCallback.verifyCertificateChainAsync(chainDER, chainPEM, trustedCerts = assertedCerts, verificationProfile)
+        return platformCallback.verifyCertificateChainAsync(chainDER, chainPEM, trustedCerts = assertedCerts, verificationProfile, verificationTime)
     }
 }

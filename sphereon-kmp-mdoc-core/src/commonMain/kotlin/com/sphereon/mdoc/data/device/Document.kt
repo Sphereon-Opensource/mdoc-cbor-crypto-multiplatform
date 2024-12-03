@@ -130,7 +130,7 @@ data class DocumentCbor(
         deviceSigned: DeviceSignedCbor? = null
     ): DocumentCbor {
         val docRequest = Oid4VPPresentationDefinition.Static.fromDTO(presentationDefinition).toDocRequest()
-        if (docRequest.itemsRequest.docType !== this.docType) {
+        if (docRequest.itemsRequest.docType != this.docType) {
             throw IllegalArgumentException("Document request docType ${docRequest.itemsRequest.docType} does not match docType ${this.docType}")
         }
         return DocumentCbor(docType = this.docType, issuerSigned = limitDisclosures(docRequest), deviceSigned = deviceSigned ?: this.deviceSigned)

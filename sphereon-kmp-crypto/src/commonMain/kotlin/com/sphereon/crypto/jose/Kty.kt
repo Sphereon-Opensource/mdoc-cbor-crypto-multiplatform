@@ -34,6 +34,8 @@ enum class JwaKeyType(val value: String) {
                 ?: throw IllegalArgumentException("Unknown value $value")
         }
     }
+
+    override fun toString() = value
 }
 
 

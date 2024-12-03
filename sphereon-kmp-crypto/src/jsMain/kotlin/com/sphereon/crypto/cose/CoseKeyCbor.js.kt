@@ -7,14 +7,21 @@ import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborUInt
 import com.sphereon.cbor.NumberLabel
 import com.sphereon.crypto.IKey
+import com.sphereon.crypto.IKeyDTO
 import kotlinx.serialization.json.JsonObject
 
 @JsExport
-actual external sealed interface ICoseKeyJson : IKey {
+actual external sealed interface ICoseKeyJson : ICoseKeyJsonDTO, IKey {
+    actual override fun toPublicKey(): ICoseKeyJson
+}
+
+@JsExport
+actual external sealed interface ICoseKeyJsonDTO : IKeyDTO {
     actual override val kty: CoseKeyType
     actual override val kid: String?
     actual override val alg: CoseAlgorithm?
     actual override val key_ops: Array<CoseKeyOperations>?
+
     @JsName("baseIV")
     actual val baseIV: String?
 
@@ -22,6 +29,7 @@ actual external sealed interface ICoseKeyJson : IKey {
     actual override val x: String?
     actual override val y: String?
     actual override val d: String?
+
     @JsName("x5chain") //x5c in JWK
     actual val x5chain: Array<String>?
     actual override val additional: JsonObject?
@@ -42,21 +50,27 @@ actual external sealed interface ICoseKeyJson : IKey {
  *    }
  */
 
+@JsExport
+actual external interface ICoseKeyCbor : ICoseKeyCborDTO, IKey {
+    actual override fun toPublicKey(): ICoseKeyCbor
+}
+
 
 @JsExport
-actual external interface ICoseKeyCbor : IKey {
+actual external interface ICoseKeyCborDTO : IKeyDTO {
     actual override val kty: CborUInt
     actual override val kid: CborByteString?
     actual override val alg: CborUInt?
     actual override val key_ops: CborArray<CborUInt>?
+
     @JsName("baseIV")
     actual val baseIV: CborByteString?
     actual override val crv: CborUInt?
     actual override val x: CborByteString?
     actual override val y: CborByteString?
     actual override val d: CborByteString?
+
     @JsName("x5chain")
     actual val x5chain: CborArray<CborByteString>?
     actual override val additional: CborMap<NumberLabel, CborItem<*>>?
-    actual override fun toPublicKey(): CoseKeyCbor
 }

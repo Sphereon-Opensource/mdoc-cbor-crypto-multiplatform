@@ -3,6 +3,7 @@ package com.sphereon.crypto
 import com.sphereon.crypto.generic.KeyOperations
 import com.sphereon.crypto.generic.KeyType
 import com.sphereon.crypto.generic.SignatureAlgorithm
+import com.sphereon.crypto.jose.IJwk
 
 /**
  * Represents a resolved cryptographic key information interface.
@@ -17,7 +18,7 @@ actual interface IManagedKeyInfo<KT : IKey> : IResolvedKeyInfo<KT> {
     actual fun toManagedPublicKeyInfo(): IManagedKeyInfo<KT>
 }
 
-actual interface IKey {
+actual interface IKeyDTO {
     actual val kty: Any
     actual val kid: Any?
     actual val alg: Any?
@@ -28,6 +29,8 @@ actual interface IKey {
     actual val d: Any?
     actual val additional: Any?
 
+}
+actual interface IKey: IKeyDTO {
 
     // Mappings to help implementers easily get values in their poison of choice (COSE/JWA) no matter the key type
     actual fun getSignatureAlgorithm(): SignatureAlgorithm?
@@ -38,7 +41,6 @@ actual interface IKey {
     actual fun toPublicKey(): IKey
     actual fun getXAsString(): String?
     actual fun getYAsString(): String?
-
 
 }
 

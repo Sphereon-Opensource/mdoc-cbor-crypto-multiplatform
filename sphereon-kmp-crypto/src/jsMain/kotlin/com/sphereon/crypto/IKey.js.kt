@@ -17,9 +17,8 @@ actual external interface IManagedKeyInfo<KT : IKey> : IResolvedKeyInfo<KT> {
     actual fun toManagedPublicKeyInfo(): IManagedKeyInfo<KT>
 }
 
-
 @JsExport
-actual external interface IKey {
+actual external interface IKeyDTO {
     @JsName("kty")
     actual val kty: Any
 
@@ -44,6 +43,7 @@ actual external interface IKey {
     @JsName("y")
     actual val y: Any?
 
+
     /*  @JsName("x5chain") //x5c in JWK
       actual val x5chain: Any?
   */
@@ -52,6 +52,10 @@ actual external interface IKey {
 
     @JsName("d")
     actual val d: Any?
+}
+
+@JsExport
+actual external interface IKey: IKeyDTO {
 
     // Mappings to help implementers easily get values in their poison of choice (COSE/JWA) no matter the key type
     actual fun getSignatureAlgorithm(): SignatureAlgorithm?
@@ -62,7 +66,6 @@ actual external interface IKey {
     actual fun getKidAsString(generate: Boolean): String?
     actual fun getXAsString(): String?
     actual fun getYAsString(): String?
-
 }
 
 

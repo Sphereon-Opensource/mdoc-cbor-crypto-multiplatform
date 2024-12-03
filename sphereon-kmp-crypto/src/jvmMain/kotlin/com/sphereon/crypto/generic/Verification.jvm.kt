@@ -8,6 +8,7 @@ actual interface IVerifyResult {
     actual val name: String
     actual val error: Boolean
     actual val message: String?
+    actual val detailMessage: String?
     actual val critical: Boolean
 }
 

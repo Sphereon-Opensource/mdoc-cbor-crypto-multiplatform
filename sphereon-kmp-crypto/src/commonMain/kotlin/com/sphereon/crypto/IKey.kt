@@ -8,11 +8,10 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlin.js.JsExport
 
-
 /**
  * Represents an interface for a cryptographic key.
  */
-expect interface IKey {
+expect interface IKeyDTO {
 
     /**
      * Represents the key type for the implementation of the IKey interface.
@@ -102,6 +101,13 @@ expect interface IKey {
      * certain cryptographic operations or key management tasks.
      */
     val additional: Any?
+}
+
+
+/**
+ * Represents an interface for a cryptographic key.
+ */
+expect interface IKey: IKeyDTO {
 
     /**
      * Maps key types to their appropriate values for COSE/JWA implementations.
@@ -138,6 +144,7 @@ expect interface IKey {
     fun getYAsString(): String?
 
     fun toPublicKey(): IKey
+
 }
 
 @JsExport
@@ -323,14 +330,15 @@ data class KeyInfo<KT : IKey>(
         fun <KT : IKey> fromDTO(dto: IKeyInfo<out KT>) =
             with(dto) {
                 KeyInfo(
-                    kid = kid,
+                    kid = key?.getKidAsString(false) ?: kid,
                     key = key,
                     opts = opts,
-                    x5c = x5c,
+                    x5c = key?.getX509CertificateChain() ?: x5c,
                     kms = kms,
                     kmsKeyRef = kmsKeyRef,
                     keyVisibility = keyVisibility ?: KeyVisibility.PUBLIC,
-                    signatureAlgorithm = signatureAlgorithm
+                    signatureAlgorithm = signatureAlgorithm ?: key?.getSignatureAlgorithm(),
+                    keyType = key?.getKty() ?: dto.keyType,
                 )
             }
 
@@ -362,15 +370,15 @@ data class ResolvedKeyInfo<KT : IKey>(
 
     fun toKeyInfo() =
         KeyInfo(
-            kid = kid,
+            kid = kid ?: key.getKidAsString(false),
             key = key,
             opts = opts,
-            x5c = x5c,
+            x5c = x5c ?: key.getX509CertificateChain(),
+            kms = kms,
             kmsKeyRef = kmsKeyRef,
             keyVisibility = keyVisibility ?: KeyVisibility.PUBLIC,
-            signatureAlgorithm = signatureAlgorithm,
-            kms = kms,
-            keyType = keyType,
+            signatureAlgorithm = signatureAlgorithm  ?: key.getSignatureAlgorithm(),
+            keyType = keyType ?: key.getKty(),
         )
 
     override fun toResolvedPublicKeyInfo(): ResolvedKeyInfo<KT> = this.copy(key = key.toPublicKey() as KT, keyVisibility = KeyVisibility.PUBLIC)
@@ -381,15 +389,14 @@ data class ResolvedKeyInfo<KT : IKey>(
         fun <KT : IKey> fromDTO(dto: IResolvedKeyInfo<out KT>) =
             with(dto) {
                 ResolvedKeyInfo(
-                    kid = kid,
+                    kid = key.getKidAsString(false) ?: kid,
                     key = key,
                     opts = opts,
-                    x5c = x5c,
+                    x5c = key.getX509CertificateChain() ?: x5c,
                     kms = kms,
                     kmsKeyRef = kmsKeyRef,
-//                    x509VerificationResult = x509VerificationResult,
                     keyVisibility = keyVisibility ?: KeyVisibility.PUBLIC,
-                    signatureAlgorithm = signatureAlgorithm,
+                    signatureAlgorithm = signatureAlgorithm ?: key.getSignatureAlgorithm(),
                     keyType = keyType
                 )
             }
@@ -401,21 +408,22 @@ data class ResolvedKeyInfo<KT : IKey>(
                     key = key ?: dto.key?.let { it as KT } ?: throw IllegalArgumentException("No key passed in and key info also had no key"),
                     opts = opts,
                     x5c = x5c,
+                    kms = kms,
                     kmsKeyRef = kmsKeyRef,
                     keyVisibility = keyVisibility ?: KeyVisibility.PUBLIC,
                     signatureAlgorithm = signatureAlgorithm,
-//                    x509VerificationResult = null
+                    keyType = dto.keyType ?: key?.getKty()
                 )
             }
 
         fun <KT : IKey> fromKey(key: KT): IResolvedKeyInfo<KT> {
             return ResolvedKeyInfo(
+                kid = key.getKidAsString(false),
                 key = key,
-                keyType = key.getKty(),
-                kid = key.getKidAsString(true),
                 x5c = key.getX509CertificateChain(),
                 keyVisibility = if (key.d !== null) KeyVisibility.PRIVATE else KeyVisibility.PUBLIC,
-                signatureAlgorithm = key.getSignatureAlgorithm()
+                signatureAlgorithm = key.getSignatureAlgorithm(),
+                keyType = key.getKty()
             )
         }
     }

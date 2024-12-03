@@ -3,6 +3,7 @@ package com.sphereon.mdoc.data.device
 import com.sphereon.cbor.AnyCborItem
 import com.sphereon.cbor.CDDL
 import com.sphereon.cbor.CborBuilder
+import com.sphereon.cbor.CborEncodedItem
 import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborView
 import com.sphereon.cbor.StringLabel
@@ -34,7 +35,8 @@ data class DeviceSignedCbor(
     val nameSpaces: DeviceNameSpacesCbor = DeviceNameSpacesCbor(), val deviceAuth: DeviceAuthCbor
 ) : CborView<DeviceSignedCbor, DeviceSignedJson, CborMap<StringLabel, AnyCborItem>>(cddl = CDDL.map) {
     override fun cborBuilder(): CborBuilder<DeviceSignedCbor> {
-        return CborMap.Static.builder(this).put(Static.NAME_SPACES, this.nameSpaces.cborEncode()).put(Static.DEVICE_AUTH, this.deviceAuth.toCbor())
+        return CborMap.Static.builder(this).putTaggedEncodedCbor<AnyCborItem>(Static.NAME_SPACES, this.nameSpaces.cborEncode())
+            .put(Static.DEVICE_AUTH, this.deviceAuth.toCbor())
             .end()
     }
 

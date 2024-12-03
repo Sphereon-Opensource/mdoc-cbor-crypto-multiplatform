@@ -9,7 +9,7 @@ private const val FIFTEEN = 15
 
 @Serializable
 @JsExport
-data class AzureKeyvaultClientConfig(
+data class AzureKeyVaultClientConfig(
     val applicationId: String = "azure-keyvault",
     val keyvaultUrl: String,
     val tenantId: String,

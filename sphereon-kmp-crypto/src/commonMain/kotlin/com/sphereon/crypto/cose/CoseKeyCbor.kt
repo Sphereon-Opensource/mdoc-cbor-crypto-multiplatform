@@ -1,5 +1,6 @@
 package com.sphereon.crypto.cose
 
+import co.touchlab.kermit.Logger.Companion.d
 import com.sphereon.cbor.AnyCborItem
 import com.sphereon.cbor.CDDL
 import com.sphereon.cbor.CborArray
@@ -14,14 +15,15 @@ import com.sphereon.cbor.NumberLabel
 import com.sphereon.cbor.cborSerializer
 import com.sphereon.cbor.encodeToArray
 import com.sphereon.cbor.toCborByteString
-import com.sphereon.cbor.toUInt
 import com.sphereon.crypto.IKey
+import com.sphereon.crypto.IKeyDTO
 import com.sphereon.crypto.generic.KeyOperations
 import com.sphereon.crypto.generic.KeyType
 import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.crypto.jose.Jwk
 import com.sphereon.crypto.jose.generateJwkThumbprint
 import com.sphereon.crypto.jose.jsonToJwk
+import com.sphereon.json.HasToJsonString
 import com.sphereon.json.JsonView
 import com.sphereon.json.cryptoJsonSerializer
 import com.sphereon.kmp.Encoding
@@ -29,18 +31,22 @@ import com.sphereon.kmp.LongKMP
 import com.sphereon.kmp.decodeFrom
 import com.sphereon.kmp.encodeTo
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlin.js.JsExport
 import kotlin.js.JsName
 
+expect sealed interface ICoseKeyJson : ICoseKeyJsonDTO, IKey {
+    override fun toPublicKey(): ICoseKeyJson
+}
 /**
  * Represents a COSE (CBOR Object Signing and Encryption) key in JSON format. This sealed interface extends
  * the IKey interface, providing necessary properties to define a COSE key. It ensures compatibility
  * with expected key attributes in the COSE ecosystem.
  */
-expect sealed interface ICoseKeyJson : IKey {
+expect sealed interface ICoseKeyJsonDTO : IKeyDTO {
     /**
      * Represents the COSE key type for the current key.
      * The COSE (CBOR Object Signing and Encryption) key type determines the algorithm and general structure of the key.
@@ -134,6 +140,7 @@ expect sealed interface ICoseKeyJson : IKey {
 @JsExport
 @Serializable
 data class CoseKeyJson(
+    @Transient
     val generateKid: Boolean = false,
     override val kty: CoseKeyType,
     override var kid: String? = null,
@@ -149,37 +156,17 @@ data class CoseKeyJson(
     override val d: String? = null,
     override val x5chain: Array<String>? = null,
     override val additional: JsonObject? = null
-) : JsonView(), ICoseKeyJson {
+) : JsonView(), ICoseKeyJson, HasToJsonString {
     init {
         if (this.kid == null && generateKid) {
             this.kid = determineKid()
         }
     }
 
+
+
     private fun determineKid() = generateJwkThumbprint(jsonToJwk())
 
-    /**
-     * Converts the current object to a JSON element using the cryptoJsonSerializer
-     * for serialization. This method leverages the encodeToJsonElement function
-     * to produce the JSON representation of the object.
-     *
-     * @return JSON representation of the current object as a JsonElement
-     */
-    fun toDto() = cryptoJsonSerializer.encodeToJsonElement(this)
-    /* :ICoseKeyJson {
-       cryptoJsonSerializer.encodeToDynamic(CoseKeyJson::serializer, this)
-       override val kty = this@CoseKeyJson.kty
-       override val kid = this@CoseKeyJson.kid
-       override val alg = this@CoseKeyJson.alg
-       override val key_ops = this@CoseKeyJson.key_ops
-       override val baseIV = this@CoseKeyJson.baseIV
-       override val crv = this@CoseKeyJson.crv
-       override val x = this@CoseKeyJson.x
-       override val y = this@CoseKeyJson.y
-       override val d = this@CoseKeyJson.d
-       override val x5chain = this@CoseKeyJson.x5chain
-       override val additional = this@CoseKeyJson.additional
-   }*/
 
     /**
      * Maps the current algorithm to a predefined AlgorithmMapping based on its CoSE value.
@@ -228,6 +215,30 @@ data class CoseKeyJson(
     override fun toPublicKey() = copy(d = null)
 
     /**
+     * Converts the current object to a JSON element using the cryptoJsonSerializer
+     * for serialization. This method leverages the encodeToJsonElement function
+     * to produce the JSON representation of the object.
+     *
+     * @return JSON representation of the current object as a JsonElement
+     */
+    fun toJsonObject() = cryptoJsonSerializer.encodeToJsonElement(this)
+    /* :ICoseKeyJson {
+       cryptoJsonSerializer.encodeToDynamic(CoseKeyJson::serializer, this)
+       override val kty = this@CoseKeyJson.kty
+       override val kid = this@CoseKeyJson.kid
+       override val alg = this@CoseKeyJson.alg
+       override val key_ops = this@CoseKeyJson.key_ops
+       override val baseIV = this@CoseKeyJson.baseIV
+       override val crv = this@CoseKeyJson.crv
+       override val x = this@CoseKeyJson.x
+       override val y = this@CoseKeyJson.y
+       override val d = this@CoseKeyJson.d
+       override val x5chain = this@CoseKeyJson.x5chain
+       override val additional = this@CoseKeyJson.additional
+   }*/
+
+
+    /**
      * Serializes the current object to a JSON string using the provided cryptoJsonSerializer.
      *
      * @return A JSON string representation of the current object.
@@ -240,7 +251,7 @@ data class CoseKeyJson(
      * @return an instance of `CoseKeyCbor` containing the CBOR-encoded key data.
      */
     override fun toCbor(): CoseKeyCbor =
-        CoseKeyCbor.Builder().withKty(kty).withKid(kid).withAlg(alg).withKeyOps(key_ops).withBaseIV(baseIV)
+        CoseKeyCbor.Builder().withKty(kty).withKid(kid, false).withAlg(alg).withKeyOps(key_ops).withBaseIV(baseIV)
             .withCrv(crv).withX(x).withY(y).withD(d).withX5Chain(x5chain).build() // todo: additional
 
     /**
@@ -314,7 +325,7 @@ data class CoseKeyJson(
          * @param dto The ICoseKeyJson instance that needs to be converted.
          * @return A new instance of CoseKeyJson with properties copied from the given dto.
          */
-        fun fromDTO(dto: ICoseKeyJson) = with(dto) {
+        fun fromJsonDTO(dto: ICoseKeyJsonDTO) = with(dto) {
             CoseKeyJson(
                 generateKid = false,
                 kty = kty,
@@ -549,8 +560,11 @@ data class CoseKeyJson(
  * This interface extends the IKey interface, providing additional properties specific to COSE keys.
  */
 
+expect interface ICoseKeyCbor : ICoseKeyCborDTO, IKey {
+    override fun toPublicKey(): ICoseKeyCbor
+}
 
-expect interface ICoseKeyCbor : IKey {
+expect interface ICoseKeyCborDTO : IKeyDTO {
 
     /**
      * Represents the key type value for the COSE Key encoded using CBOR.
@@ -647,8 +661,6 @@ expect interface ICoseKeyCbor : IKey {
      */
     override val additional: CborMap<NumberLabel, CborItem<*>>?
 
-
-    override fun toPublicKey(): CoseKeyCbor
 }
 
 /**
@@ -1334,7 +1346,7 @@ data class CoseKeyCbor(
          * @return A new `CoseKeyCbor` instance populated with the properties of the DTO.
          */
         @JsName("fromDTO")
-        fun fromDTO(dto: ICoseKeyCbor) = with(dto) {
+        fun fromDTO(dto: ICoseKeyCborDTO) = with(dto) {
             CoseKeyCbor(
                 generateKid = false,
                 kty = kty,

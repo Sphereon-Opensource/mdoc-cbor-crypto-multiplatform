@@ -1,5 +1,6 @@
 package com.sphereon.crypto
 
+import com.sphereon.cbor.encodeToBase64Array
 import com.sphereon.cbor.toCborByteString
 import com.sphereon.crypto.cose.CoseAlgorithm
 import com.sphereon.crypto.cose.CoseHeaderCbor
@@ -11,6 +12,7 @@ import com.sphereon.crypto.cose.CoseSign1InputCbor
 import com.sphereon.crypto.cose.ICoseKeyCbor
 import com.sphereon.crypto.cose.ToBeSignedCbor
 import com.sphereon.crypto.generic.IVerifySignatureResult
+import com.sphereon.crypto.generic.KeyType
 import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.crypto.generic.VerifySignatureResult
 import com.sphereon.kmp.Encoding
@@ -37,13 +39,13 @@ interface ICoseCryptoMarkerType
 interface ICoseCryptoCallbackService : ICoseCryptoCallbackMarkerType {
     suspend fun sign(
         input: ToBeSignedCbor,
-        requireX5Chain: Boolean
+        requireX5Chain: Boolean? = true
     ): ByteArray
 
     suspend fun verify1(
         input: CoseSign1Cbor<*>,
         keyInfo: IKeyInfo<*>,
-        requireX5Chain: Boolean = true
+        requireX5Chain: Boolean? = true
     ): IVerifySignatureResult<ICoseKeyCbor>
 
     suspend fun mac0(
@@ -66,13 +68,13 @@ interface ICoseCryptoService : ICoseCryptoMarkerType {
     suspend fun <CborType> sign1(
         input: CoseSign1InputCbor,
         keyInfo: IKeyInfo<*>? = null,
-        requireX5Chain: Boolean = true
+        requireX5Chain: Boolean? = true
     ): CoseSign1Result<CborType>
 
     suspend fun verify1(
         input: CoseSign1Cbor<*>,
         keyInfo: IKeyInfo<*>? = null,
-        requireX5Chain: Boolean = true
+        requireX5Chain: Boolean? = true
     ): IVerifySignatureResult<ICoseKeyCbor>
 
 
@@ -176,23 +178,30 @@ abstract class AbstractCoseCryptoService<CallbackServiceType>(
         managedKey: Boolean = false,
         requireX5Chain: Boolean = true
     ): Pair<CoseHeaderCbor, IResolvedKeyInfo<ICoseKeyCbor>> {
-        var x5chain = protectedHeader?.x5chain
+        var x5chain = protectedHeader?.x5chain ?: unprotectedHeader?.x5chain
         val sigAlg = protectedHeader?.alg ?: unprotectedHeader?.alg ?: keyInfo?.signatureAlgorithm?.cose
         val kid =
-            keyInfo?.kid ?: protectedHeader?.kid?.encodeTo(Encoding.BASE64URL) ?: unprotectedHeader?.kid?.encodeTo(Encoding.BASE64URL)
+            keyInfo?.kid ?: protectedHeader?.kid?.encodeTo(Encoding.UTF8) ?: unprotectedHeader?.kid?.encodeTo(Encoding.UTF8)
+
 
         var keyInfoWithKey = keyInfo
         if (keyInfo === null && x5chain !== null) {
             if (sigAlg?.keyType !== null) {
-                // Let's create a key info for platform specific code from the x5chain // TODO: We could also get the leaf cert and fill the rest
+                // Let's create a key info for platform specific code from the x5chain
+                // TODO: We should also get the leaf cert and fill the rest
+                println("TODO: Key derived from x5chain, but we do not convert all properties to a Cborkey yet!")
+                val signatureAlgorithm = SignatureAlgorithm.Static.fromCose(sigAlg)
                 keyInfoWithKey = KeyInfo(
-                    key = CoseKeyCbor(x5chain = x5chain, kty = sigAlg.keyType.toCbor(), kid = kid?.toCborByteString(Encoding.BASE64URL)),
-                    kid = kid
+                    key = CoseKeyCbor(x5chain = x5chain, kty = sigAlg.keyType.toCbor(), kid = kid?.toCborByteString(Encoding.UTF8), crv = sigAlg.curve?.toCbor()),
+                    x5c = x5chain.encodeToBase64Array(false),
+                    signatureAlgorithm = signatureAlgorithm,
+                    kid = kid,
+                    keyType = KeyType.Static.fromCose(sigAlg.keyType)
                 )
             }
         }
         if (keyInfoWithKey === null) {
-            throw IllegalStateException("No protected header or key info passed in")
+            throw IllegalStateException("No protected header or key info passed in. Could not construct key info with key")
         }
         if (managedKey) {
 
@@ -235,9 +244,9 @@ class CoseCryptoService(override val platformCallback: ICoseCryptoCallbackServic
     override suspend fun <CborType> sign1(
         input: CoseSign1InputCbor,
         keyInfo: IKeyInfo<*>?,
-        requireX5Chain: Boolean
+        requireX5Chain: Boolean?
     ): CoseSign1Result<CborType> {
-        val (preSignInputResult, toSign, preSignKeyInfoResult) = this.preSign1(input, keyInfo, requireX5Chain)
+        val (preSignInputResult, toSign, preSignKeyInfoResult) = this.preSign1(input, keyInfo, requireX5Chain == true)
         val signature = this.platformCallback.sign(toSign, requireX5Chain)
         return this.postSign1(preSignInputResult, preSignKeyInfoResult, signature)
     }
@@ -246,13 +255,13 @@ class CoseCryptoService(override val platformCallback: ICoseCryptoCallbackServic
     override suspend fun verify1(
         input: CoseSign1Cbor<*>,
         keyInfo: IKeyInfo<*>?,
-        requireX5Chain: Boolean
+        requireX5Chain: Boolean?
     ): IVerifySignatureResult<ICoseKeyCbor> {
         val (_, info) = verifyAndAmendKeyInfo(
             protectedHeader = input.protectedHeader,
             unprotectedHeader = input.unprotectedHeader,
             keyInfo = keyInfo,
-            requireX5Chain = requireX5Chain
+            requireX5Chain = requireX5Chain == true
         )
         try {
             this.assertEnabled()
@@ -267,7 +276,7 @@ class CoseCryptoService(override val platformCallback: ICoseCryptoCallbackServic
         }
 
         val sigAlg = input.protectedHeader.alg ?: input.unprotectedHeader?.alg
-        val keyType = sigAlg?.keyType ?: info.key?.getKty()?.cose
+        val keyType = sigAlg?.keyType ?: info.key.getKty().cose
         if (keyType == null) {
             return VerifySignatureResult(
                 keyInfo = info,

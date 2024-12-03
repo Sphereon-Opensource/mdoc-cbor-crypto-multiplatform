@@ -1,7 +1,10 @@
 package com.sphereon.crypto
 
 import com.sphereon.crypto.generic.IVerifyResult
+import com.sphereon.kmp.LocalDateTimeKMP
 import kotlinx.coroutines.await
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import kotlin.js.Promise
 
 
@@ -17,6 +20,7 @@ external interface IX509ServiceJS : IX509ServiceMarkerType {
         chainPEM: Array<String>?,
         trustedCerts: Array<String>?,
         verificationProfile: X509VerificationProfile?,
+        verificationTime: LocalDateTimeKMP?
     ): Promise<IX509VerificationResult<KeyType>>
 
     /**
@@ -66,8 +70,10 @@ class X509ServiceJS(val platformCallback: IX509ServiceJS = DefaultCallbacks.x509
         chainDER: Array<ByteArray>?,
         chainPEM: Array<String>?,
         trustedCerts: Array<String>?,
-        verificationProfile: X509VerificationProfile?
+        verificationProfile: X509VerificationProfile?,
+        verificationTime: LocalDateTimeKMP?
     ): Promise<IX509VerificationResult<KeyType>> {
+        val verifiedAt = verificationTime ?: LocalDateTimeKMP.Static.now()
         if (!isEnabled()) {
             CryptoConst.LOG.info("Verify Certificate Chain (JS) has been disabled. Returning success result")
             return Promise.resolve(
@@ -75,7 +81,8 @@ class X509ServiceJS(val platformCallback: IX509ServiceJS = DefaultCallbacks.x509
                     name = CryptoConst.X509_LITERAL,
                     message = "X509 verification has been disabled",
                     error = false,
-                    critical = false
+                    critical = false,
+                    verificationTime = verifiedAt
                 )
             )
         }
@@ -84,7 +91,8 @@ class X509ServiceJS(val platformCallback: IX509ServiceJS = DefaultCallbacks.x509
             chainDER,
             chainPEM,
             trustedCerts = trustedCerts ?: this.getTrustedCerts(),
-            verificationProfile
+            verificationProfile = verificationProfile,
+            verificationTime = verifiedAt
         )
     }
 
@@ -136,40 +144,46 @@ internal class X509ServiceJSAdapter(private val x509ServiceJS: X509ServiceJS = X
         chainDER: Array<ByteArray>?,
         chainPEM: Array<String>?,
         trustedCerts: Array<String>?,
-        verificationProfile: X509VerificationProfile,
+        verificationProfile: X509VerificationProfile?,
+        verificationTime: LocalDateTimeKMP?
     ): IX509VerificationResult<KeyType> {
+        val verificationAt = verificationTime ?: LocalDateTimeKMP.Static.now()
         CryptoConst.LOG.debug("Verifying certificate chain...")
         if (chainDER == null && chainPEM == null) {
             return X509VerificationResult(
                 name = CryptoConst.X509_LITERAL,
                 error = true,
                 message = "Please provide either a chain in DER format or PEM format",
-                critical = true
+                critical = true,
+                verificationTime = verificationAt
             )
         }
-        val assertedCerts = trustedCerts ?: this.getTrustedCerts()
-        if (assertedCerts.isNullOrEmpty()) {
+        val assertedTrustedCerts = trustedCerts ?: this.getTrustedCerts()
+        if (assertedTrustedCerts.isNullOrEmpty()) {
             return X509VerificationResult(
                 error = true,
                 message = "No trusted certificates have been provided.",
                 critical = true,
-                name = CryptoConst.X509_LITERAL
+                name = CryptoConst.X509_LITERAL,
+                verificationTime = verificationAt
             )
         }
 
         return try {
-            x509ServiceJS.verifyCertificateChainAsync<KeyType>(chainDER, chainPEM, assertedCerts, verificationProfile)
+            x509ServiceJS.verifyCertificateChainAsync<KeyType>(chainDER, chainPEM, assertedTrustedCerts, verificationProfile, verificationAt)
                 .await()
         } catch (e: Exception) {
             CryptoConst.LOG.error(e.message ?: "X509 validation failed", e)
             X509VerificationResult(
                 name = CryptoConst.X509_LITERAL,
                 error = true,
-                message = "Certificate chain verification failed ${e.message}",
-                critical = true
+                message = "Certificate chain verification failed with an unexpected error ${e.message}",
+                detailMessage = e.message,
+                critical = true,
+                verificationTime = verificationAt
             )
         }.also {
-            CryptoConst.LOG.info("Verifying certificate chain result: $it")
+            CryptoConst.LOG.info("Verifying certificate chain result: Message: ${it.message} Error: ${it.error} Critical: ${it.critical} Verification time: ${it.verificationTime} Name: ${it.name}")
         }
 
     }
@@ -193,7 +207,16 @@ actual external interface IX509ServiceMarkerType
 
 @JsExport
 actual external interface IX509VerificationResult<out KeyType : IKey> : IVerifyResult {
+    @JsName("publicKey")
+    @SerialName("publicKey")
     actual val publicKey: KeyType?
+    @JsName("publicKeyAlgorithm")
+    @SerialName("publicKeyAlgorithm")
     actual val publicKeyAlgorithm: String?
+    @JsName("publicKeyParams")
+    @SerialName("publicKeyParams")
     actual val publicKeyParams: Any?
+    @JsName("verificationTime")
+    @SerialName("verificationTime")
+    actual val verificationTime: LocalDateTimeKMP
 }

@@ -2,13 +2,16 @@ package com.sphereon.crypto
 
 import com.sphereon.cbor.CborArray
 import com.sphereon.cbor.CborByteString
+import com.sphereon.cbor.CborUInt
 import com.sphereon.cbor.toCborByteString
 import com.sphereon.crypto.cose.CoseKeyCbor
 import com.sphereon.crypto.cose.CoseKeyJson
-import com.sphereon.crypto.cose.ICoseKeyCbor
-import com.sphereon.crypto.cose.ICoseKeyJson
+import com.sphereon.crypto.cose.CoseKeyType
+import com.sphereon.crypto.cose.ICoseKeyCborDTO
+import com.sphereon.crypto.cose.ICoseKeyJsonDTO
 import com.sphereon.crypto.jose.IJwk
-import com.sphereon.crypto.jose.IJwkJson
+import com.sphereon.crypto.jose.IJwkDTO
+import com.sphereon.crypto.jose.JwaKeyType
 import com.sphereon.crypto.jose.Jwk
 import com.sphereon.crypto.jose.cborToJwk
 import com.sphereon.crypto.jose.jsonToJwk
@@ -28,17 +31,45 @@ object CoseJoseKeyMappingService {
      * @return The equivalent key in JOSE JWK format.
      * @throws IllegalArgumentException if the key cannot be converted to JOSE JWK format.
      */
-    fun toJoseJwk(key: IKey): Jwk = when (key) {
-        is Jwk -> key
-        is CoseKeyCbor -> key.cborToJwk()
-        is CoseKeyJson -> key.jsonToJwk()
-        is ICoseKeyCbor -> CoseKeyCbor.Static.fromDTO(key).cborToJwk()
-        is ICoseKeyJson -> CoseKeyJson.Static.fromDTO(key).jsonToJwk()
-        is IJwk -> Jwk.Static.fromDTO(key)
-        is IJwkJson -> Jwk.Static.fromJson(key)
-        else -> throw IllegalArgumentException("Cannot convert key to jose/jwk")
+    fun toJoseJwk(key: IKey): Jwk {
+        return when (key) {
+            is Jwk -> key
+            is CoseKeyCbor -> key.cborToJwk()
+            is CoseKeyJson -> key.jsonToJwk()
+            else -> {
+                // We cannot compare on classes, as these are external interfaces in JS
+                if (key.kty is CborUInt) return CoseKeyCbor.Static.fromDTO(key as ICoseKeyCborDTO).cborToJwk()
+                if (key.kty is CoseKeyType) return CoseKeyJson.Static.fromJsonDTO(key as ICoseKeyJsonDTO).jsonToJwk()
+                if (key.kty is JwaKeyType) return Jwk.Static.from(key as IJwk)
+                if (key.kty is String) return Jwk.Static.fromDTO(key as IJwkDTO)
+                throw IllegalArgumentException("Cannot convert key to jose/jwk")
+            }
+        }
     }
 
+    /**
+     * Converts an `IKey` instance to `CoseKeyCbor`.
+     *
+     * @param key The `IKey` instance to be converted. This can be one of several implementing types.
+     * @return The converted `CoseKeyCbor` instance.
+     * @throws IllegalArgumentException If the key cannot be converted to CBOR.
+     */
+    fun toCoseKey(key: IKey): CoseKeyCbor {
+        return when (key) {
+            // WARNING: DO NOT CHANGE THE ORDER. Since we use actual interfaces in js, the ICoseKeyCbor would match even when you pass in a jwk
+            is CoseKeyCbor -> key
+            is Jwk -> key.jwkToCoseKeyCbor()
+            is CoseKeyJson -> key.toCbor()
+            else -> {
+                // We cannot rely on comparisons for the interfaces, as that would go wrong in JS where these are marked as external intefaces
+                if (key.kty is CborUInt) return CoseKeyCbor.Static.fromDTO(key as ICoseKeyCborDTO)
+                if (key.kty is CoseKeyType) return CoseKeyJson.Static.fromJsonDTO(key as ICoseKeyJsonDTO).toCbor()
+                if (key.kty is JwaKeyType) return Jwk.Static.from(key as IJwk).jwkToCoseKeyCbor()
+                if (key.kty is String) return Jwk.Static.fromDTO(key as IJwkDTO).jwkToCoseKeyCbor()
+                throw IllegalArgumentException("Cannot convert key to cbor")
+            }
+        }
+    }
 
     /**
      * Retrieves the X.509 certificate chain (x5c) from the provided key.
@@ -148,26 +179,6 @@ object CoseJoseKeyMappingService {
 
             }
         }?.toMutableList()?.let { arr -> CborArray(arr) }
-    }
-
-
-    /**
-     * Converts an `IKey` instance to `CoseKeyCbor`.
-     *
-     * @param key The `IKey` instance to be converted. This can be one of several implementing types.
-     * @return The converted `CoseKeyCbor` instance.
-     * @throws IllegalArgumentException If the key cannot be converted to CBOR.
-     */
-    fun toCoseKey(key: IKey): CoseKeyCbor = when (key) {
-        // WARNING: DO NOT CHANGE THE ORDER. Since we use actual interfaces in js, the ICoseKeyCbor would match even when you pass in a jwk
-        is CoseKeyCbor -> key
-        is Jwk -> key.jwkToCoseKeyCbor()
-        is CoseKeyJson -> key.toCbor()
-        is IJwk -> Jwk.Static.fromDTO(key).jwkToCoseKeyCbor()
-        is IJwkJson -> Jwk.Static.fromJson(key).jwkToCoseKeyCbor()
-        is ICoseKeyJson -> CoseKeyJson.Static.fromDTO(key).toCbor()
-        is ICoseKeyCbor -> CoseKeyCbor.Static.fromDTO(key)
-        else -> throw IllegalArgumentException("Cannot convert key to cbor")
     }
 
 

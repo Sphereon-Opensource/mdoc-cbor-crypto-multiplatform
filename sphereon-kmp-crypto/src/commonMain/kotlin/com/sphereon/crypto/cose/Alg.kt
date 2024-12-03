@@ -612,6 +612,8 @@ enum class CoseAlgorithm(
         }
 
     }
+
+    override fun toString() = "" + value
 }
 
 

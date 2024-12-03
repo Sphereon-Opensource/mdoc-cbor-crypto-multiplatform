@@ -1,11 +1,14 @@
 package com.sphereon.crypto.jose
 
 import com.sphereon.crypto.IKey
+import com.sphereon.crypto.IKeyDTO
 import com.sphereon.crypto.PKIException
 import com.sphereon.crypto.cose.CoseKeyCbor
 import com.sphereon.crypto.cose.CoseKeyJson
 import com.sphereon.crypto.cose.ICoseKeyCbor
+import com.sphereon.crypto.cose.ICoseKeyCborDTO
 import com.sphereon.crypto.cose.ICoseKeyJson
+import com.sphereon.crypto.cose.ICoseKeyJsonDTO
 import com.sphereon.crypto.generic.KeyOperations
 import com.sphereon.crypto.generic.KeyType
 import com.sphereon.crypto.generic.SignatureAlgorithm
@@ -18,12 +21,15 @@ import com.sphereon.crypto.generic.toJoseCurve
 import com.sphereon.crypto.generic.toJoseKeyOperations
 import com.sphereon.crypto.generic.toJoseKeyType
 import com.sphereon.crypto.generic.toJoseSignatureAlgorithm
+import com.sphereon.json.HasToJsonDTO
+import com.sphereon.json.HasToJsonString
 import com.sphereon.json.cryptoJsonSerializer
 import com.sphereon.kmp.Encoding
 import com.sphereon.kmp.decodeFrom
 import com.sphereon.kmp.encodeToBase64Url
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -41,7 +47,7 @@ This interface defines the properties of a JWK as specified by the JSON Web Key 
  *  key parameters used in various algorithms.
 
  */
-expect interface IJwkJson : IKey {
+expect interface IJwkDTO : IKeyDTO {
     /**
      * The algorithm name used for cryptographic operations.
      * The value may be null if the algorithm is not specified or initialized.
@@ -365,6 +371,7 @@ expect interface IJwk : IKey {
 @JsExport
 @Serializable
 data class Jwk(
+    @Transient
     private val generateKid: Boolean = false,
     override val alg: JwaAlgorithm? = null,
     override val crv: JwaCurve? = null,
@@ -384,7 +391,7 @@ data class Jwk(
     @SerialName("x5t#S256")
     override val x5t_S256: String? = null,
     override val y: String? = null,
-) : IJwk {
+) : IJwk, HasToJsonString, HasToJsonDTO {
 
     init {
         if (kid === null && generateKid) {
@@ -446,7 +453,7 @@ data class Jwk(
         return x5c
     }
 
-    override fun getKidAsString(generate: Boolean) = kid ?: if (generateKid) determineKid() else kid
+    override fun getKidAsString(generate: Boolean) = kid ?: if (generate) determineKid() else kid
     override fun getXAsString() = x
 
     override fun getYAsString() = y
@@ -769,7 +776,7 @@ data class Jwk(
 //                    .withE(e)
 //                    .withK(k)
             .withKeyOps(key_ops?.map { it.toCoseKeyOperations() }?.toTypedArray())
-            .withKid(kid)
+            .withKid(kid, false)
 //                    .withN(n)
 //                    .withUse(use)
             .withX(x)
@@ -796,7 +803,11 @@ data class Jwk(
      *
      * @return The JSON object representation of the current object.
      */
-    fun toJsonObject() = cryptoJsonSerializer.encodeToJsonElement(serializer(), this).jsonObject
+    fun toJsonObject() = cryptoJsonSerializer.encodeToJsonElement(serializer(), this)
+
+    override fun toJsonString() = cryptoJsonSerializer.encodeToString(serializer(), this)
+
+    override fun <T> toJsonDTO() = com.sphereon.json.toJsonDTO<T>(this)
 
 
     /**
@@ -810,7 +821,7 @@ data class Jwk(
          * @param jwk The JSON representation of the JWK.
          * @return The Jwk object.
          */
-        fun fromJson(jwk: IJwkJson): Jwk = with(jwk) {
+        fun fromDTO(jwk: IJwkDTO): Jwk = with(jwk) {
             return Jwk(
                 alg = JwaAlgorithm.Static.fromValue(alg),
                 crv = JwaCurve.Static.fromValue(crv),
@@ -866,8 +877,8 @@ data class Jwk(
          * @param jwk The `IJwk` instance to be converted.
          * @return The equivalent `Jwk` instance with the same properties.
          */
-        fun fromDTO(jwk: IJwk): Jwk = with(jwk) {
-            return@fromDTO Jwk(
+        fun from(jwk: IJwk): Jwk = with(jwk) {
+            return@from Jwk(
                 alg = alg,
                 crv = crv,
                 d = d,
@@ -893,7 +904,7 @@ data class Jwk(
          * @param coseKey the COSE key JSON object to convert.
          * @return the resulting JWK.
          */
-        fun fromCoseKeyJson(coseKey: ICoseKeyJson): Jwk {
+        fun fromCoseKeyJson(coseKey: ICoseKeyJsonDTO): Jwk {
             with(coseKey) {
                 val kty = kty.toJoseKeyType()
                 return Builder()
@@ -904,7 +915,7 @@ data class Jwk(
 //                    .withE(e)
 //                    .withK(k)
                     .withKeyOps(key_ops?.map { it.toJoseKeyOperations() }?.toTypedArray())
-                    .withKid(kid)
+                    .withKid(kid, false)
 //                    .withN(n)
 //                    .withUse(use)
                     .withX(x)
@@ -924,7 +935,7 @@ data class Jwk(
          * a COSE key encoded in CBOR format.
          * @return The JSON representation of the COSE key.
          */
-        fun fromCoseKey(coseKey: ICoseKeyCbor) = fromCoseKeyJson(CoseKeyCbor.Static.fromDTO(coseKey).toJson())
+        fun fromCoseKey(coseKey: ICoseKeyCborDTO) = fromCoseKeyJson(CoseKeyCbor.Static.fromDTO(coseKey).toJson())
 
     }
 
@@ -964,6 +975,16 @@ enum class JwkUse(val value: String) {
     enc("enc")
 }
 
+/**
+ * Generates a JWK (JSON Web Key) thumbprint based on the key type and its parameters.
+ *
+ * The function creates a subset of the JWK containing essential fields based on the key type
+ * (RSA or EC) and then calculates a hash of the JSON-encoded subset. This hash is converted
+ * to a Base64 URL-encoded string to produce the thumbprint.
+ *
+ * @param jwk The JWK object containing key information.
+ * @return A Base64 URL-encoded string representing the JWK thumbprint.
+ */
 fun generateJwkThumbprint(jwk: IJwk): String {
     val jwkSubset = when (jwk.kty) {
         JwaKeyType.RSA -> mapOf(

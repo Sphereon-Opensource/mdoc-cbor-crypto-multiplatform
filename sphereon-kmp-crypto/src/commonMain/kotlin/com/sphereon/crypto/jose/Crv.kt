@@ -36,6 +36,8 @@ enum class JwaCurve(val value: String) {
             return JwaCurve.entries.find { entry -> entry.value == value }
         }
     }
+
+    override fun toString() = value
 }
 
 internal object JwaCurveSerializer : KSerializer<JwaCurve> {

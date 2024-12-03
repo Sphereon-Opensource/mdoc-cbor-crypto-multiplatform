@@ -7,9 +7,12 @@ import com.sphereon.cbor.CborMap
 import com.sphereon.cbor.CborUInt
 import com.sphereon.cbor.NumberLabel
 import com.sphereon.crypto.IKey
+import com.sphereon.crypto.IKeyDTO
 import kotlinx.serialization.json.JsonObject
-
-actual sealed interface ICoseKeyJson : IKey {
+actual sealed interface ICoseKeyJson : ICoseKeyJsonDTO,IKey {
+    actual override fun toPublicKey(): ICoseKeyJson
+}
+actual sealed interface ICoseKeyJsonDTO : IKeyDTO {
     actual abstract override val kty: CoseKeyType
     actual abstract override val kid: String?
     actual abstract override val alg: CoseAlgorithm?
@@ -38,7 +41,11 @@ actual sealed interface ICoseKeyJson : IKey {
  */
 
 
-actual interface ICoseKeyCbor : IKey {
+actual interface ICoseKeyCbor : ICoseKeyCborDTO, IKey {
+    actual override fun toPublicKey(): ICoseKeyCbor
+}
+
+actual interface ICoseKeyCborDTO : IKeyDTO {
     actual abstract override val kty: CborUInt
     actual abstract override val kid: CborByteString?
     actual abstract override val alg: CborUInt?
@@ -50,5 +57,4 @@ actual interface ICoseKeyCbor : IKey {
     actual abstract override val d: CborByteString?
     actual abstract val x5chain: CborArray<CborByteString>?
     actual abstract override val additional: CborMap<NumberLabel, CborItem<*>>?
-    actual abstract override fun toPublicKey(): CoseKeyCbor
 }

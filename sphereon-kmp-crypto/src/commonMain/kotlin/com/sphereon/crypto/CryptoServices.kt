@@ -28,9 +28,7 @@ object DefaultCallbacks {
     private var coseCryptoCallback: ICoseCryptoCallbackMarkerType? = null
 
     fun <X509CallbackType : IX509ServiceMarkerType> x509(): X509CallbackType {
-        if (x509Callback == null) {
-            throw IllegalStateException("No default X509 Platform Callback implementation was registered")
-        }
+        checkNotNull(x509Callback) { "No default X509 Platform Callback implementation was registered" }
         return x509Callback as X509CallbackType
     }
 
@@ -38,10 +36,12 @@ object DefaultCallbacks {
         this.x509Callback = x509Callback
     }
 
+    fun hasX509Default(): Boolean {
+        return this.x509Callback != null
+    }
+
     fun <CoseCryptoCallbackType : ICoseCryptoCallbackMarkerType> coseCrypto(): CoseCryptoCallbackType {
-        if (coseCryptoCallback == null) {
-            throw IllegalStateException("No default Cose Crypto Platform Callback implementation was registered")
-        }
+        checkNotNull(coseCryptoCallback) { "No default Cose Crypto Platform Callback implementation was registered" }
         return coseCryptoCallback as CoseCryptoCallbackType
     }
 
@@ -50,8 +50,6 @@ object DefaultCallbacks {
     }
 
     fun setCoseCryptoDefault(coseCryptoCallback: ICoseCryptoCallbackMarkerType?) {
-        println("setCoseCryptoDefault: ${coseCryptoCallback!!::class.simpleName}")
-        Error("setCoseCryptoDefault (stacktrace): ${coseCryptoCallback::class.simpleName}").printStackTrace()
         this.coseCryptoCallback = coseCryptoCallback
     }
 }
@@ -83,11 +81,4 @@ interface ICallbackService<PlatformCallbackType> {
 
     @JsName("platform")
     fun platform(): PlatformCallbackType
-
-    /**
-     * Register the platform specific callback that implements the verification
-     *
-     * External developers use this as an entry point for their platform code
-     *//*
-    fun register(platformCallback: PlatformCallbackType): ICallbackService<PlatformCallbackType>*/
 }

@@ -3,16 +3,18 @@ package com.sphereon.mdoc.data
 import com.sphereon.crypto.DefaultCallbacks
 import com.sphereon.crypto.ICoseCryptoCallbackService
 import com.sphereon.crypto.IKeyInfo
-import com.sphereon.crypto.generic.IVerifyResults
 import com.sphereon.crypto.IX509Service
 import com.sphereon.crypto.KeyInfo
-import com.sphereon.crypto.generic.VerifyResult
-import com.sphereon.crypto.generic.VerifyResults
 import com.sphereon.crypto.cose.CoseSign1Cbor
 import com.sphereon.crypto.cose.ICoseKeyCbor
+import com.sphereon.crypto.generic.IVerifyResults
+import com.sphereon.crypto.generic.VerifyResult
+import com.sphereon.crypto.generic.VerifyResults
 import com.sphereon.kmp.DateTimeUtils
+import com.sphereon.kmp.LocalDateTimeKMP
 import com.sphereon.kmp.getDateTime
 import com.sphereon.mdoc.MdocConst
+import com.sphereon.mdoc.data.MdocVerification.entries
 import com.sphereon.mdoc.data.device.DocumentCbor
 import com.sphereon.mdoc.data.mso.MobileSecurityObjectCbor
 import kotlin.js.JsExport
@@ -37,12 +39,14 @@ import kotlin.js.JsExport
  * — the current timestamp shall be equal or later than the ‘validFrom’ element,
  * — the 'validUntil' element shall be equal or later than the current timestamp.
  */
-object Validations {
+@JsExport.Ignore
+object MdocValidations {
 
     suspend fun fromDocument(
         document: DocumentCbor,
         x509Service: IX509Service = DefaultCallbacks.x509(),
         trustedCerts: Array<String>? = x509Service.getTrustedCerts(),
+        verificationTime: LocalDateTimeKMP? = LocalDateTimeKMP.Static.now(),
         keyInfo: IKeyInfo<ICoseKeyCbor>? = null,
         allowExpiredDocuments: Boolean = false,
         coseCryptoService: ICoseCryptoCallbackService = DefaultCallbacks.coseCrypto(),
@@ -57,6 +61,7 @@ object Validations {
         coseCryptoService = coseCryptoService,
         keyInfo = keyInfo,
         trustedCerts = trustedCerts,
+        verificationTime = verificationTime,
         allowExpiredDocuments = allowExpiredDocuments,
         dateTimeUtils = dateTimeUtils,
         timeZoneId = timeZoneId,
@@ -68,6 +73,7 @@ object Validations {
         keyInfo: IKeyInfo<ICoseKeyCbor>? = null,
         x509Service: IX509Service = DefaultCallbacks.x509(),
         trustedCerts: Array<String>? = x509Service.getTrustedCerts(),
+        verificationTime: LocalDateTimeKMP? = LocalDateTimeKMP.Static.now(),
         allowExpiredDocuments: Boolean = false,
         coseCryptoService: ICoseCryptoCallbackService = DefaultCallbacks.coseCrypto(),
         dateTimeUtils: DateTimeUtils = getDateTime(),
@@ -82,6 +88,7 @@ object Validations {
         keyInfo = keyInfo,
         allowExpiredDocuments = allowExpiredDocuments,
         trustedCerts = trustedCerts,
+        verificationTime = verificationTime,
         dateTimeUtils = dateTimeUtils,
         timeZoneId = timeZoneId,
         clockSkewAllowedInSec = clockSkewAllowedInSec,
@@ -92,15 +99,17 @@ object Validations {
         issuerAuth: CoseSign1Cbor<MobileSecurityObjectCbor>? = null,
         document: DocumentCbor? = null,
         mdocVerificationTypes: MdocVerificationTypes = MdocVerification.Static.ALL,
-        x509Service: IX509Service  = DefaultCallbacks.x509(),
+        x509Service: IX509Service = DefaultCallbacks.x509(),
         keyInfo: IKeyInfo<ICoseKeyCbor>? = null,
         trustedCerts: Array<String>? = x509Service.getTrustedCerts(),
+        verificationTime: LocalDateTimeKMP? = LocalDateTimeKMP.Static.now(),
         allowExpiredDocuments: Boolean? = false,
         coseCryptoService: ICoseCryptoCallbackService = DefaultCallbacks.coseCrypto(),
         dateTimeUtils: DateTimeUtils = getDateTime(),
         timeZoneId: String? = null,
         clockSkewAllowedInSec: Int = 120,
     ): IVerifyResults<ICoseKeyCbor> {
+        val verifiedAt = verificationTime ?: LocalDateTimeKMP.Static.now()
         if (issuerAuth === null && document == null) {
             return VerifyResults(
                 error = true,
@@ -110,7 +119,7 @@ object Validations {
                         name = MdocConst.MDOC_LITERAL,
                         critical = true,
                         error = true,
-                        message = "Either an mdoc or an issuerAith object needs to be provided for verification"
+                        message = "Either an mdoc or an issuerAuth object needs to be provided for verification"
                     )
                 )
             )
@@ -136,7 +145,15 @@ object Validations {
             when (it) {
                 MdocVerification.CERTIFICATE_CHAIN -> IssuerAuthValidation.verifyCertificateChain(auth, x509Service, trustedCerts)
                 MdocVerification.ISSUER_AUTH_SIGNATURE -> IssuerAuthValidation.verifySign1(auth, coseCryptoService, keyInfo)
-                MdocVerification.VALIDITY -> IssuerAuthValidation.verifyValidityInfo(auth, allowExpiredDocuments, dateTimeUtils, timeZoneId, clockSkewAllowedInSec )
+                MdocVerification.VALIDITY -> IssuerAuthValidation.verifyValidityInfo(
+                    auth,
+                    verifiedAt,
+                    allowExpiredDocuments,
+                    dateTimeUtils,
+                    timeZoneId,
+                    clockSkewAllowedInSec
+                )
+
                 MdocVerification.DOC_TYPE -> IssuerAuthValidation.verifyDocType(document)
                 MdocVerification.DIGEST_VALUES -> IssuerAuthValidation.verifyDigests(auth)
             }

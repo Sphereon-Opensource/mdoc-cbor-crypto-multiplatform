@@ -23,14 +23,14 @@ external interface ICoseCryptoCallbackJS : ICoseCryptoCallbackMarkerType {
     @JsName("signAsync")
     fun signAsync(
         input: ToBeSignedCbor,
-        requireX5Chain: Boolean
+        requireX5Chain: Boolean?
     ): Promise<ByteArray>
 
     @JsName("verify1Async")
     fun verify1Async(
         input: CoseSign1Cbor<*>,
         keyInfo: IKeyInfo<ICoseKeyCbor>,
-        requireX5Chain: Boolean
+        requireX5Chain: Boolean?
     ): Promise<IVerifySignatureResult<ICoseKeyCbor>>
 
     /*@JsName("mac0Async")
@@ -54,14 +54,14 @@ external interface ICoseCryptoServiceJS {
     fun <CborType> sign1(
         input: CoseSign1InputCbor,
         keyInfo: IKeyInfo<*>?,
-        requireX5Chain: Boolean
+        requireX5Chain: Boolean?
     ): Promise<CoseSign1Result<CborType>>
 
     @JsName("verify1")
     fun verify1(
         input: CoseSign1Cbor<*>,
         keyInfo: IKeyInfo<*>?,
-        requireX5Chain: Boolean
+        requireX5Chain: Boolean?
     ): Promise<IVerifySignatureResult<ICoseKeyCbor>>
 
     @JsName("mac0Async")
@@ -114,11 +114,11 @@ class CoseCryptoServiceJS(
     override fun <CborType> sign1(
         input: CoseSign1InputCbor,
         keyInfo: IKeyInfo<*>?,
-        requireX5Chain: Boolean
+        requireX5Chain: Boolean?
     ): Promise<CoseSign1Result<CborType>> {
         return CoroutineScope(CoroutineName(COSE_CRYPTO_SERVICE_JS_SCOPE)).async {
             println("pre preSign1")
-            val (preSignInputResult, toSign, preSignKeyInfoResult) = preSign1(input, keyInfo, requireX5Chain)
+            val (preSignInputResult, toSign, preSignKeyInfoResult) = preSign1(input, keyInfo, requireX5Chain == true)
             println("post presign1, about to call platform callback.sign")
             val platform = platform()
             requireNotNull(platform)
@@ -134,14 +134,14 @@ class CoseCryptoServiceJS(
     override fun verify1(
         input: CoseSign1Cbor<*>,
         keyInfo: IKeyInfo<*>?,
-        requireX5Chain: Boolean
+        requireX5Chain: Boolean?
     ): Promise<IVerifySignatureResult<ICoseKeyCbor>> {
         return CoroutineScope(CoroutineName(COSE_CRYPTO_SERVICE_JS_SCOPE)).async {
             val (protectedHeader, info) = verifyAndAmendKeyInfo(
                 protectedHeader = input.protectedHeader,
                 unprotectedHeader = input.unprotectedHeader,
                 keyInfo = keyInfo,
-                requireX5Chain = requireX5Chain
+                requireX5Chain = requireX5Chain != false
             )
             try {
                 assertEnabled()
@@ -193,15 +193,15 @@ class CoseCryptoServiceJSAdapter(val coseCallbackJS: CoseCryptoServiceJS = CoseC
     override suspend fun <CborType> sign1(
         input: CoseSign1InputCbor,
         keyInfo: IKeyInfo<*>?,
-        requireX5Chain: Boolean
+        requireX5Chain: Boolean?
     ): CoseSign1Result<CborType> = coseCallbackJS.sign1<CborType>(input = input, keyInfo = keyInfo, requireX5Chain = requireX5Chain).await()
 
 
     override suspend fun verify1(
         input: CoseSign1Cbor<*>,
         keyInfo: IKeyInfo<*>?,
-        requireX5Chain: Boolean
-    ): IVerifySignatureResult<ICoseKeyCbor> = coseCallbackJS.verify1(input = input, keyInfo = keyInfo, requireX5Chain = true).await()
+        requireX5Chain: Boolean?
+    ): IVerifySignatureResult<ICoseKeyCbor> = coseCallbackJS.verify1(input = input, keyInfo = keyInfo, requireX5Chain = requireX5Chain).await()
 
     override suspend fun mac0(input: CoseMac0InputCbor, sharedSecret: ByteArray, alg: SignatureAlgorithm) =
         coseCallbackJS.mac0Async(input = input, sharedSecret = sharedSecret, alg = alg).await()

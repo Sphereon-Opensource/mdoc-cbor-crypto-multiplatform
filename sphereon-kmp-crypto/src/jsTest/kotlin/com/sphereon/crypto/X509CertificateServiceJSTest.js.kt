@@ -2,6 +2,7 @@ package com.sphereon.crypto
 
 
 import com.sphereon.crypto.cose.CoseKeyCbor
+import com.sphereon.kmp.LocalDateTimeKMP
 import kotlinx.coroutines.test.TestResult
 import kotlinx.coroutines.test.runTest
 import kotlin.js.Promise
@@ -15,9 +16,11 @@ object JsCallback: IX509ServiceJS {
         chainDER: Array<ByteArray>?,
         chainPEM: Array<String>?,
         trustedCerts: Array<String>?,
-        verificationProfile: X509VerificationProfile?
+        verificationProfile: X509VerificationProfile?,
+        verificationTime: LocalDateTimeKMP?
     ): Promise<IX509VerificationResult<KeyType>> {
-        return Promise.resolve(X509VerificationResult(critical = true, error = false, message = "test success"))
+        val verifiedAt = verificationTime ?: LocalDateTimeKMP.Static.now()
+        return Promise.resolve(X509VerificationResult(critical = true, error = false, message = "test success", verificationTime = verifiedAt))
     }
 
     override fun getTrustedCerts(): Array<String>? {
@@ -42,7 +45,8 @@ class X509CertificateServiceJSTest {
                 chainPEM = arrayOf("chainpem1", "chainpem2"), trustedCerts = arrayOf(
                     "chainpem1"
                 ),
-                verificationProfile = null
+                verificationProfile = null,
+                verificationTime = null
             )
             println("Done verifyCertChain test:")
             println(result.toString())

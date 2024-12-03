@@ -10,10 +10,8 @@ import com.sphereon.mdoc.data.device.DeviceResponseCbor
 import com.sphereon.mdoc.data.device.DocumentCbor
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.asPromise
 import kotlinx.coroutines.async
-import kotlin.coroutines.CoroutineContext
 import kotlin.js.Promise
 
 private const val COROUTINE_CONTEXT = "MdocOid4vpServiceJs"

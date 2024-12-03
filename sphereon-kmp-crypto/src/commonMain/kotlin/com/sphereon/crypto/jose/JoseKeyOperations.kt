@@ -33,6 +33,8 @@ enum class JoseKeyOperations(val value: String, val description: String) {
                 ?: throw IllegalArgumentException("Unknown value $value")
         }
     }
+
+    override fun toString() = value
 }
 
 internal object JoseKeyOperationsSerializer : KSerializer<JoseKeyOperations> {

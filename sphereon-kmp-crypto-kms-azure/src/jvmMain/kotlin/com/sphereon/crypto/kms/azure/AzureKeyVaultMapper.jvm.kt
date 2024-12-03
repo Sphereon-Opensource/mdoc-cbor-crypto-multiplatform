@@ -26,7 +26,7 @@ import com.sphereon.crypto.jose.Jwk
 import com.sphereon.kmp.encodeToBase64
 import java.time.Duration
 
-fun AzureKeyvaultClientConfig.toClientOptions(): ClientOptions? {
+fun AzureKeyVaultClientConfig.toClientOptions(): ClientOptions? {
     if (headers.isNullOrEmpty()) {
         return null
     }
