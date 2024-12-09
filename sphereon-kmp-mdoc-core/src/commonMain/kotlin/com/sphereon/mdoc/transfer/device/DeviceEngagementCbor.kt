@@ -23,10 +23,13 @@ import com.sphereon.crypto.cose.CoseKeyJson
 import com.sphereon.json.JsonView
 import com.sphereon.json.mdocJsonSerializer
 import com.sphereon.kmp.LongKMP
+import com.sphereon.kmp.decodeFromBase64Url
+import com.sphereon.kmp.encodeToBase64Url
 import com.sphereon.kmp.numberToKmpLong
 import com.sphereon.kmp.toKmpLong
 import com.sphereon.mdoc.experimental.oid4vp.OID4VP_PROTOCOL_INFO_LABEL
 import com.sphereon.mdoc.experimental.oid4vp.Oid4vpRequestProtocolCbor
+import com.sphereon.mdoc.transfer.device.DeviceRetrievalMethodType.entries
 import com.sphereon.mdoc.transfer.device.WifiOptionsCbor.Static.CHANNEL_INFO_CHANNEL_NUMBER
 import com.sphereon.mdoc.transfer.device.WifiOptionsCbor.Static.CHANNEL_INFO_OPERATING_CLASS
 import com.sphereon.mdoc.transfer.device.WifiOptionsCbor.Static.PASS_PHRASE
@@ -40,8 +43,8 @@ import kotlin.js.JsName
 data class DeviceEngagementJson(
     val version: String = "1.0",
     val security: DeviceEngagementSecurityCbor,
-    val deviceRetrievalMethods: Array<DeviceRetrievalMethodCbor>? = null,
-    val serverRetrievalMethod: ServerRetrievalMethodsCbor? = null,
+    val deviceRetrievalMethods: Array<DeviceRetrievalMethodJson>? = null,
+    val serverRetrievalMethod: ServerRetrievalMethodsJson? = null,
     val protocolInfo: ProtocolInfo? = null,
     val additionalItems: MutableMap<LongKMP, Any>? = mutableMapOf()
 ) : JsonView() {
@@ -71,6 +74,8 @@ data class DeviceEngagementCbor(
         return Oid4vpRequestProtocolCbor.Static.fromProtocolInfo(protocolInfo!!)
     }
 
+    fun toBase64Url() = this.cborEncode().encodeToBase64Url()
+
     object Static {
         val VERSION = NumberLabel(0)
         val SECURITY = NumberLabel(1)
@@ -91,6 +96,11 @@ data class DeviceEngagementCbor(
 
         fun cborDecode(encodedDeviceEngagement: ByteArray): DeviceEngagementCbor =
             fromCborItem(cborSerializer.decode(encodedDeviceEngagement))
+
+        fun fromQRData(qrData: String): DeviceEngagementCbor {
+            check(qrData.startsWith("mdoc:")) { "QR data does not start with 'mdoc:'" }
+            return cborDecode(qrData.substring(5).decodeFromBase64Url())
+        }
     }
 
     override fun cborBuilder(): CborBuilder<DeviceEngagementCbor> {
@@ -271,7 +281,7 @@ enum class DeviceRetrievalMethodType(val type: Int) {
 @JsExport
 data class DeviceRetrievalMethodCbor(
     val type: CborUInt,
-    val version: CborUInt,
+    val version: CborUInt = CborUInt(1),
     val retrievalOptions: DeviceRetrievalOptionsCbor
 ) : CborView<DeviceRetrievalMethodCbor, DeviceRetrievalMethodJson, CborArray<AnyCborItem>>(CDDL.list) {
 

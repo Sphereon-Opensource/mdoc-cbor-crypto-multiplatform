@@ -178,6 +178,6 @@ android {
     }
 }
 */
-dependencies {
-//    add("kspJs", "deezer.kustomexport:compiler:0.8.2")
-}
+//dependencies {
+////    add("kspJs", "deezer.kustomexport:compiler:0.8.2")
+//}
