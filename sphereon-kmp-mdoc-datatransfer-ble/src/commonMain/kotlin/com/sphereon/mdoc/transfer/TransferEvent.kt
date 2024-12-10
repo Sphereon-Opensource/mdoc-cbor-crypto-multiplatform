@@ -21,6 +21,7 @@ data class DebugEvent(override val role: EngagementRole, val message: String) : 
 @JsExport
 data class Connecting(override val role: EngagementRole) : TransferEvent
 
+
 @JsExport
 data class Connected(override val role: EngagementRole) : TransferEvent
 

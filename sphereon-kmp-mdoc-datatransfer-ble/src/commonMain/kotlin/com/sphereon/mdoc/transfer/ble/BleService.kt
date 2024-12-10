@@ -6,12 +6,12 @@ import com.juul.kable.PlatformAdvertisement
 import com.juul.kable.Scanner
 import com.juul.kable.logs.Logging
 import com.juul.kable.logs.SystemLogEngine
-import com.sphereon.mdoc.transfer.Error
-import com.sphereon.mdoc.transfer.ble.IBleService.ScanState.Canceled
-import com.sphereon.mdoc.transfer.ble.IBleService.ScanState.Error
-import com.sphereon.mdoc.transfer.ble.IBleService.ScanState.Finished
-import com.sphereon.mdoc.transfer.ble.IBleService.ScanState.Initial
-import com.sphereon.mdoc.transfer.ble.IBleService.ScanState.Scanning
+import com.sphereon.mdoc.transfer.ble.BleScanState.Canceled
+import com.sphereon.mdoc.transfer.ble.BleScanState.Error
+import com.sphereon.mdoc.transfer.ble.BleScanState.Finished
+import com.sphereon.mdoc.transfer.ble.BleScanState.Found
+import com.sphereon.mdoc.transfer.ble.BleScanState.Initial
+import com.sphereon.mdoc.transfer.ble.BleScanState.Scanning
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -30,12 +30,11 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 
-
-
+@JsExport
 @OptIn(ExperimentalUuidApi::class)
 class BleService(
     private val scope: CoroutineScope,
-    private val onStatus: ((state: IBleService.ScanState, message: String?) -> Unit)? = null,
+    private val onStatus: ((state: BleScanState, message: String?) -> Unit)? = null,
 ) : IBleService {
 
     private fun convertUuidToImpl(uuid: Uuid) = uuidFrom(uuid.toString())
@@ -56,14 +55,14 @@ class BleService(
     private val found = mutableMapOf<Identifier, PlatformAdvertisement>()
 
     private val _isScanning = MutableStateFlow(Initial)
-    override val state: StateFlow<IBleService.ScanState> = _isScanning.asStateFlow()
+    override val state: StateFlow<BleScanState> = _isScanning.asStateFlow()
 
     private val _advertisements = MutableStateFlow<List<PlatformAdvertisement>>(emptyList())
     override val advertisements = _advertisements.asStateFlow()
 
-    private var scanJob: Job? = null
+    public var scanJob: Job? = null
 
-    override fun initiateScan(services: Array<Uuid>, filter: (suspend (PlatformAdvertisement) -> Boolean)) {
+    override fun initiateScan(services: Array<Uuid>, filter: ((PlatformAdvertisement) -> Boolean)) {
         onStatus?.invoke(Initial, null)
         if (_isScanning.value == Scanning) {
             return
@@ -78,6 +77,7 @@ class BleService(
                         .onStart { onStatus?.invoke(Scanning, null) }
                         .filter(filter)
                         .collect { advertisement ->
+                            onStatus?.invoke(Found, advertisement.identifier.toString())
                             found[advertisement.identifier] = advertisement
                             _advertisements.value = found.values.toList()
                         }
@@ -94,11 +94,12 @@ class BleService(
     }
 
 
-
+    @JsExport.Ignore
     override suspend fun cancelAndJoin() {
         scanJob?.cancelAndJoin()
     }
 
+    @JsExport.Ignore
     override suspend fun clear() {
         cancelAndJoin()
         found.clear()
@@ -106,29 +107,32 @@ class BleService(
     }
 }
 
+enum class BleScanState {
+    Initial,
+    Scanning,
+    Found,
+    Error,
+    Canceled,
+    Finished,
+}
 
+@JsExport
 interface IBleService {
 
-    enum class ScanState {
-        Initial,
-        Scanning,
-        Error,
-        Canceled,
-        Finished,
-    }
-
-    /** On Javascript, value is always [ScanState.Initial]. */
-    val state: StateFlow<ScanState>
+    /** On Javascript, value is always [BleScanState.Initial]. */
+    val state: StateFlow<BleScanState>
 
     /** Value is always an empty [List] on JavaScript. */
     val advertisements: StateFlow<List<PlatformAdvertisement>>
 
     @OptIn(ExperimentalUuidApi::class)
-    fun initiateScan(services: Array<Uuid>, filter: suspend (PlatformAdvertisement) -> Boolean = { advertisement -> true })
+    fun initiateScan(services: Array<Uuid>, filter: (PlatformAdvertisement) -> Boolean = { advertisement -> true })
 
     /** No-op on Javascript. */
+    @JsExport.Ignore
     suspend fun cancelAndJoin()
 
     /** No-op on Javascript. */
+    @JsExport.Ignore
     suspend fun clear()
 }

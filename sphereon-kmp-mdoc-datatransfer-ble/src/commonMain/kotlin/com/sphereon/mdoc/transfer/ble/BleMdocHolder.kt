@@ -14,7 +14,7 @@ class BleMdocHolder {
 
     private constructor(
         scope: CoroutineScope? = null,
-        onStatus: ((state: IBleService.ScanState, message: String?) -> Unit)? = null
+        onStatus: ((state: BleScanState, message: String?) -> Unit)? = null
     ) {
         this.scope = scope ?: CoroutineScope(CoroutineName("BleHolder"))
         this.ble = BleService(scope = this.scope, onStatus = onStatus)
@@ -37,7 +37,7 @@ class BleMdocHolder {
 
 
     object Static {
-        fun init(onStatus: ((state: IBleService.ScanState, message: String?) -> Unit)? = null): BleMdocHolder {
+        fun init(onStatus: ((state: BleScanState, message: String?) -> Unit)? = null): BleMdocHolder {
             return BleMdocHolder(onStatus = onStatus)
         }
     }

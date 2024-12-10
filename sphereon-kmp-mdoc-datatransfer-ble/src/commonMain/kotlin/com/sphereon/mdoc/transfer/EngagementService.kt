@@ -23,6 +23,7 @@ import kotlin.js.JsExport
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
+@JsExport
 enum class EngagementRole {
     HOLDER,
     VERIFIER

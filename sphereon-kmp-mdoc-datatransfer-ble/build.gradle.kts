@@ -4,7 +4,7 @@ import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootExtension
 
 plugins {
 //    alias(libs.plugins.androidLibrary)
-    kotlin("multiplatform")
+    kotlin("multiplatform") version libs.versions.kotlin
     kotlin("plugin.serialization")
     id("io.kotest.multiplatform")
     id("module.publication")
@@ -150,9 +150,10 @@ kotlin {
 
             }
         }
-        val androidTest by getting {
+        val androidUnitTest by getting {
             dependencies {
                 implementation(libs.whyoleg.cryptography.provider.jdk)
+                implementation(libs.kotlinx.coroutines.android)
                 implementation(projects.sphereonKmpCryptoKms)
             }
         }
@@ -169,6 +170,7 @@ kotlin {
                 implementation(libs.kotest.framework.datatest)
                 implementation(libs.kotest.property)
                 implementation(libs.whyoleg.cryptography.provider.webcrypto)
+                implementation(projects.sphereonKmpCryptoKms)
 
             }
         }
