@@ -8,6 +8,7 @@ plugins {
     id("io.kotest.multiplatform")
 //    id("com.google.devtools.ksp") version "2.0.0-RC3-1.0.20"
     id("module.publication")
+    id("maven-publish")
 }
 
 

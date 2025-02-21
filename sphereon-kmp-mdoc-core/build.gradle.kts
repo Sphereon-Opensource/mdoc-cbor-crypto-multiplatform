@@ -8,6 +8,7 @@ plugins {
     kotlin("plugin.serialization")
     id("io.kotest.multiplatform")
     id("module.publication")
+    id("maven-publish")
 }
 
 
