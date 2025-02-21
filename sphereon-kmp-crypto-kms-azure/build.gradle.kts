@@ -9,6 +9,7 @@ plugins {
     id("io.kotest.multiplatform")
     id("module.publication")
     id("com.codingfeline.buildkonfig") version "0.15.2"
+    id("maven-publish")
 }
 
 rootProject.plugins.withType<org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootPlugin> {
