@@ -1,4 +1,4 @@
-package com.sphereon.crypto.kms
+package com.sphereon.crypto.kms.provider.ecdsa
 
 import EcdsaRawKmpKeyInfoContext
 import checkSupportedEcdsaCurve
@@ -19,6 +19,7 @@ import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.crypto.jose.Jwk
 import com.sphereon.crypto.jose.JwkUse
 import com.sphereon.crypto.jose.generateJwkThumbprint
+import com.sphereon.crypto.kms.IKeyStoreService
 import com.sphereon.crypto.sign.IRawSignatureService
 import com.sphereon.crypto.sign.ISimpleSignatureService
 import com.sphereon.crypto.sign.model.SignInput
@@ -32,6 +33,8 @@ import dev.whyoleg.cryptography.algorithms.ECDSA
 import keyInfoToEcdsaRawKmpContext
 import resolveEcdsaKmpCurve
 import kotlin.js.JsExport
+import com.sphereon.crypto.kms.MemoryKeyStoreService
+import com.sphereon.crypto.kms.IKeyManagementSystem
 
 /**
  * EcDSACryptoProvider provides Elliptic Curve Digital Signature Algorithm (ECDSA) cryptographic operations

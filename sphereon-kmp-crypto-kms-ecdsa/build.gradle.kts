@@ -1,7 +1,6 @@
 import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnLockMismatchReport
 import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootExtension
 
-
 plugins {
 //    alias(libs.plugins.androidLibrary)
     kotlin("multiplatform")
@@ -9,7 +8,6 @@ plugins {
     id("io.kotest.multiplatform")
     id("module.publication")
 }
-
 
 rootProject.plugins.withType<org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootPlugin> {
     rootProject.the<org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootExtension>().download = false
@@ -26,11 +24,11 @@ rootProject.plugins.withType(org.jetbrains.kotlin.gradle.targets.js.yarn.YarnPlu
     rootProject.the<YarnRootExtension>().yarnLockAutoReplace = true // true
 }
 
-
 /*
 ksp {
     arg("erasePackage", "true")
 }*/
+
 repositories {
     mavenLocal()
     mavenCentral()
@@ -41,12 +39,12 @@ repositories {
     }
     maven(url = "https://raw.githubusercontent.com/Deezer/KustomExport/mvn-repo")
 }
+
 /*
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     kotlinOptions.freeCompilerArgs += "-opt-in=kotlin.js.ExperimentalJsExport"
 }
 */
-
 
 kotlin {
     kotlin.applyDefaultHierarchyTemplate()
@@ -68,7 +66,7 @@ kotlin {
           }
       }*/
     js(IR) {
-        moduleName = "@sphereon/kmp-mdoc-core"
+        moduleName = "@sphereon/kmp-crypto-kms-provider-ecdsa"
         nodejs {
 //            useEsModules() // Enables ES2015 modules
 
@@ -113,6 +111,7 @@ kotlin {
                 implementation(projects.sphereonKmpCommon)
                 implementation(projects.sphereonKmpCbor)
                 implementation(projects.sphereonKmpCrypto)
+                implementation(projects.sphereonKmpCryptoKms)
                 implementation(libs.kotlinx.datetime)
                 implementation(libs.kotlinx.serialization.core)
                 implementation(libs.kotlinx.serialization.json)
@@ -120,23 +119,17 @@ kotlin {
                 implementation(libs.whyoleg.cryptography.core)
                 implementation(libs.kotlinx.io.core)
                 implementation(libs.kermit)
-
-
+                implementation(libs.kable.core)
             }
         }
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
-                implementation("me.sujanpoudel.multiplatform.utils:platform-identifier:0.2.2")
                 implementation(libs.kotlinx.coroutines.test)
-                implementation(projects.sphereonKmpCryptoKms)
-                implementation(projects.sphereonKmpCryptoKms)
-                implementation(projects.sphereonKmpCryptoKmsEcdsa)
             }
         }
         val jvmMain by getting {
             dependencies {
-
             }
         }
         val jvmTest by getting {
@@ -146,7 +139,6 @@ kotlin {
         }
         val jsMain by getting {
             dependencies {
-                implementation(projects.sphereonKmpCommon)
             }
         }
 
@@ -157,6 +149,7 @@ kotlin {
                 implementation(libs.kotest.framework.datatest)
                 implementation(libs.kotest.property)
                 implementation(libs.whyoleg.cryptography.provider.webcrypto)
+
             }
         }
         /* val nativeMain by getting {
