@@ -2,7 +2,6 @@ import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnLockMismatchReport
 import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootExtension
 
 plugins {
-//    alias(libs.plugins.androidLibrary)
     kotlin("multiplatform")
     kotlin("plugin.serialization")
     id("io.kotest.multiplatform")
@@ -11,23 +10,16 @@ plugins {
 
 rootProject.plugins.withType<org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootPlugin> {
     rootProject.the<org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootExtension>().download = false
-    // "true" for default behavior
 }
 rootProject.plugins.withType<org.jetbrains.kotlin.gradle.targets.js.yarn.YarnPlugin> {
     rootProject.the<YarnRootExtension>().download = false
-    // "true" for default behavior
 }
 rootProject.plugins.withType(org.jetbrains.kotlin.gradle.targets.js.yarn.YarnPlugin::class.java) {
     rootProject.the<YarnRootExtension>().yarnLockMismatchReport =
-        YarnLockMismatchReport.WARNING // NONE | FAIL
-    rootProject.the<YarnRootExtension>().reportNewYarnLock = false // true
-    rootProject.the<YarnRootExtension>().yarnLockAutoReplace = true // true
+        YarnLockMismatchReport.WARNING
+    rootProject.the<YarnRootExtension>().reportNewYarnLock = false
+    rootProject.the<YarnRootExtension>().yarnLockAutoReplace = true
 }
-
-/*
-ksp {
-    arg("erasePackage", "true")
-}*/
 
 repositories {
     mavenLocal()
@@ -40,12 +32,6 @@ repositories {
     maven(url = "https://raw.githubusercontent.com/Deezer/KustomExport/mvn-repo")
 }
 
-/*
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions.freeCompilerArgs += "-opt-in=kotlin.js.ExperimentalJsExport"
-}
-*/
-
 kotlin {
     kotlin.applyDefaultHierarchyTemplate()
 
@@ -57,27 +43,14 @@ kotlin {
             }
         }
     }
-    /*  androidTarget {
-          publishLibraryVariants("release")
-          compilations.all {
-              kotlinOptions {
-                  jvmTarget = JavaVersion.VERSION_17.toString()
-              }
-          }
-      }*/
-    js(IR) {
-        moduleName = "@sphereon/kmp-crypto-kms-provider-ecdsa"
-        nodejs {
-//            useEsModules() // Enables ES2015 modules
 
+    js(IR) {
+        nodejs {
             testTask {
                 useMocha()
-            } // To run tests with Node.js.
-
+            }
         }
         browser {
-//            useEsModules() // Enables ES2015 modules
-
             testTask {
                 useMocha()
             }
@@ -86,19 +59,6 @@ kotlin {
         binaries.library()
         generateTypeScriptDefinitions()
     }
-    /*
-    val hostOs = System.getProperty("os.name")
-    val isArm64 = System.getProperty("os.arch") == "aarch64"
-    val isMingwX64 = hostOs.startsWith("Windows")
-    val nativeTarget = when {
-        hostOs == "Mac OS X" && isArm64 -> macosArm64("native")
-        hostOs == "Mac OS X" && !isArm64 -> macosX64("native")
-        hostOs == "Linux" && isArm64 -> linuxArm64("native")
-        hostOs == "Linux" && !isArm64 -> linuxX64("native")
-        isMingwX64 -> mingwX64("native")
-        else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
-    }*/
-
 
     sourceSets {
         all {
@@ -152,9 +112,5 @@ kotlin {
 
             }
         }
-        /* val nativeMain by getting {
-             dependencies {}
-         }
-         val nativeTest by getting*/
     }
 }
