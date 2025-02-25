@@ -1,4 +1,4 @@
-package com.sphereon.crypto.kms.provider.ecdsa
+package com.sphereon.crypto.kms.ecdsa
 
 import EcdsaRawKmpKeyInfoContext
 import checkSupportedEcdsaCurve

@@ -10,7 +10,7 @@ import com.sphereon.crypto.cose.CoseKeyCbor
 import com.sphereon.crypto.cose.ICoseKeyCbor
 import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.crypto.kms.CoseJoseProvidedKeyResolverService
-import com.sphereon.crypto.kms.provider.ecdsa.EcDSACryptoProvider
+import com.sphereon.crypto.kms.ecdsa.EcDSACryptoProvider
 import com.sphereon.crypto.kms.KeyManagerService
 import com.sphereon.crypto.providers.CoseCryptoProviderToCallbackAdapterJS
 import com.sphereon.json.oid4vpJsonSerializer

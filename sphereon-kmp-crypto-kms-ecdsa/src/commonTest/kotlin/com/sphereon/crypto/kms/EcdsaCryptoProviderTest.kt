@@ -5,7 +5,7 @@ import com.sphereon.crypto.generic.Curve
 import com.sphereon.crypto.generic.DigestAlg
 import com.sphereon.crypto.generic.KeyType
 import com.sphereon.crypto.generic.SignatureAlgorithm
-import com.sphereon.crypto.kms.provider.ecdsa.EcDSACryptoProvider
+import com.sphereon.crypto.kms.ecdsa.EcDSACryptoProvider
 import dev.whyoleg.cryptography.CryptographyProvider
 import kotlinx.coroutines.test.runTest
 import kotlin.test.BeforeTest
