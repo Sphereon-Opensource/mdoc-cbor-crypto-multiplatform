@@ -1,14 +1,12 @@
 package com.sphereon.crypto.kms.aws
 
 import kotlinx.serialization.Serializable
-import kotlin.js.JsExport
 
 private const val SECOND = 1000L
 private const val ONE = 1
 private const val FIFTEEN = 15
 
 @Serializable
-@JsExport
 data class AwsKmsClientConfig(
     val applicationId: String = "aws-kms",
     val region: String,
@@ -17,7 +15,6 @@ data class AwsKmsClientConfig(
 )
 
 @Serializable
-@JsExport
 enum class CredentialMode {
     ACCESS_KEY,
     PROFILE,
@@ -26,7 +23,6 @@ enum class CredentialMode {
 }
 
 @Serializable
-@JsExport
 data class CredentialOpts(
     val credentialMode: CredentialMode,
     val accessKeyCredentialOpts: AccessKeyCredentialOpts? = null,
@@ -34,7 +30,6 @@ data class CredentialOpts(
 )
 
 @Serializable
-@JsExport
 data class ExponentialBackoffRetryOpts(
     val maxRetries: Int? = 10,
     val baseDelayInMS: Long? = ONE * SECOND,
@@ -45,7 +40,6 @@ data class ExponentialBackoffRetryOpts(
  *  Authenticate with access key ID and secret key.
  */
 @Serializable
-@JsExport
 data class AccessKeyCredentialOpts(
     val accessKeyId: String,
     val secretAccessKey: String,
@@ -56,7 +50,6 @@ data class AccessKeyCredentialOpts(
  *  Authenticate with a named profile from AWS config.
  */
 @Serializable
-@JsExport
 data class ProfileCredentialOpts(
     val profileName: String,
 )
