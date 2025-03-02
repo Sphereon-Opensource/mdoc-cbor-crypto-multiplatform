@@ -41,6 +41,7 @@ kotlin {
                 implementation(libs.kermit)
                 implementation(project.dependencies.platform(awssdk.bom))
                 implementation(awssdk.services.kms)
+                implementation(libs.nimbusds.jose.jwt)
                 implementation("com.nimbusds:nimbus-jose-jwt:10.0.2")
             }
         }
