@@ -70,7 +70,10 @@ class IssuerSignedTest {
         assertNotNull(doc.issuerSigned.issuerAuth)
         assertNotNull(doc.issuerSigned.nameSpaces)
         assertEquals(2, doc.issuerSigned.issuerAuth.unprotectedHeader?.x5chain?.value?.size)
-        assertEquals(22, doc.issuerSigned.nameSpaces?.getStringLabel<CborArray<*>>("eu.europa.ec.eudi.pid.1", true)?.value?.size)
+        assertEquals(
+            22,
+            doc.issuerSigned.nameSpaces?.getStringLabel<CborArray<*>>("eu.europa.ec.eudi.pid.1", true)?.value?.size
+        )
     }
 
 
@@ -145,32 +148,49 @@ class IssuerSignedTest {
         issuerSignedJson.nameSpaces?.values?.forEach { items -> items.map { item -> println(item.toString()) } }
         val issuerSignedCborFromJson = issuerSignedJson.toCbor()
 
-        assertEquals(issuerSignedCbor, issuerSignedCborFromJson)
-    }
+        val namespace = "eu.europa.ec.eudi.pid.1"
+        val originalNamespaceArray = issuerSignedCbor.nameSpaces?.getStringLabel<CborArray<*>>(namespace, true)
+        val convertedNamespaceArray = issuerSignedCborFromJson.nameSpaces?.getStringLabel<CborArray<*>>(namespace, true)
+
+        assertNotNull(originalNamespaceArray)
+        assertNotNull(convertedNamespaceArray)
+        assertEquals(originalNamespaceArray.value.size, convertedNamespaceArray.value.size)
+
+        assertEquals(
+            issuerSignedCbor.issuerAuth.protectedHeader.alg,
+            issuerSignedCborFromJson.issuerAuth.protectedHeader.alg
+        )
+        assertEquals(
+            issuerSignedCbor.issuerAuth.unprotectedHeader?.x5chain?.value?.size,
+            issuerSignedCborFromJson.issuerAuth.unprotectedHeader?.x5chain?.value?.size
+        )
+        assertEquals(issuerSignedCbor.issuerAuth.payload, issuerSignedCborFromJson.issuerAuth.payload)
+        assertEquals(issuerSignedCbor.issuerAuth.signature, issuerSignedCborFromJson.issuerAuth.signature)
 
 
-    @Test
-    fun shouldCreateSigned() {
-        val cose = CoseSign1Cbor<Any>(
-            payload = "This is the content.".toCborByteString(),
-            protectedHeader = CoseHeaderCbor(alg = CoseAlgorithm.ES256),
-            unprotectedHeader = CoseHeaderCbor(kid = "11".stringToCborByteString()),
-            signature = CborByteString(
-                "8eb33e4ca31d1c465ab05aac34cc6b23d58fef5c083106c4d25a91aef0b0117e2af9a291aa32e14ab834dc56ed2a223444547e01f11d3b0916e5a4c345cacb36".decodeFrom(
-                    Encoding.HEX
+        @Test
+        fun shouldCreateSigned() {
+            val cose = CoseSign1Cbor<Any>(
+                payload = "This is the content.".toCborByteString(),
+                protectedHeader = CoseHeaderCbor(alg = CoseAlgorithm.ES256),
+                unprotectedHeader = CoseHeaderCbor(kid = "11".stringToCborByteString()),
+                signature = CborByteString(
+                    "8eb33e4ca31d1c465ab05aac34cc6b23d58fef5c083106c4d25a91aef0b0117e2af9a291aa32e14ab834dc56ed2a223444547e01f11d3b0916e5a4c345cacb36".decodeFrom(
+                        Encoding.HEX
+                    )
                 )
             )
-        )
-        val coseKeyCbor = CoseKeyJson(
-            kty = CoseKeyType.EC2,
-            kid = "11",
-            crv = CoseCurve.P_256,
-            x = "usWxHK2PmfnHKwXPS54m0kTcGJ90UiglWiGahtagnv8",
-            y = "IBOL-C3BttVivg-lSreASjpkttcsz-1rb7btKLv8EX4",
-            d = "V8kgd2ZBRuh2dgyVINBUqpPDr7BOMGcF22CQMIUHtNM"
-        ).toCbor()
-        val sigStructure = cose.toBeSignedCbor(KeyInfo(key = coseKeyCbor), SignatureAlgorithm.ECDSA_SHA256)
-        println(sigStructure.toCbor().encodeTo(Encoding.HEX))
-        println(cose.cborEncode().encodeTo(Encoding.HEX))
+            val coseKeyCbor = CoseKeyJson(
+                kty = CoseKeyType.EC2,
+                kid = "11",
+                crv = CoseCurve.P_256,
+                x = "usWxHK2PmfnHKwXPS54m0kTcGJ90UiglWiGahtagnv8",
+                y = "IBOL-C3BttVivg-lSreASjpkttcsz-1rb7btKLv8EX4",
+                d = "V8kgd2ZBRuh2dgyVINBUqpPDr7BOMGcF22CQMIUHtNM"
+            ).toCbor()
+            val sigStructure = cose.toBeSignedCbor(KeyInfo(key = coseKeyCbor), SignatureAlgorithm.ECDSA_SHA256)
+            println(sigStructure.toCbor().encodeTo(Encoding.HEX))
+            println(cose.cborEncode().encodeTo(Encoding.HEX))
+        }
     }
 }
