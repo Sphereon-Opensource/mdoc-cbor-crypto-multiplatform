@@ -2,12 +2,7 @@ package com.sphereon.crypto.kms.aws
 
 import aws.sdk.kotlin.services.kms.KmsClient
 import aws.sdk.kotlin.services.kms.model.*
-import com.nimbusds.jose.Algorithm
 import com.sphereon.crypto.IKeyInfo
-import com.sphereon.crypto.sign.model.SignInput
-import com.sphereon.crypto.sign.model.SignOutput
-import com.sphereon.crypto.sign.model.Signature
-import com.sphereon.crypto.sign.model.SignatureLevel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.security.KeyFactory
@@ -19,8 +14,6 @@ import com.sphereon.crypto.generic.*
 import com.nimbusds.jose.jwk.KeyType
 import com.sphereon.crypto.CoseJoseKeyMappingService
 import com.sphereon.crypto.jose.*
-import com.sphereon.kmp.encodeToBase64
-import java.security.spec.EllipticCurve
 
 actual class AwsKmsCryptoProvider actual constructor(
     private val config: AwsKmsClientConfig
@@ -123,7 +116,7 @@ actual class AwsKmsCryptoProvider actual constructor(
                 this.signingAlgorithm = algorithm.toSigningAlgorithmSpec()
             })
             return verifyResponse.signatureValid ?: false
-        } catch (e: aws.sdk.kotlin.services.kms.model.KmsInvalidSignatureException) {
+        } catch (e: KmsInvalidSignatureException) {
             return false
         }
     }
@@ -148,7 +141,6 @@ actual class AwsKmsCryptoProvider actual constructor(
     }
 
     private fun ECKey.toJwk(): Jwk {
-        // Determine algorithm from curve
         val jwaAlg = when(this.curve) {
             Curve.P_256 -> JwaAlgorithm.ES256
             Curve.P_384 -> JwaAlgorithm.ES384
@@ -169,7 +161,6 @@ actual class AwsKmsCryptoProvider actual constructor(
     private fun KeyType.toJwaKeyType(): JwaKeyType {
         return when (this) {
             KeyType.EC -> JwaKeyType.EC
-            KeyType.RSA -> JwaKeyType.RSA
             else -> throw IllegalArgumentException("Unsupported key type: $this")
         }
     }
