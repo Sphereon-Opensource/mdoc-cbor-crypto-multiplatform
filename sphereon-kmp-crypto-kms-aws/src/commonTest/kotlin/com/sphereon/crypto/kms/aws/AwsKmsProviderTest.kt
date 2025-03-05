@@ -46,7 +46,7 @@ class AwsKmsProviderTest {
     fun testSupportedCurves() {
         val curves = awsKmsCryptoProvider.supportedCurves()
         assertContentEquals(
-            arrayOf(Curve.P_256, Curve.Secp256k1, Curve.P_384, Curve.P_521), curves
+            arrayOf(Curve.P_256, Curve.P_384, Curve.P_521), curves
         )
     }
 

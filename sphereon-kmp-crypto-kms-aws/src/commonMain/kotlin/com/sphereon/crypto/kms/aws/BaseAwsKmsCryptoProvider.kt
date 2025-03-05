@@ -20,7 +20,7 @@ abstract class BaseAwsKmsCryptoProvider(private val id: String) : IKeyManagement
     ISimpleSignatureService {
     override fun getId(): String = id
 
-    override fun supportedCurves(): Array<Curve> = arrayOf(Curve.P_256, Curve.Secp256k1, Curve.P_384, Curve.P_521)
+    override fun supportedCurves(): Array<Curve> = arrayOf(Curve.P_256, Curve.P_384, Curve.P_521)
 
     override fun isSupportedCurve(curve: Curve): Boolean {
         return supportedCurves().contains(curve)

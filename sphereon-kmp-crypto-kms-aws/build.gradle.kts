@@ -5,7 +5,7 @@ plugins {
     kotlin("plugin.serialization")
     id("io.kotest.multiplatform")
     id("module.publication")
-    id("com.codingfeline.buildkonfig") version "0.15.2"
+    alias(libs.plugins.buildkonfig)
 }
 
 kotlin {
@@ -41,8 +41,6 @@ kotlin {
                 implementation(libs.kermit)
                 implementation(project.dependencies.platform(awssdk.bom))
                 implementation(awssdk.services.kms)
-                implementation(libs.nimbusds.jose.jwt)
-                implementation("com.nimbusds:nimbus-jose-jwt:10.0.2")
             }
         }
         val commonTest by getting {
@@ -53,6 +51,7 @@ kotlin {
         }
         val jvmMain by getting {
             dependencies {
+                implementation(libs.nimbusds.jose.jwt)
             }
         }
         val jvmTest by getting {

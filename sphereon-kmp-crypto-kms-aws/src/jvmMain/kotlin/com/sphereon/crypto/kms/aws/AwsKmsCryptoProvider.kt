@@ -14,6 +14,9 @@ import com.sphereon.crypto.generic.*
 import com.nimbusds.jose.jwk.KeyType
 import com.sphereon.crypto.CoseJoseKeyMappingService
 import com.sphereon.crypto.jose.*
+import com.sphereon.kmp.Logger
+
+private val logger = Logger("sphereon:kmp:kms:aws")
 
 actual class AwsKmsCryptoProvider actual constructor(
     private val config: AwsKmsClientConfig
@@ -117,6 +120,7 @@ actual class AwsKmsCryptoProvider actual constructor(
             })
             return verifyResponse.signatureValid ?: false
         } catch (e: KmsInvalidSignatureException) {
+            logger.debug("Signature validation failed: ${e.message}")
             return false
         }
     }

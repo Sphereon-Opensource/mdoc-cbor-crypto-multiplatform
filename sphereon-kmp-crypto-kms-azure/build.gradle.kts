@@ -8,7 +8,7 @@ plugins {
     kotlin("plugin.serialization")
     id("io.kotest.multiplatform")
     id("module.publication")
-    id("com.codingfeline.buildkonfig") version "0.15.2"
+    alias(libs.plugins.buildkonfig)
 }
 
 rootProject.plugins.withType<org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootPlugin> {
