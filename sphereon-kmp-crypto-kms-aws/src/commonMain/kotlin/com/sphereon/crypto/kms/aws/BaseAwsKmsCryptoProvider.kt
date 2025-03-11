@@ -9,16 +9,33 @@ import com.sphereon.crypto.generic.ManagedKeyPair
 import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.crypto.jose.JwkUse
 import com.sphereon.crypto.kms.IKeyManagementSystem
+import com.sphereon.crypto.kms.IKeyStoreService
+import com.sphereon.crypto.kms.model.AwsKmsClientConfig
+import com.sphereon.crypto.kms.model.KeyProviderSettings
+import com.sphereon.crypto.kms.model.KeyProviderType
 import com.sphereon.crypto.sign.IRawSignatureService
 import com.sphereon.crypto.sign.ISimpleSignatureService
 import com.sphereon.crypto.sign.model.SignInput
 import com.sphereon.crypto.sign.model.SignOutput
 import com.sphereon.crypto.sign.model.Signature
 
-abstract class BaseAwsKmsCryptoProvider(private val id: String) : IKeyManagementSystem,
+abstract class BaseAwsKmsCryptoProvider(override val settings: KeyProviderSettings) : IKeyManagementSystem,
     IRawSignatureService,
-    ISimpleSignatureService {
-    override fun getId(): String = id
+    ISimpleSignatureService,
+    IKeyStoreService {
+
+    init {
+        if (settings.id.isBlank()) {
+            throw IllegalArgumentException("Missing ID in settings.id")
+        } else if (settings.config.aws == null) {
+            throw IllegalArgumentException("Missing AWS KMS configuration in settings.config.aws")
+        } else if (settings.config.type !== KeyProviderType.AWS_KMS) {
+            throw IllegalArgumentException("Invalid key provider type: ${settings.config.type}. Expected AWS_KMS")
+        }
+    }
+    protected val awsConfig: AwsKmsClientConfig = settings.config.aws!!
+
+    override fun getId(): String = settings.id
 
     override fun supportedCurves(): Array<Curve> = arrayOf(Curve.P_256, Curve.P_384, Curve.P_521)
 
@@ -83,4 +100,6 @@ abstract class BaseAwsKmsCryptoProvider(private val id: String) : IKeyManagement
     override suspend fun isValidSignature(signInput: SignInput, signature: Signature): Boolean {
         TODO("Implement in platform-specific code")
     }
+
+
 }

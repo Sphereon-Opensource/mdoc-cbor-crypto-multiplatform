@@ -25,6 +25,8 @@ data class KeyProviderConfig(
 
     val jksParameters: KeystoreParameters? = null,
 
+    val aws: AwsKmsClientConfig? = null
+
 //    val restConfig: RestConfig? = null
 
 )

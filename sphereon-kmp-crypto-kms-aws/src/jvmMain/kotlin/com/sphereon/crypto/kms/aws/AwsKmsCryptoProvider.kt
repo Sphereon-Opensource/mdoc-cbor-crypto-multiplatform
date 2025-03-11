@@ -2,30 +2,31 @@ package com.sphereon.crypto.kms.aws
 
 import aws.sdk.kotlin.services.kms.KmsClient
 import aws.sdk.kotlin.services.kms.model.*
-import com.sphereon.crypto.IKeyInfo
+import com.nimbusds.jose.jwk.Curve
+import com.nimbusds.jose.jwk.ECKey
+import com.nimbusds.jose.jwk.KeyType
+import com.sphereon.crypto.*
+import com.sphereon.crypto.generic.*
+import com.sphereon.crypto.jose.*
+import com.sphereon.crypto.kms.model.KeyProviderSettings
+import com.sphereon.kmp.Logger
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.security.KeyFactory
-import java.security.spec.X509EncodedKeySpec
 import java.security.interfaces.ECPublicKey
-import com.nimbusds.jose.jwk.ECKey
-import com.nimbusds.jose.jwk.Curve
-import com.sphereon.crypto.generic.*
-import com.nimbusds.jose.jwk.KeyType
-import com.sphereon.crypto.CoseJoseKeyMappingService
-import com.sphereon.crypto.jose.*
-import com.sphereon.kmp.Logger
+import java.security.spec.X509EncodedKeySpec
 
 private val logger = Logger("sphereon:kmp:kms:aws")
 
 actual class AwsKmsCryptoProvider actual constructor(
-    private val config: AwsKmsClientConfig
-) : BaseAwsKmsCryptoProvider("aws-kms") {
+    settings: KeyProviderSettings
+) : BaseAwsKmsCryptoProvider(settings) {
 
-    private suspend fun getKmsClient(): KmsClient {
+    private suspend fun getAWSKmsClient(): KmsClient {
         return withContext(Dispatchers.IO) {
             KmsClient {
-                region = config.region
+                region = awsConfig.region
             }
         }
     }
@@ -55,7 +56,7 @@ actual class AwsKmsCryptoProvider actual constructor(
         }
 
         // Create key in AWS KMS
-        val client = getKmsClient()
+        val client = getAWSKmsClient()
         val createKeyResponse = client.createKey(CreateKeyRequest {
             keyUsage = KeyUsageType.SignVerify
             this.keySpec = keySpec
@@ -71,6 +72,10 @@ actual class AwsKmsCryptoProvider actual constructor(
         val publicKeyDer: ByteArray = getPublicKeyResponse.publicKey
             ?: throw IllegalStateException("Public key not found")
 
+        return toManagedKeyPair(publicKeyDer, kid, curve)
+    }
+
+    private fun toManagedKeyPair(publicKeyDer: ByteArray, kid: String, curve: Curve): ManagedKeyPair {
         // Create JWK from public key
         val ecKey = createJwkFromPublicKey(publicKeyDer, kid, curve)
         val joseKeyPair = JoseKeyPair(null, ecKey.toJwk())
@@ -92,7 +97,7 @@ actual class AwsKmsCryptoProvider actual constructor(
         val keyId = keyInfo.kmsKeyRef ?: throw IllegalArgumentException("KMS key reference is required")
         val algorithm = keyInfo.signatureAlgorithm ?: throw IllegalArgumentException("Signature algorithm is required")
 
-        val client = getKmsClient()
+        val client = getAWSKmsClient()
         val signResponse = client.sign(SignRequest {
             this.keyId = keyId
             message = input
@@ -110,7 +115,7 @@ actual class AwsKmsCryptoProvider actual constructor(
         val keyId = keyInfo.kmsKeyRef ?: throw IllegalArgumentException("KMS key reference is required")
         val algorithm = keyInfo.signatureAlgorithm ?: throw IllegalArgumentException("Signature algorithm is required")
 
-        val client = getKmsClient()
+        val client = getAWSKmsClient()
         try {
             val verifyResponse = client.verify(VerifyRequest {
                 this.keyId = keyId
@@ -125,7 +130,7 @@ actual class AwsKmsCryptoProvider actual constructor(
         }
     }
 
-    private fun SignatureAlgorithm.toSigningAlgorithmSpec() : SigningAlgorithmSpec {
+    private fun SignatureAlgorithm.toSigningAlgorithmSpec(): SigningAlgorithmSpec {
         return when (this) {
             SignatureAlgorithm.ECDSA_SHA256 -> SigningAlgorithmSpec.EcdsaSha256
             SignatureAlgorithm.ECDSA_SHA384 -> SigningAlgorithmSpec.EcdsaSha384
@@ -145,11 +150,11 @@ actual class AwsKmsCryptoProvider actual constructor(
     }
 
     private fun ECKey.toJwk(): Jwk {
-        val jwaAlg = when(this.curve) {
+        val jwaAlg = when (this.curve) {
             Curve.P_256 -> JwaAlgorithm.ES256
             Curve.P_384 -> JwaAlgorithm.ES384
             Curve.P_521 -> JwaAlgorithm.ES512
-            else -> null
+            else -> throw IllegalArgumentException("Unsupported curve: ${this.curve}")
         }
 
         return Jwk.Builder()
@@ -167,6 +172,53 @@ actual class AwsKmsCryptoProvider actual constructor(
             KeyType.EC -> JwaKeyType.EC
             else -> throw IllegalArgumentException("Unsupported key type: $this")
         }
+    }
+
+    override fun listKeys(): Array<IManagedKeyInfo<*>> {
+        return runBlocking {
+            val client = getAWSKmsClient()
+            client.listKeys().keys?.map { entry: KeyListEntry ->
+                getKey(KeyInfo<IJwk>(kmsKeyRef = entry.keyId!!))
+            }
+        }.orEmpty().toTypedArray()
+
+
+    }
+
+    override fun getKey(keyInfo: IKeyInfo<*>): IManagedKeyInfo<*> {
+        return runBlocking {
+            getAWSKmsClient().use { client ->
+                client.getPublicKey(GetPublicKeyRequest { keyId = keyInfo.kmsKeyRef }).publicKey?.let {
+                    toManagedKeyPair(
+                        it,
+                        keyInfo.kmsKeyRef!!,
+                        Curve.P_256
+                    ).joseToManagedKeyInfo()
+                }
+                    ?: throw IllegalArgumentException(
+                        "Key with ID ${keyInfo.kmsKeyRef} not found in AWS KMS"
+                    )
+            }
+        }
+    }
+
+    override fun storeKey(keyInfo: IResolvedKeyInfo<*>, kms: String, kmsKeyRef: String): IManagedKeyInfo<*> {
+        throw UnsupportedOperationException("AWS KMS does not support storing keys, it generates them only")
+    }
+
+    override fun deleteKey(keyInfo: IKeyInfo<*>): Boolean {
+        return runBlocking {
+            getAWSKmsClient().use { client ->
+                client.scheduleKeyDeletion(ScheduleKeyDeletionRequest {
+                    keyId = keyInfo.kmsKeyRef
+                    pendingWindowInDays = 7
+                }).keyState == KeyState.PendingDeletion
+            }
+        }
+    }
+
+    override fun keyVisibility(): KeyVisibility {
+        return KeyVisibility.PUBLIC
     }
 }
 

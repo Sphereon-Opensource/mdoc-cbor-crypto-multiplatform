@@ -1,35 +1,31 @@
 package com.sphereon.crypto.kms.aws
 
-import com.sphereon.crypto.generic.Curve
-import com.sphereon.crypto.generic.DigestAlg
-import com.sphereon.crypto.generic.KeyOperations
-import com.sphereon.crypto.generic.KeyType
-import com.sphereon.crypto.generic.SignatureAlgorithm
+import com.sphereon.crypto.KeyEncoding
+import com.sphereon.crypto.KeyVisibility
+import com.sphereon.crypto.generic.*
 import com.sphereon.crypto.jose.JwaAlgorithm
 import com.sphereon.crypto.jose.JwaKeyType
+import com.sphereon.crypto.jose.Jwk
+import com.sphereon.crypto.kms.model.*
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
-import kotlin.test.BeforeTest
-import kotlin.test.Test
-import kotlin.test.assertContentEquals
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class AwsKmsProviderTest {
     private lateinit var awsKmsCryptoProvider: AwsKmsCryptoProvider
+
+    var managedKeyPair: ManagedKeyPair? = null
 
     @BeforeTest
     fun setUp() {
         val awsConfig = AwsKmsClientConfig(
             applicationId = "aws-kms-test",
-            region = BuildKonfig.AWS_REGION!!,
+            region = BuildKonfig.AWS_REGION ?: throw IllegalArgumentException("Missing AWS region env var AWS_REGION"),
             credentialOpts = CredentialOpts(
                 credentialMode = CredentialMode.ACCESS_KEY,
                 accessKeyCredentialOpts = AccessKeyCredentialOpts(
-                    accessKeyId = BuildKonfig.AWS_ACCESS_KEY_ID!!,
-                    secretAccessKey = BuildKonfig.AWS_SECRET_ACCESS_KEY!!
+                    accessKeyId = BuildKonfig.AWS_ACCESS_KEY_ID ?: throw IllegalArgumentException("Missing AWS access key id env var AWS_ACCESS_KEY_ID"),
+                    secretAccessKey = BuildKonfig.AWS_SECRET_ACCESS_KEY ?: throw IllegalArgumentException("Missing AWS secret access key env var AWS_SECRET_ACCESS_KEY")
                 )
             ),
             exponentialBackoffRetryOpts = ExponentialBackoffRetryOpts(
@@ -38,8 +34,15 @@ class AwsKmsProviderTest {
                 maxDelayInMS = 15000 // Wait for max 15 seconds eventually
             )
         )
-
-        awsKmsCryptoProvider = AwsKmsCryptoProvider(config = awsConfig)
+        val settings = KeyProviderSettings(id = "aws-kms-test", config = KeyProviderConfig(type = KeyProviderType.AWS_KMS, aws = awsConfig))
+        awsKmsCryptoProvider = AwsKmsCryptoProvider(settings)
+        runBlocking {
+            managedKeyPair = awsKmsCryptoProvider.generateKeyAsync(
+                alg = SignatureAlgorithm.ECDSA_SHA256, keyOperations = arrayOf(
+                    KeyOperations.SIGN, KeyOperations.VERIFY
+                )
+            )
+        }
     }
 
     @Test
@@ -68,15 +71,15 @@ class AwsKmsProviderTest {
 
     @Test
     fun testGenerateKeyAsyncECDSA_SHA256() = runTest {
-        val managedKeyPair = awsKmsCryptoProvider.generateKeyAsync(
-            alg = SignatureAlgorithm.ECDSA_SHA256, keyOperations = arrayOf(
-                KeyOperations.SIGN, KeyOperations.VERIFY
-            )
-        )
-        assertNotNull(managedKeyPair)
-        assertNotNull(managedKeyPair.cborToManagedKeyInfo().key.kid)
-        assertEquals(JwaKeyType.EC, managedKeyPair.jose.publicJwk.kty)
-        assertEquals(JwaAlgorithm.ES256, managedKeyPair.jose.publicJwk.alg)
+        val kp = managedKeyPair ?: throw AssertionError("Managed key pair is null")
+        assertNotNull(kp)
+        assertNotNull(kp.cborToManagedKeyInfo().key.kid)
+        assertEquals(JwaKeyType.EC, kp.jose.publicJwk.kty)
+        assertEquals(JwaAlgorithm.ES256, kp.jose.publicJwk.alg)
+        println(kp.jose.publicJwk.toString())
+
+        awsKmsCryptoProvider.deleteKey(kp.toManagedKeyInfo<Jwk>(visibility = KeyVisibility.PUBLIC, keyEncoding = KeyEncoding.JOSE))
+
     }
 
     @Test
@@ -87,9 +90,10 @@ class AwsKmsProviderTest {
             )
         )
         assertNotNull(managedKeyPair)
-        assertNotNull(managedKeyPair.cborToManagedKeyInfo().key.kid)
+        assertNotNull(managedKeyPair.joseToManagedKeyInfo().key.kid)
         assertEquals(JwaKeyType.EC, managedKeyPair.jose.publicJwk.kty)
         assertEquals(JwaAlgorithm.ES384, managedKeyPair.jose.publicJwk.alg)
+        awsKmsCryptoProvider.deleteKey(managedKeyPair.toManagedKeyInfo<Jwk>(visibility = KeyVisibility.PUBLIC, keyEncoding = KeyEncoding.JOSE))
     }
 
     @Test
@@ -103,12 +107,13 @@ class AwsKmsProviderTest {
         assertNotNull(managedKeyPair.cborToManagedKeyInfo().key.kid)
         assertEquals(JwaKeyType.EC, managedKeyPair.jose.publicJwk.kty)
         assertEquals(JwaAlgorithm.ES512, managedKeyPair.jose.publicJwk.alg)
+        awsKmsCryptoProvider.deleteKey(managedKeyPair.toManagedKeyInfo<Jwk>(visibility = KeyVisibility.PUBLIC, keyEncoding = KeyEncoding.JOSE))
     }
 
     @Test
     fun testValidRawSignatureAndVerification() = runTest {
-        val managedKeyPair = awsKmsCryptoProvider.generateKeyAsync(alg = SignatureAlgorithm.ECDSA_SHA256)
-        val keyInfo = managedKeyPair.joseToManagedKeyInfo()
+//        val managedKeyPair = awsKmsCryptoProvider.generateKeyAsync(alg = SignatureAlgorithm.ECDSA_SHA256)
+        val keyInfo = managedKeyPair!!.joseToManagedKeyInfo()
         assertNotNull(keyInfo)
         val signature = awsKmsCryptoProvider.createRawSignatureAsync(
             keyInfo = keyInfo, input = "test".encodeToByteArray(), false
@@ -118,12 +123,13 @@ class AwsKmsProviderTest {
             keyInfo = keyInfo, signature = signature, input = "test".encodeToByteArray()
         )
         assertTrue(verification)
+//        awsKmsCryptoProvider.deleteKey(managedKeyPair.toManagedKeyInfo<Jwk>(visibility = KeyVisibility.PUBLIC, keyEncoding = KeyEncoding.JOSE))
     }
 
     @Test
     fun testInvalidRawSignatureAndVerification() = runTest {
-        val managedKeyPair = awsKmsCryptoProvider.generateKeyAsync(alg = SignatureAlgorithm.ECDSA_SHA256)
-        val keyInfo = managedKeyPair.joseToManagedKeyInfo()
+//        val managedKeyPair = awsKmsCryptoProvider.generateKeyAsync(alg = SignatureAlgorithm.ECDSA_SHA256)
+        val keyInfo = managedKeyPair!!.joseToManagedKeyInfo()
         assertNotNull(keyInfo)
         val signature = awsKmsCryptoProvider.createRawSignatureAsync(
             keyInfo = keyInfo, input = "test".encodeToByteArray(), false
@@ -133,6 +139,7 @@ class AwsKmsProviderTest {
             keyInfo = keyInfo, signature = signature, input = "test2".encodeToByteArray()
         )
         assertFalse(verification)
+//        awsKmsCryptoProvider.deleteKey(managedKeyPair.toManagedKeyInfo<Jwk>(visibility = KeyVisibility.PUBLIC, keyEncoding = KeyEncoding.JOSE))
     }
 
     @Test
