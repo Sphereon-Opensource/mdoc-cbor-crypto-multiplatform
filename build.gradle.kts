@@ -1,6 +1,6 @@
 allprojects {
     group = "com.sphereon.kmp"
-    version = "0.2.0-SNAPSHOT.25"
+    version = "0.2.0.27-SNAPSHOT"
 }
 
 plugins {
@@ -55,7 +55,7 @@ subprojects {
                     name = "sphereon-opensource"
                     val snapshotsUrl = "https://nexus.sphereon.com/repository/sphereon-opensource-snapshots/"
                     val releasesUrl = "https://nexus.sphereon.com/repository/sphereon-opensource-releases/"
-                    url = uri(if (version.toString().endsWith("SNAPSHOT")) snapshotsUrl else releasesUrl)
+                    url = uri(if (version.toString().contains("SNAPSHOT")) snapshotsUrl else releasesUrl)
                     credentials {
                         username = System.getenv("NEXUS_USERNAME")
                         password = System.getenv("NEXUS_PASSWORD")
