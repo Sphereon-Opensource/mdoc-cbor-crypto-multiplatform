@@ -1,7 +1,6 @@
 package com.sphereon.crypto.kms.aws
 
 import aws.sdk.kotlin.services.kms.KmsClient
-import aws.sdk.kotlin.services.kms.createAlias
 import aws.sdk.kotlin.services.kms.model.*
 import com.nimbusds.jose.jwk.Curve
 import com.nimbusds.jose.jwk.ECKey
@@ -218,8 +217,9 @@ actual class AwsKmsCryptoProvider actual constructor(
     override fun deleteKey(keyInfo: IKeyInfo<*>): Boolean {
         return runBlocking {
             getAWSKmsClient().use { client ->
+                val keyId = if (keyInfo.kid != null) keyInfo.kid else getKey(keyInfo).kid ?: determineAwsKeyId(keyInfo)  // We fetch the key first, since deletion can only happen via kid and not an alias!
                 client.scheduleKeyDeletion(ScheduleKeyDeletionRequest {
-                    keyId = determineAwsKeyId(keyInfo)
+                    this.keyId = keyId
                     pendingWindowInDays = 7
                 }).keyState == KeyState.PendingDeletion
             }
@@ -232,7 +232,9 @@ actual class AwsKmsCryptoProvider actual constructor(
 }
 
 fun determineAwsKeyId(keyInfo: IKeyInfo<*>): String {
-    val keyIdArg = keyInfo.kid ?: keyInfo.kmsKeyRef ?: throw IllegalArgumentException("KMS key reference is required")
-    return if (keyInfo.kmsKeyRef == keyInfo.kid || keyInfo.kmsKeyRef == null || keyIdArg.startsWith("alias/")) keyIdArg else "alias/$keyIdArg"
+    val keyIdArg = keyInfo.kmsKeyRef ?: keyInfo.kid ?: throw IllegalArgumentException("KMS key reference is required")
+    return (if (keyInfo.kmsKeyRef == keyInfo.kid || keyInfo.kmsKeyRef == null || keyIdArg.startsWith("alias/")) keyIdArg else "alias/$keyIdArg").also {
+        logger.debug("Determined key ID for keyref: ${keyInfo.kmsKeyRef}, kid: ${keyInfo.kid} to be $it")
+    }
 }
 
