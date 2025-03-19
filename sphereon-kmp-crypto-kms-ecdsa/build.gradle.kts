@@ -79,7 +79,6 @@ kotlin {
                 implementation(libs.whyoleg.cryptography.core)
                 implementation(libs.kotlinx.io.core)
                 implementation(libs.kermit)
-                implementation(libs.kable.core)
             }
         }
         val commonTest by getting {

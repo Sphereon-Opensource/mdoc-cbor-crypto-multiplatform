@@ -2,9 +2,6 @@ package com.sphereon.crypto.kms.aws
 
 import aws.sdk.kotlin.services.kms.KmsClient
 import aws.sdk.kotlin.services.kms.model.*
-import com.nimbusds.jose.jwk.Curve
-import com.nimbusds.jose.jwk.ECKey
-import com.nimbusds.jose.jwk.KeyType
 import com.sphereon.crypto.*
 import com.sphereon.crypto.generic.*
 import com.sphereon.crypto.jose.*
@@ -13,9 +10,11 @@ import com.sphereon.kmp.Logger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import java.math.BigInteger
 import java.security.KeyFactory
 import java.security.interfaces.ECPublicKey
 import java.security.spec.X509EncodedKeySpec
+import java.util.*
 
 private val logger = Logger("sphereon:kmp:kms:aws")
 
@@ -48,7 +47,7 @@ actual class AwsKmsCryptoProvider actual constructor(
         }
 
         // Map signature algorithm to key spec and curve
-        val (keySpec, curve) = when (signingAlgorithm) {
+        val (keySpec, _) = when (signingAlgorithm) {
             SignatureAlgorithm.ECDSA_SHA256 -> KeySpec.EccNistP256 to Curve.P_256
             SignatureAlgorithm.ECDSA_SHA384 -> KeySpec.EccNistP384 to Curve.P_384
             SignatureAlgorithm.ECDSA_SHA512 -> KeySpec.EccNistP521 to Curve.P_521
@@ -81,20 +80,20 @@ actual class AwsKmsCryptoProvider actual constructor(
         val publicKeyDer: ByteArray = getPublicKeyResponse.publicKey
             ?: throw IllegalStateException("Public key not found")
 
-        return toManagedKeyPair(publicKeyDer, kid, kmsKeyRef ?: kid, curve)
+        return toManagedKeyPair(publicKeyDer, kid, kmsKeyRef ?: kid)
     }
 
-    private fun toManagedKeyPair(publicKeyDer: ByteArray, kid: String, kmsKeyRef: String, curve: Curve): ManagedKeyPair {
+    private fun toManagedKeyPair(publicKeyDer: ByteArray, kid: String, kmsKeyRef: String): ManagedKeyPair {
         // Create JWK from public key
-        val ecKey = createJwkFromPublicKey(publicKeyDer, kid, curve)
-        val joseKeyPair = JoseKeyPair(null, ecKey.toJwk())
+        val jwk = createJwkFromPublicKey(publicKeyDer, kid)
+        val joseKeyPair = JoseKeyPair(null, jwk)
 
         return ManagedKeyPair(
             kms = getId(),
             kmsKeyRef = kmsKeyRef,
             kid = kid,
             jose = joseKeyPair,
-            cose = CoseKeyPair(null, CoseJoseKeyMappingService.toCoseKey(ecKey.toJwk()))
+            cose = CoseKeyPair(null, CoseJoseKeyMappingService.toCoseKey(jwk))
         )
     }
 
@@ -103,13 +102,19 @@ actual class AwsKmsCryptoProvider actual constructor(
         input: ByteArray,
         requireX5Chain: Boolean
     ): ByteArray {
-        val algorithm = keyInfo.signatureAlgorithm
+        var algorithm = keyInfo.signatureAlgorithm
+        if (algorithm == null) {
+            // No alg supplied. Although the AWS SDK lists the signature param as optional it really is not. So let's lookup the key in this case
+            val key = getKey(keyInfo)
+            algorithm = key.signatureAlgorithm
+                ?: throw IllegalArgumentException("Key does not have a signature algorithm set")
+        }
 
         val client = getAWSKmsClient()
         val signResponse = client.sign(SignRequest {
             this.keyId = determineAwsKeyId(keyInfo)
             message = input
-            this.signingAlgorithm = algorithm?.toSigningAlgorithmSpec()
+            this.signingAlgorithm = algorithm.toSigningAlgorithmSpec()
         })
 
         return signResponse.signature!!
@@ -146,40 +151,72 @@ actual class AwsKmsCryptoProvider actual constructor(
         }
     }
 
-    private fun createJwkFromPublicKey(publicKeyDer: ByteArray, keyId: String, curve: Curve): ECKey {
+    /**
+     * Creates a JWK (JSON Web Key) representation from the DER-encoded ECDSA public key.
+     *
+     * This implementation supports curves P-256, P-384, and P-521.
+     *
+     * @param publicKeyDer DER-encoded public key bytes.
+     * @param keyId The key identifier to embed in the JWK.
+     * @return A map representing the JWK.
+     * @throws IllegalArgumentException if the key is not a valid EC key or if it uses an unsupported curve.
+     */
+    fun createJwkFromPublicKey(publicKeyDer: ByteArray, keyId: String): Jwk {
+        // Parse the DER-encoded public key and cast it to an ECPublicKey.
         val keyFactory = KeyFactory.getInstance("EC")
-        val spec = X509EncodedKeySpec(publicKeyDer)
-        val publicKey = keyFactory.generatePublic(spec) as ECPublicKey
+        val keySpec = X509EncodedKeySpec(publicKeyDer)
+        val publicKey = keyFactory.generatePublic(keySpec) as? ECPublicKey
+            ?: throw IllegalArgumentException("Provided key is not a valid EC public key.")
 
-        return ECKey.Builder(curve, publicKey)
-            .keyID(keyId)
-            .build()
-    }
+        // Extract the affine coordinates (x and y)
+        val ecPoint = publicKey.w
+        val params = publicKey.params
+        val fieldSize = params.curve.field.fieldSize
+        // Compute byte length for coordinates
+        val coordinateLength = (fieldSize + 7) / 8
 
-    private fun ECKey.toJwk(): Jwk {
-        val jwaAlg = when (this.curve) {
-            Curve.P_256 -> JwaAlgorithm.ES256
-            Curve.P_384 -> JwaAlgorithm.ES384
-            Curve.P_521 -> JwaAlgorithm.ES512
-            else -> throw IllegalArgumentException("Unsupported curve: ${this.curve}")
+        // Convert BigInteger to a fixed-length byte array (unsigned representation)
+        fun bigIntToFixedLengthBytes(value: BigInteger, length: Int): ByteArray {
+            val bytes = value.toByteArray()
+            return when {
+                bytes.size == length -> bytes
+                bytes.size == length + 1 && bytes[0].toInt() == 0 -> bytes.copyOfRange(1, bytes.size)
+                bytes.size < length -> {
+                    // Left pad with zeros if necessary
+                    ByteArray(length).apply {
+                        System.arraycopy(bytes, 0, this, length - bytes.size, bytes.size)
+                    }
+                }
+                else -> bytes.copyOfRange(bytes.size - length, bytes.size)
+            }
+        }
+
+        val xBytes = bigIntToFixedLengthBytes(ecPoint.affineX, coordinateLength)
+        val yBytes = bigIntToFixedLengthBytes(ecPoint.affineY, coordinateLength)
+
+        // Encode x and y using Base64 URL encoding (without padding)
+        val encoder = Base64.getUrlEncoder().withoutPadding()
+        val xEncoded = encoder.encodeToString(xBytes)
+        val yEncoded = encoder.encodeToString(yBytes)
+
+        // Map the field size to the corresponding JWK "crv" value
+        val (crv, alg) = when (fieldSize) {
+            256 -> "P-256" to JwaAlgorithm.ES256
+            384 -> "P-384" to JwaAlgorithm.ES384
+            521 -> "P-521" to JwaAlgorithm.ES512
+            else -> throw IllegalArgumentException("Unsupported EC curve with field size $fieldSize")
         }
 
         return Jwk.Builder()
-            .withKid(this.keyID)
-            .withKty(this.keyType.toJwaKeyType())
-            .withAlg(jwaAlg)
-            .withX(this.x.toString())
-            .withY(this.y.toString())
+            .withKid(keyId)
+            .withKty(JwaKeyType.EC)
+            .withAlg(alg)
+            .withX(xEncoded)
+            .withY(yEncoded)
             .withKeyOps(arrayOf(JoseKeyOperations.SIGN, JoseKeyOperations.VERIFY))
             .build()
     }
 
-    private fun KeyType.toJwaKeyType(): JwaKeyType {
-        return when (this) {
-            KeyType.EC -> JwaKeyType.EC
-            else -> throw IllegalArgumentException("Unsupported key type: $this")
-        }
-    }
 
     override fun listKeys(): Array<IManagedKeyInfo<*>> {
         return runBlocking {
@@ -195,12 +232,13 @@ actual class AwsKmsCryptoProvider actual constructor(
     override fun getKey(keyInfo: IKeyInfo<*>): IManagedKeyInfo<*> {
         return runBlocking {
             getAWSKmsClient().use { client ->
+
                 client.getPublicKey(GetPublicKeyRequest { keyId = determineAwsKeyId(keyInfo) }).publicKey?.let {
+
                     toManagedKeyPair(
                         it,
                         keyInfo.kid!!,
-                        keyInfo.kmsKeyRef!!,
-                        Curve.P_256
+                        keyInfo.kmsKeyRef!!
                     ).joseToManagedKeyInfo()
                 }
                     ?: throw IllegalArgumentException(

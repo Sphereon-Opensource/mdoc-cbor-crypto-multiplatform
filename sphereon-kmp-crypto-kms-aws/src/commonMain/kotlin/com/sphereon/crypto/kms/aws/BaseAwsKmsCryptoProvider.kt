@@ -1,12 +1,7 @@
 package com.sphereon.crypto.kms.aws
 
 import com.sphereon.crypto.IKeyInfo
-import com.sphereon.crypto.generic.Curve
-import com.sphereon.crypto.generic.DigestAlg
-import com.sphereon.crypto.generic.KeyOperations
-import com.sphereon.crypto.generic.KeyType
-import com.sphereon.crypto.generic.ManagedKeyPair
-import com.sphereon.crypto.generic.SignatureAlgorithm
+import com.sphereon.crypto.generic.*
 import com.sphereon.crypto.jose.JwkUse
 import com.sphereon.crypto.kms.IKeyManagementSystem
 import com.sphereon.crypto.kms.IKeyStoreService
@@ -29,6 +24,7 @@ abstract class BaseAwsKmsCryptoProvider(override val settings: KeyProviderSettin
         requireNotNull(settings.config.aws) { "Missing AWS KMS configuration in settings.config.aws" }
         check(settings.config.type == KeyProviderType.AWS_KMS) { "Invalid key provider type: ${settings.config.type}. Expected AWS_KMS" }
     }
+
 
     protected val awsConfig: AwsKmsClientConfig = settings.config.aws!!
 

@@ -51,8 +51,7 @@ kotlin {
         }
         val jvmMain by getting {
             dependencies {
-                implementation(libs.nimbusds.jose.jwt)
-                implementation(libs.slf4j.simple)
+                api(libs.slf4j.simple)
             }
         }
         val jvmTest by getting {
