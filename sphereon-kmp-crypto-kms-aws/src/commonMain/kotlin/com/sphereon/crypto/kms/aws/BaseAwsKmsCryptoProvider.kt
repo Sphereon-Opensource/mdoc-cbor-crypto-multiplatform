@@ -25,14 +25,11 @@ abstract class BaseAwsKmsCryptoProvider(override val settings: KeyProviderSettin
     IKeyStoreService {
 
     init {
-        if (settings.id.isBlank()) {
-            throw IllegalArgumentException("Missing ID in settings.id")
-        } else if (settings.config.aws == null) {
-            throw IllegalArgumentException("Missing AWS KMS configuration in settings.config.aws")
-        } else if (settings.config.type !== KeyProviderType.AWS_KMS) {
-            throw IllegalArgumentException("Invalid key provider type: ${settings.config.type}. Expected AWS_KMS")
-        }
+        check(settings.id.isNotBlank()) { "Missing ID in settings.id" }
+        requireNotNull(settings.config.aws) { "Missing AWS KMS configuration in settings.config.aws" }
+        check(settings.config.type == KeyProviderType.AWS_KMS) { "Invalid key provider type: ${settings.config.type}. Expected AWS_KMS" }
     }
+
     protected val awsConfig: AwsKmsClientConfig = settings.config.aws!!
 
     override fun getId(): String = settings.id

@@ -38,6 +38,7 @@ class AwsKmsProviderTest {
         awsKmsCryptoProvider = AwsKmsCryptoProvider(settings)
         runBlocking {
             managedKeyPair = awsKmsCryptoProvider.generateKeyAsync(
+                kmsKeyRef = "aws-kms-test-${System.currentTimeMillis()}",
                 alg = SignatureAlgorithm.ECDSA_SHA256, keyOperations = arrayOf(
                     KeyOperations.SIGN, KeyOperations.VERIFY
                 )

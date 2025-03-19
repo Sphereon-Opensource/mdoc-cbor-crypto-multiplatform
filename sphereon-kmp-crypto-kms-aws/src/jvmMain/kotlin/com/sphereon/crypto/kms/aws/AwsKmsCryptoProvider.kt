@@ -1,6 +1,7 @@
 package com.sphereon.crypto.kms.aws
 
 import aws.sdk.kotlin.services.kms.KmsClient
+import aws.sdk.kotlin.services.kms.createAlias
 import aws.sdk.kotlin.services.kms.model.*
 import com.nimbusds.jose.jwk.Curve
 import com.nimbusds.jose.jwk.ECKey
@@ -58,12 +59,21 @@ actual class AwsKmsCryptoProvider actual constructor(
         // Create key in AWS KMS
         val client = getAWSKmsClient()
         val createKeyResponse = client.createKey(CreateKeyRequest {
-            keyUsage = KeyUsageType.SignVerify
+            this.keyUsage = KeyUsageType.SignVerify
             this.keySpec = keySpec
         })
 
         val kid = createKeyResponse.keyMetadata?.keyId
             ?: throw IllegalStateException("Failed to retrieve key ID after creation")
+
+        if (kmsKeyRef != null && (createKeyResponse.keyMetadata?.arn != null || createKeyResponse.keyMetadata?.keyId != null)) {
+            val aliasResponse = client.createAlias(
+                CreateAliasRequest {
+                    this.aliasName = if (kmsKeyRef.startsWith("alias/")) kmsKeyRef else "alias/$kmsKeyRef"
+                    this.targetKeyId = createKeyResponse.keyMetadata?.keyId ?: createKeyResponse.keyMetadata?.arn
+                })
+        }
+
 
         // Get public key in DER format
         val getPublicKeyResponse = client.getPublicKey(GetPublicKeyRequest {
@@ -72,17 +82,17 @@ actual class AwsKmsCryptoProvider actual constructor(
         val publicKeyDer: ByteArray = getPublicKeyResponse.publicKey
             ?: throw IllegalStateException("Public key not found")
 
-        return toManagedKeyPair(publicKeyDer, kid, curve)
+        return toManagedKeyPair(publicKeyDer, kid, kmsKeyRef ?: kid, curve)
     }
 
-    private fun toManagedKeyPair(publicKeyDer: ByteArray, kid: String, curve: Curve): ManagedKeyPair {
+    private fun toManagedKeyPair(publicKeyDer: ByteArray, kid: String, kmsKeyRef: String, curve: Curve): ManagedKeyPair {
         // Create JWK from public key
         val ecKey = createJwkFromPublicKey(publicKeyDer, kid, curve)
         val joseKeyPair = JoseKeyPair(null, ecKey.toJwk())
 
         return ManagedKeyPair(
             kms = getId(),
-            kmsKeyRef = kid,
+            kmsKeyRef = kmsKeyRef,
             kid = kid,
             jose = joseKeyPair,
             cose = CoseKeyPair(null, CoseJoseKeyMappingService.toCoseKey(ecKey.toJwk()))
@@ -94,14 +104,13 @@ actual class AwsKmsCryptoProvider actual constructor(
         input: ByteArray,
         requireX5Chain: Boolean
     ): ByteArray {
-        val keyId = keyInfo.kmsKeyRef ?: throw IllegalArgumentException("KMS key reference is required")
-        val algorithm = keyInfo.signatureAlgorithm ?: throw IllegalArgumentException("Signature algorithm is required")
+        val algorithm = keyInfo.signatureAlgorithm
 
         val client = getAWSKmsClient()
         val signResponse = client.sign(SignRequest {
-            this.keyId = keyId
+            this.keyId = determineAwsKeyId(keyInfo)
             message = input
-            this.signingAlgorithm = algorithm.toSigningAlgorithmSpec()
+            this.signingAlgorithm = algorithm?.toSigningAlgorithmSpec()
         })
 
         return signResponse.signature!!
@@ -112,20 +121,19 @@ actual class AwsKmsCryptoProvider actual constructor(
         input: ByteArray,
         signature: ByteArray
     ): Boolean {
-        val keyId = keyInfo.kmsKeyRef ?: throw IllegalArgumentException("KMS key reference is required")
-        val algorithm = keyInfo.signatureAlgorithm ?: throw IllegalArgumentException("Signature algorithm is required")
+        val algorithm = keyInfo.signatureAlgorithm
 
         val client = getAWSKmsClient()
         try {
             val verifyResponse = client.verify(VerifyRequest {
-                this.keyId = keyId
+                this.keyId = determineAwsKeyId(keyInfo)
                 message = input
                 this.signature = signature
-                this.signingAlgorithm = algorithm.toSigningAlgorithmSpec()
+                this.signingAlgorithm = algorithm?.toSigningAlgorithmSpec()
             })
-            return verifyResponse.signatureValid ?: false
+            return verifyResponse.signatureValid
         } catch (e: KmsInvalidSignatureException) {
-            logger.debug("Signature validation failed: ${e.message}")
+            logger.debug("Signature validation failed for ${determineAwsKeyId(keyInfo)}: ${e.message}")
             return false
         }
     }
@@ -163,7 +171,7 @@ actual class AwsKmsCryptoProvider actual constructor(
             .withAlg(jwaAlg)
             .withX(this.x.toString())
             .withY(this.y.toString())
-            .withKeyOps(arrayOf(JoseKeyOperations.SIGN))
+            .withKeyOps(arrayOf(JoseKeyOperations.SIGN, JoseKeyOperations.VERIFY))
             .build()
     }
 
@@ -178,7 +186,7 @@ actual class AwsKmsCryptoProvider actual constructor(
         return runBlocking {
             val client = getAWSKmsClient()
             client.listKeys().keys?.map { entry: KeyListEntry ->
-                getKey(KeyInfo<IJwk>(kmsKeyRef = entry.keyId!!))
+                getKey(KeyInfo<IJwk>(kid = entry.keyId!!))
             }
         }.orEmpty().toTypedArray()
 
@@ -188,9 +196,10 @@ actual class AwsKmsCryptoProvider actual constructor(
     override fun getKey(keyInfo: IKeyInfo<*>): IManagedKeyInfo<*> {
         return runBlocking {
             getAWSKmsClient().use { client ->
-                client.getPublicKey(GetPublicKeyRequest { keyId = keyInfo.kmsKeyRef }).publicKey?.let {
+                client.getPublicKey(GetPublicKeyRequest { keyId = determineAwsKeyId(keyInfo) }).publicKey?.let {
                     toManagedKeyPair(
                         it,
+                        keyInfo.kid!!,
                         keyInfo.kmsKeyRef!!,
                         Curve.P_256
                     ).joseToManagedKeyInfo()
@@ -210,7 +219,7 @@ actual class AwsKmsCryptoProvider actual constructor(
         return runBlocking {
             getAWSKmsClient().use { client ->
                 client.scheduleKeyDeletion(ScheduleKeyDeletionRequest {
-                    keyId = keyInfo.kmsKeyRef
+                    keyId = determineAwsKeyId(keyInfo)
                     pendingWindowInDays = 7
                 }).keyState == KeyState.PendingDeletion
             }
@@ -220,5 +229,10 @@ actual class AwsKmsCryptoProvider actual constructor(
     override fun keyVisibility(): KeyVisibility {
         return KeyVisibility.PUBLIC
     }
+}
+
+fun determineAwsKeyId(keyInfo: IKeyInfo<*>): String {
+    val keyIdArg = keyInfo.kid ?: keyInfo.kmsKeyRef ?: throw IllegalArgumentException("KMS key reference is required")
+    return if (keyInfo.kmsKeyRef == keyInfo.kid || keyInfo.kmsKeyRef == null || keyIdArg.startsWith("alias/")) keyIdArg else "alias/$keyIdArg"
 }
 
