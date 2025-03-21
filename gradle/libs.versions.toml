@@ -4,7 +4,7 @@ android-minSdk = "24"
 android-compileSdk = "34"
 base64 = "2.4.0"
 buildkonfig = "0.17.0"
-coroutines = "1.10.1"
+coroutines = "1.9.0"
 datetime = "0.6.2"
 io = "0.7.0"
 junit-jupiter-engine = "5.12.0"
@@ -13,8 +13,9 @@ kermit = "2.0.4"
 kable = "0.34.0"
 kache = "2.1.0"
 kotest = "5.9.1"
-kotlin = "2.1.10"
+kotlin = "2.1.20"
 kotlincrypto = "0.7.0"
+npmPublish = "3.5.3"
 serialization = "1.8.0"
 whyoleg-cryptography = "0.4.0"
 slf4j = "2.0.17"
@@ -53,6 +54,7 @@ kable-core = { module = "com.juul.kable:kable-core", version.ref = "kable"}
 slf4j-simple = {module = "org.slf4j:slf4j-simple", version.ref = "slf4j"}
 
 [plugins]
+npmPublish = { id = "dev.petuska.npm.publish", version.ref = "npmPublish" }
 androidLibrary = { id = "com.android.library", version.ref = "agp" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 buildkonfig = { id = "com.codingfeline.buildkonfig", version.ref = "buildkonfig"}
