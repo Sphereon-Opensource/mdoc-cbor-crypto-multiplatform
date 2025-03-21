@@ -8,6 +8,7 @@ plugins {
     id("io.kotest.multiplatform")
     id("module.publication")
     id("maven-publish")
+    alias(libs.plugins.npmPublish)
 }
 
 rootProject.plugins.withType<org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootPlugin> {
@@ -50,7 +51,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
 kotlin {
     kotlin.applyDefaultHierarchyTemplate()
 
-    jvmToolchain(17)
+    jvmToolchain(21)
     jvm {
         testRuns.named("test") {
             executionTask.configure {
@@ -72,7 +73,7 @@ kotlin {
 //            useEsModules() // Enables ES2015 modules
 
             testTask {
-                useMocha()
+                // useMocha()
             } // To run tests with Node.js.
 
         }
@@ -80,7 +81,7 @@ kotlin {
 //            useEsModules() // Enables ES2015 modules
 
             testTask {
-                useMocha()
+                // useMocha()
             }
         }
 
@@ -156,5 +157,26 @@ kotlin {
              dependencies {}
          }
          val nativeTest by getting*/
+    }
+}
+
+
+
+npmPublish {
+    registries {
+        register("npmjs") {
+            uri.set("https://registry.npmjs.org")
+            authToken.set(System.getenv("NPM_TOKEN") ?: "")
+        }
+    }
+    packages {
+        named("js") {
+            packageJson {
+                "name" by "@sphereon/kmp-crypto-kms"
+                "version" by rootProject.extra["npmVersion"] as String
+            }
+            scope.set("@sphereon")
+            packageName.set("kmp-crypto-kms")
+        }
     }
 }

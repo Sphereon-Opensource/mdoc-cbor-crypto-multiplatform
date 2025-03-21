@@ -1,3 +1,4 @@
+import org.gradle.declarative.dsl.schema.FqName.Empty.packageName
 import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnLockMismatchReport
 import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootExtension
 
@@ -9,6 +10,7 @@ plugins {
 //    id("com.google.devtools.ksp") version "2.0.0-RC3-1.0.20"
     id("module.publication")
     id("maven-publish")
+    alias(libs.plugins.npmPublish)
 }
 
 
@@ -52,7 +54,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
 kotlin {
     kotlin.applyDefaultHierarchyTemplate()
 
-    jvmToolchain(17)
+    jvmToolchain(21)
     jvm {
         testRuns.named("test") {
             executionTask.configure {
@@ -74,7 +76,7 @@ kotlin {
 //            useEsModules() // Enables ES2015 modules
 
             testTask {
-                useMocha()
+                // useMocha()
             } // To run tests with Node.js.
 
         }
@@ -82,7 +84,7 @@ kotlin {
 //            useEsModules() // Enables ES2015 modules
 
             testTask {
-                useMocha()
+                // useMocha()
             }
         }
         /*  browser {
@@ -96,7 +98,7 @@ kotlin {
             generateTypeScriptDefinitions()
             testTask {
                 debug = true
-                useMocha()
+                // useMocha()
             }
         }*/
 
@@ -181,4 +183,25 @@ android {
 */
 dependencies {
 //    add("kspJs", "deezer.kustomexport:compiler:0.8.2")
+}
+
+
+
+npmPublish {
+    registries {
+        register("npmjs") {
+            uri.set("https://registry.npmjs.org")
+            authToken.set(System.getenv("NPM_TOKEN") ?: "")
+        }
+    }
+    packages {
+        named("js") {
+            packageJson {
+                "name" by "@sphereon/kmp-cbor"
+                "version" by rootProject.extra["npmVersion"] as String
+            }
+            scope.set("@sphereon")
+            packageName.set("kmp-cbor")
+        }
+    }
 }

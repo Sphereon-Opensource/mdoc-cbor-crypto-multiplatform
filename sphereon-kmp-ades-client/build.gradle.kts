@@ -2,6 +2,7 @@ import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnLockMismatchReport
 import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootExtension
 
 plugins {
+    alias(libs.plugins.npmPublish)
 //    alias(libs.plugins.androidLibrary)
     kotlin("multiplatform")
     kotlin("plugin.serialization")
@@ -51,7 +52,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
 kotlin {
     kotlin.applyDefaultHierarchyTemplate()
 
-    jvmToolchain(17)
+    jvmToolchain(21)
     jvm {
         testRuns.named("test") {
             executionTask.configure {
@@ -73,7 +74,7 @@ kotlin {
 //            useEsModules() // Enables ES2015 modules
 
             testTask {
-                useMocha()
+                // useMocha()
             } // To run tests with Node.js.
 
         }
@@ -81,7 +82,7 @@ kotlin {
 //            useEsModules() // Enables ES2015 modules
 
             testTask {
-                useMocha()
+                // useMocha()
             }
         }
 

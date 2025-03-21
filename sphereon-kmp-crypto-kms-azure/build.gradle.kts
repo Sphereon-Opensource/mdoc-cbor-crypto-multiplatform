@@ -9,6 +9,7 @@ plugins {
     id("io.kotest.multiplatform")
     id("module.publication")
     id("maven-publish")
+    alias(libs.plugins.npmPublish)
     alias(libs.plugins.buildkonfig)
 }
 
@@ -52,7 +53,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
 kotlin {
     kotlin.applyDefaultHierarchyTemplate()
 
-    jvmToolchain(17)
+    jvmToolchain(21)
     jvm {
         testRuns.named("test") {
             executionTask.configure {
@@ -74,7 +75,7 @@ kotlin {
 //            useEsModules() // Enables ES2015 modules
 
             testTask {
-                useMocha()
+                // useMocha()
             } // To run tests with Node.js.
 
         }
@@ -82,7 +83,7 @@ kotlin {
 //            useEsModules() // Enables ES2015 modules
 
             testTask {
-                useMocha()
+                // useMocha()
             }
         }
 

@@ -1,6 +1,8 @@
 allprojects {
     group = "com.sphereon.kmp"
-    version = "0.2.4"
+    version = "0.2.7"
+
+    val npmVersion by extra { getNpmVersion() }
 }
 
 plugins {
@@ -11,9 +13,31 @@ plugins {
 //    kotlin("jvm") apply false
     id("module.publication") apply false
     kotlin("jvm") version libs.versions.kotlin
+    alias(libs.plugins.npmPublish) apply false
 }
 
+fun getNpmVersion(): String {
+    val baseVersion = project.version.toString()
+    if (!baseVersion.endsWith("-SNAPSHOT")) {
+        return baseVersion
+    }
 
+    // For SNAPSHOT versions, create an unstable.<commit-hash> version
+    val versionBase = baseVersion.removeSuffix("-SNAPSHOT")
+
+    // Get git commit hash
+    val gitCommitHash = try {
+        val process = ProcessBuilder("git", "rev-parse", "--short=7", "HEAD")
+            .redirectError(ProcessBuilder.Redirect.INHERIT)
+            .start()
+
+        process.inputStream.bufferedReader().use { it.readLine() }
+    } catch (e: Exception) {
+        "unknown"
+    }
+
+    return "$versionBase-unstable.$gitCommitHash"
+}
 /*
 ksp {
     arg("erasePackage", "true")
@@ -40,7 +64,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
 
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(21)
     compilerOptions {
         freeCompilerArgs.add("-Xexpect-actual-classes")
     }
@@ -48,6 +72,7 @@ kotlin {
 
 
 subprojects {
+
     plugins.withType<MavenPublishPlugin> {
         configure<PublishingExtension> {
             repositories {

@@ -8,6 +8,7 @@ plugins {
     id("io.kotest.multiplatform")
     id("module.publication")
     id("maven-publish")
+    alias(libs.plugins.npmPublish)
 }
 
 
@@ -73,7 +74,7 @@ kotlin {
 //            useEsModules() // Enables ES2015 modules
 
             testTask {
-                useMocha()
+                // useMocha()
             } // To run tests with Node.js.
 
         }
@@ -81,7 +82,7 @@ kotlin {
 //            useEsModules() // Enables ES2015 modules
 
             testTask {
-                useMocha()
+                // useMocha()
             }
         }
 
@@ -149,5 +150,24 @@ kotlin {
              dependencies {}
          }
          val nativeTest by getting*/
+    }
+}
+
+npmPublish {
+    registries {
+        register("npmjs") {
+            uri.set("https://registry.npmjs.org")
+            authToken.set(System.getenv("NPM_TOKEN") ?: "")
+        }
+    }
+    packages {
+        named("js") {
+            packageJson {
+                "name" by "@sphereon/kmp-common"
+                "version" by rootProject.extra["npmVersion"] as String
+            }
+            scope.set("@sphereon")
+            packageName.set("kmp-common")
+        }
     }
 }

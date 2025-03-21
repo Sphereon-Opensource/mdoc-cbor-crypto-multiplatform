@@ -6,12 +6,13 @@ plugins {
     id("io.kotest.multiplatform")
     id("module.publication")
     alias(libs.plugins.buildkonfig)
+    alias(libs.plugins.npmPublish)
 }
 
 kotlin {
     kotlin.applyDefaultHierarchyTemplate()
 
-    jvmToolchain(17)
+    jvmToolchain(21)
     jvm {
         testRuns.named("test") {
             executionTask.configure {

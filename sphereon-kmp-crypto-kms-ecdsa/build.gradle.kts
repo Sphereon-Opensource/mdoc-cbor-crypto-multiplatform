@@ -1,7 +1,9 @@
+import org.gradle.declarative.dsl.schema.FqName.Empty.packageName
 import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnLockMismatchReport
 import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootExtension
 
 plugins {
+    alias(libs.plugins.npmPublish)
     kotlin("multiplatform")
     kotlin("plugin.serialization")
     id("io.kotest.multiplatform")
@@ -35,7 +37,7 @@ repositories {
 kotlin {
     kotlin.applyDefaultHierarchyTemplate()
 
-    jvmToolchain(17)
+    jvmToolchain(21)
     jvm {
         testRuns.named("test") {
             executionTask.configure {
@@ -47,12 +49,12 @@ kotlin {
     js(IR) {
         nodejs {
             testTask {
-                useMocha()
+                // useMocha()
             }
         }
         browser {
             testTask {
-                useMocha()
+                // useMocha()
             }
         }
 
@@ -113,3 +115,24 @@ kotlin {
         }
     }
 }
+
+
+npmPublish {
+    registries {
+        register("npmjs") {
+            uri.set("https://registry.npmjs.org")
+            authToken.set(System.getenv("NPM_TOKEN") ?: "")
+        }
+    }
+    packages {
+        named("js") {
+            packageJson {
+                "name" by "@sphereon/kmp-kms-ecdsa"
+                "version" by rootProject.extra["npmVersion"] as String
+            }
+            scope.set("@sphereon")
+            packageName.set("kmp-kms-ecdsa")
+        }
+    }
+}
+
