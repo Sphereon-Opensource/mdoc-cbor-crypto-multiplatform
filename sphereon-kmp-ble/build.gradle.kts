@@ -1,6 +1,7 @@
 plugins {
-    kotlin("multiplatform") version libs.versions.kotlin
-    id("com.android.library")
+    alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.kotest)
+    alias(libs.plugins.android.library)
 //    kotlin("jvm") version libs.versions.kotlin
 }
 

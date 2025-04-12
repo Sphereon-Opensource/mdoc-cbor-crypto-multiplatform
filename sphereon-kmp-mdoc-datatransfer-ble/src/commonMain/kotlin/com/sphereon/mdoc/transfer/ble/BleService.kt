@@ -29,12 +29,16 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
+@JsExport
+fun interface OnBleStatusCallback {
+    operator fun invoke(state: BleScanState, message: String?)
+}
 
 @JsExport
 @OptIn(ExperimentalUuidApi::class)
 class BleService(
     private val scope: CoroutineScope,
-    private val onStatus: ((state: BleScanState, message: String?) -> Unit)? = null,
+    private val onStatus: Array<OnBleStatusCallback> = emptyArray(),
 ) : IBleService {
 
     private fun convertUuidToImpl(uuid: Uuid) = uuidFrom(uuid.toString())
@@ -62,8 +66,10 @@ class BleService(
 
     public var scanJob: Job? = null
 
+    private fun emitOnStatus(state: BleScanState, message: String?) = onStatus.forEach { it(state, message) }
+
     override fun initiateScan(services: Array<Uuid>, filter: ((PlatformAdvertisement) -> Boolean)) {
-        onStatus?.invoke(Initial, null)
+        emitOnStatus(Initial, null)
         if (_isScanning.value == Scanning) {
             return
         }
@@ -71,23 +77,30 @@ class BleService(
         scanJob = scope.launch(CoroutineName("Scanner")) {
             _isScanning.value = Scanning
             try {
-                withTimeout(30.seconds) {
+                withTimeout(230.seconds) {
                     scanner(services)
                         .advertisements
-                        .onStart { onStatus?.invoke(Scanning, null) }
+                        .onStart { emitOnStatus(Scanning, null) }
                         .filter(filter)
                         .collect { advertisement ->
-                            onStatus?.invoke(Found, advertisement.identifier.toString())
+
+                            if (!found.containsKey(advertisement.identifier)) {
+                                println("Found: $advertisement")
+                                emitOnStatus(Found, advertisement.identifier.toString())
+                            }
                             found[advertisement.identifier] = advertisement
                             _advertisements.value = found.values.toList()
                         }
                 }
             } catch (e: Exception) {
                 when (e) {
-                    is CancellationException -> onStatus?.invoke(Canceled, null)
-                    else -> onStatus?.invoke(Error, e.message ?: "Unknown error")
+                    is CancellationException -> emitOnStatus(Canceled, null)
+                    else -> emitOnStatus(Error, e.message ?: "Unknown error")
                 }
             } finally {
+                println("###################################")
+                println("Scan finished #####################")
+                println("###################################")
                 _isScanning.value = Finished
             }
         }

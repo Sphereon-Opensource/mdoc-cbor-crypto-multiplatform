@@ -1,13 +1,18 @@
 [versions]
-agp = "8.7.2"
+agp = "8.7.3"
+compose = "1.7.1"
+jvm = "17"
+krayon = "0.19.1"
+voyager = "1.1.0-beta03"
 kotlin = "2.1.0"
-nexus-publish = "2.0.0-rc-1"
-android-minSdk = "24"
-android-compileSdk = "34"
-kotest = "5.9.0"
+nexus-publish = "2.0.0"
+android-compile = "35"
+android-min = "21"
+android-target = "31"
+kotest = "5.9.1"
 serialization = "1.7.3"
 coroutines = "1.9.0"
-io = "0.3.4"
+io = "0.6.0"
 datetime = "0.6.1"
 whyoleg-cryptography = "0.4.0"
 kermit = "2.0.4"
@@ -17,6 +22,8 @@ kache = "2.1.0"
 kable = "0.35.0"
 
 [libraries]
+androidx-lifecycle = { module = "androidx.lifecycle:lifecycle-common", version = "2.8.7" }
+compose-activity = { module = "androidx.activity:activity-compose", version = "1.9.3" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 nexus-publish = { module = "io.github.gradle-nexus.publish-plugin:io.github.gradle-nexus.publish-plugin.gradle.plugin", version.ref = "nexus-publish" }
@@ -47,8 +54,39 @@ kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
 encoding-base64 = { module = "io.matthewnelson.encoding:base64", version.ref = "base64" }
 kache = { module = "com.mayakapps.kache:kache", version.ref = "kache" }
 kable-core = { module = "com.juul.kable:kable-core", version.ref = "kable"}
+desugar = { module = "com.android.tools:desugar_jdk_libs", version = "2.1.3" }
+khronicle = { module = "com.juul.khronicle:khronicle-core", version = "0.5.0" }
+krayon-axis = { module = "com.juul.krayon:axis", version.ref = "krayon" }
+krayon-compose = { module = "com.juul.krayon:compose", version.ref = "krayon" }
+krayon-scale = { module = "com.juul.krayon:scale", version.ref = "krayon" }
+krayon-selection = { module = "com.juul.krayon:selection", version.ref = "krayon" }
+krayon-shape = { module = "com.juul.krayon:shape", version.ref = "krayon" }
+moko-permissions = { module = "dev.icerock.moko:permissions-compose", version = "0.18.1" }
+serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version = "1.7.3" }
+tuulbox-coroutines = { module = "com.juul.tuulbox:coroutines", version = "8.0.0" }
+voyager-navigator = { module = "cafe.adriel.voyager:voyager-navigator", version.ref = "voyager" }
+voyager-screenmodel = { module = "cafe.adriel.voyager:voyager-screenmodel", version.ref = "voyager" }
+voyager-transitions = { module = "cafe.adriel.voyager:voyager-transitions", version.ref = "voyager" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
+compose = { id = "org.jetbrains.compose", version.ref = "compose" }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+kotest = { id = "io.kotest.multiplatform", version.ref = "kotest" }
+
+[bundles]
+krayon = [
+    "krayon-axis",
+    "krayon-scale",
+    "krayon-selection",
+    "krayon-shape",
+]
+voyager = [
+    "voyager-navigator",
+    "voyager-screenmodel",
+    "voyager-transitions",
+]

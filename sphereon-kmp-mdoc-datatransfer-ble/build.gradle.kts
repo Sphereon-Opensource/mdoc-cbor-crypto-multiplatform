@@ -3,12 +3,11 @@ import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootExtension
 
 
 plugins {
-//    alias(libs.plugins.androidLibrary)
-    kotlin("multiplatform") version libs.versions.kotlin
-    kotlin("plugin.serialization")
-    id("io.kotest.multiplatform")
+    alias(libs.plugins.serialization)
+    alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotest)
     id("module.publication")
-    id("com.android.library") version libs.versions.agp
 }
 
 
@@ -26,28 +25,6 @@ rootProject.plugins.withType(org.jetbrains.kotlin.gradle.targets.js.yarn.YarnPlu
     rootProject.the<YarnRootExtension>().reportNewYarnLock = false // true
     rootProject.the<YarnRootExtension>().yarnLockAutoReplace = true // true
 }
-
-
-/*
-ksp {
-    arg("erasePackage", "true")
-}*/
-repositories {
-    mavenLocal()
-    mavenCentral()
-    gradlePluginPortal()
-    google()
-    maven {
-        url = uri("https://oss.sonatype.org/content/repositories/snapshots")
-        name = "bigNum"
-    }
-    maven(url = "https://raw.githubusercontent.com/Deezer/KustomExport/mvn-repo")
-}
-/*
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions.freeCompilerArgs += "-opt-in=kotlin.js.ExperimentalJsExport"
-}
-*/
 
 
 kotlin {
@@ -69,7 +46,7 @@ kotlin {
             }
         }
     }
-    js(IR) {
+    js {
         moduleName = "@sphereon/kmp-mdoc-datatransfer-ble"
         nodejs {
 //            useEsModules() // Enables ES2015 modules
@@ -153,8 +130,11 @@ kotlin {
         val androidUnitTest by getting {
             dependencies {
                 implementation(libs.whyoleg.cryptography.provider.jdk)
+                implementation(libs.kotlinx.coroutines.core)
+                implementation(libs.kotlinx.coroutines.test)
                 implementation(libs.kotlinx.coroutines.android)
                 implementation(projects.sphereonKmpCryptoKms)
+                implementation(kotlin("test"))
             }
         }
         val jsMain by getting {
@@ -178,6 +158,7 @@ kotlin {
              dependencies {}
          }
          val nativeTest by getting*/
+
     }
 }
 

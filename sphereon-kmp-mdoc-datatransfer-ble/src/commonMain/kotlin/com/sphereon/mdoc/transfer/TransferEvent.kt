@@ -1,7 +1,12 @@
+@file:OptIn(ExperimentalUuidApi::class)
+
 package com.sphereon.mdoc.transfer
 
+import com.juul.kable.Identifier
 import com.sphereon.mdoc.transfer.device.DeviceEngagementCbor
 import kotlin.js.JsExport
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 @JsExport
 sealed interface TransferEvent {
@@ -19,7 +24,7 @@ data class Initializing(override val role: EngagementRole) : TransferEvent
 data class DebugEvent(override val role: EngagementRole, val message: String) : TransferEvent
 
 @JsExport
-data class Connecting(override val role: EngagementRole) : TransferEvent
+data class Connecting(override val role: EngagementRole, val identifier: String) : TransferEvent
 
 
 @JsExport

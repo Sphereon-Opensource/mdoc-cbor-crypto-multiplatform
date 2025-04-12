@@ -2,10 +2,9 @@ import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnLockMismatchReport
 import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootExtension
 
 plugins {
-//    alias(libs.plugins.androidLibrary)
-    kotlin("multiplatform")
-    kotlin("plugin.serialization")
-    id("io.kotest.multiplatform")
+    alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.kotest)
+    alias(libs.plugins.serialization)
     id("module.publication")
 }
 
@@ -31,7 +30,6 @@ ksp {
     arg("erasePackage", "true")
 }*/
 repositories {
-    mavenLocal()
     mavenCentral()
     gradlePluginPortal()
     maven {
@@ -39,6 +37,7 @@ repositories {
         name = "bigNum"
     }
     maven(url = "https://raw.githubusercontent.com/Deezer/KustomExport/mvn-repo")
+    mavenLocal()
 }
 /*
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
@@ -50,7 +49,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
 kotlin {
     kotlin.applyDefaultHierarchyTemplate()
 
-    jvmToolchain(13)
+    jvmToolchain(17)
     jvm {
         testRuns.named("test") {
             executionTask.configure {
@@ -66,7 +65,7 @@ kotlin {
               }
           }
       }*/
-    js(IR) {
+    js {
         moduleName = "@sphereon/kmp-common"
         nodejs {
 //            useEsModules() // Enables ES2015 modules
@@ -130,6 +129,7 @@ kotlin {
             }
         }
         val jvmTest by getting
+
         val jsMain by getting {
             dependencies {
                 implementation(npm("@js-joda/timezone", "2.3.0"))

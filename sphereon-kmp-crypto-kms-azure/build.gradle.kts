@@ -3,10 +3,9 @@ import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnLockMismatchReport
 import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootExtension
 
 plugins {
-//    alias(libs.plugins.androidLibrary)
-    kotlin("multiplatform")
-    kotlin("plugin.serialization")
-    id("io.kotest.multiplatform")
+    alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.kotest)
+    alias(libs.plugins.serialization)
     id("module.publication")
     id("com.codingfeline.buildkonfig") version "0.15.2"
 }
@@ -25,28 +24,6 @@ rootProject.plugins.withType(org.jetbrains.kotlin.gradle.targets.js.yarn.YarnPlu
     rootProject.the<YarnRootExtension>().reportNewYarnLock = false // true
     rootProject.the<YarnRootExtension>().yarnLockAutoReplace = true // true
 }
-
-/*
-ksp {
-    arg("erasePackage", "true")
-}*/
-
-repositories {
-    mavenLocal()
-    mavenCentral()
-    gradlePluginPortal()
-    maven {
-        url = uri("https://oss.sonatype.org/content/repositories/snapshots")
-        name = "bigNum"
-    }
-    maven(url = "https://raw.githubusercontent.com/Deezer/KustomExport/mvn-repo")
-}
-
-/*
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions.freeCompilerArgs += "-opt-in=kotlin.js.ExperimentalJsExport"
-}
-*/
 
 kotlin {
     kotlin.applyDefaultHierarchyTemplate()
@@ -67,7 +44,7 @@ kotlin {
               }
           }
       }*/
-    js(IR) {
+    js {
         moduleName = "@sphereon/kmp-crypto-kms-azure"
         nodejs {
 //            useEsModules() // Enables ES2015 modules

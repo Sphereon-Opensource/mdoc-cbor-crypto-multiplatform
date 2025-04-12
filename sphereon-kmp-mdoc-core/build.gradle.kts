@@ -27,27 +27,6 @@ rootProject.plugins.withType(org.jetbrains.kotlin.gradle.targets.js.yarn.YarnPlu
 }
 
 
-/*
-ksp {
-    arg("erasePackage", "true")
-}*/
-repositories {
-    mavenLocal()
-    mavenCentral()
-    gradlePluginPortal()
-    maven {
-        url = uri("https://oss.sonatype.org/content/repositories/snapshots")
-        name = "bigNum"
-    }
-    maven(url = "https://raw.githubusercontent.com/Deezer/KustomExport/mvn-repo")
-}
-/*
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions.freeCompilerArgs += "-opt-in=kotlin.js.ExperimentalJsExport"
-}
-*/
-
-
 kotlin {
     kotlin.applyDefaultHierarchyTemplate()
 

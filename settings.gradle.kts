@@ -5,7 +5,6 @@ pluginManagement {
     includeBuild("convention-plugins")
 
     repositories {
-        mavenLocal()
         google {
             mavenContent {
                 includeGroupAndSubgroups("androidx")
@@ -20,13 +19,13 @@ pluginManagement {
         maven {
             url = uri("https://nexus.sphereon.com/repository/sphereon-opensource-releases")
         }
+        mavenLocal()
         gradlePluginPortal()
     }
 }
 
 dependencyResolutionManagement {
     repositories {
-        mavenLocal()
         google {
             mavenContent {
                 includeGroupAndSubgroups("androidx")
@@ -41,6 +40,7 @@ dependencyResolutionManagement {
         maven {
             url = uri("https://nexus.sphereon.com/repository/sphereon-opensource-releases")
         }
+        mavenLocal()
     }
 }
 plugins {
@@ -56,5 +56,9 @@ include(
     "sphereon-kmp-crypto-kms-azure",
     "sphereon-kmp-ades-client",
     "sphereon-kmp-mdoc-core",
-    "sphereon-kmp-mdoc-datatransfer-ble"
+    "sphereon-kmp-mdoc-datatransfer-ble",
+    "mdoc-qr-ble-example-app:bluetooth",
+    "mdoc-qr-ble-example-app:ios",
+    "mdoc-qr-ble-example-app:permissions",
+    "mdoc-qr-ble-example-app:app"
 )

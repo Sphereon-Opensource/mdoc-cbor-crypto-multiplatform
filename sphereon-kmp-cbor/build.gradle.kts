@@ -2,11 +2,9 @@ import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnLockMismatchReport
 import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootExtension
 
 plugins {
-//    alias(libs.plugins.androidLibrary)
-    kotlin("multiplatform")
-    kotlin("plugin.serialization")
-    id("io.kotest.multiplatform")
-//    id("com.google.devtools.ksp") version "2.0.0-RC3-1.0.20"
+    alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.kotest)
+    alias(libs.plugins.serialization)
     id("module.publication")
 }
 
@@ -32,7 +30,6 @@ ksp {
     arg("erasePackage", "true")
 }*/
 repositories {
-    mavenLocal()
     mavenCentral()
     gradlePluginPortal()
     maven {
@@ -40,6 +37,7 @@ repositories {
         name = "bigNum"
     }
     maven(url = "https://raw.githubusercontent.com/Deezer/KustomExport/mvn-repo")
+    mavenLocal()
 }
 /*
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {

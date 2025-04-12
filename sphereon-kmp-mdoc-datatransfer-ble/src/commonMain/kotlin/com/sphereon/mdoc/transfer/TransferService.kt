@@ -7,15 +7,14 @@ import com.sphereon.crypto.cose.CoseKeyCbor
 import com.sphereon.crypto.generic.SignatureAlgorithm
 import com.sphereon.crypto.kms.IKeyManagerService
 import com.sphereon.mdoc.transfer.ble.BleScanState
-import com.sphereon.mdoc.transfer.ble.BleService
-import com.sphereon.mdoc.transfer.ble.IBleService
+import com.sphereon.mdoc.transfer.ble.MdocBleService
+import com.sphereon.mdoc.transfer.ble.OnBleStatusCallback
 import com.sphereon.mdoc.transfer.device.DeviceEngagementCbor
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlin.js.JsExport
 import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 
 
 /**
@@ -49,7 +48,7 @@ class TransferService(
         context: Any? = null,
         listeners: MutableSet<TransferEventListener> = mutableSetOf<TransferEventListener>(),
         engagementService: EngagementService,
-        bleService: BleService
+        bleService: MdocBleService
     ) : this(keyManager, retrievalMethods, listeners, context)
 
 
@@ -60,7 +59,7 @@ class TransferService(
         fun fromQrEngagement(
             qrCodeData: String,
             context: Any? = null,
-            bleService: BleService,
+            bleService: MdocBleService,
             retrievalMethods: Array<DeviceRetrievalMethod> = arrayOf(),
             keyManager: IKeyManagerService,
             vararg listeners: TransferEventListener
@@ -88,7 +87,12 @@ class TransferService(
 //                bleService.
 
             }
-            transferService.sendEvent(Connecting(EngagementRole.VERIFIER))
+            // TODO check
+            transferService.sendEvent(
+                Connecting(
+                    EngagementRole.VERIFIER,
+                    engagementService.getBleCentralClientModeUuid()?.let { it.toString() }
+                        ?: throw IllegalStateException("Mdoc uuid expected in message: $qrCodeData")))
             return transferService
         }
 
@@ -102,7 +106,7 @@ abstract class AbstractTransferService(
     val retrievalMethods: Array<DeviceRetrievalMethod>,
     val listeners: MutableSet<TransferEventListener> = mutableSetOf<TransferEventListener>(),
     val context: Any? = null
-): TransferEventHandler {
+) : TransferEventHandler {
 
     private constructor(
         keyManager: IKeyManagerService,
@@ -110,14 +114,14 @@ abstract class AbstractTransferService(
         context: Any? = null,
         listeners: MutableSet<TransferEventListener> = mutableSetOf<TransferEventListener>(),
         engagementService: EngagementService,
-        bleService: BleService
+        bleService: MdocBleService
     ) : this(keyManager, retrievalMethods, listeners, context) {
         this.bleService = bleService
         this.engagementService = engagementService
         this.started = true
     }
 
-    public var bleService: BleService? = null
+    var bleService: MdocBleService? = null
     private var engagementService: EngagementService? = null
 
     private var started = false
@@ -138,28 +142,43 @@ abstract class AbstractTransferService(
         val qrEngagement = engagementService.generateQrEngagementData().also { this.started = true }
         sendEvent(QrEngagement(EngagementRole.HOLDER, qrEngagement, engagementService.getDeviceEngagement(), ble))
         if (ble) {
-            val services = mutableSetOf<Uuid>()
-            engagementService.getBleCentralClientModeUuid()?.let { services.add(it) }
-            engagementService.getBlePeripheralServerModeUuid()?.let { services.add(it) }
-            val bleService = BleService(CoroutineScope(CoroutineName("ble-service")), onStatus = { state, message ->
-                {
-                    when (state) {
-                        BleScanState.Initial -> sendEvent(Initializing(EngagementRole.HOLDER))
-                        BleScanState.Scanning -> sendEvent(Connecting(EngagementRole.HOLDER))
-                        BleScanState.Canceled -> sendEvent(Canceled(EngagementRole.HOLDER, "Scan canceled"))
-                        BleScanState.Finished -> sendEvent(DebugEvent(EngagementRole.HOLDER, message ?: "Scan finished"))
-                        BleScanState.Error -> sendEvent(Error(EngagementRole.HOLDER, message ?: "Scan error"))
-                        BleScanState.Found -> sendEvent(DebugEvent(EngagementRole.HOLDER, message ?: "Discovered"))
-                    }
+
+            this.bleService = MdocBleService(
+                centralClientModeUUID = engagementService.getBleCentralClientModeUuid(),
+                peripheralServerModeUUID = engagementService.getBlePeripheralServerModeUuid(),
+                context,
+                onStatus = arrayOf(onBleStatusCallback())
+            )
+                .also {
+                    addTransferEventListener(it);
+                    it.initiateScan()
                 }
-            })
-            this.bleService = bleService
-//            bleService.advertisements.collect { advertisement -> println(advertisement)}
-            bleService.initiateScan(services.toTypedArray())
         }
 
         return qrEngagement
     }
+
+    private fun onBleStatusCallback(): OnBleStatusCallback {
+        return object : OnBleStatusCallback {
+            override fun invoke(state: BleScanState, message: String?) {
+                when (state) {
+                    BleScanState.Initial -> sendEvent(Initializing(EngagementRole.HOLDER))
+                    BleScanState.Scanning -> sendEvent(DebugEvent(EngagementRole.HOLDER, message ?: "Scanning"))
+                    BleScanState.Found -> sendEvent(
+                        Connecting(
+                            EngagementRole.HOLDER,
+                            identifier = message /**/ ?: throw IllegalStateException("Mdoc ble identifier expected in message: $message")
+                        )
+                    )
+
+                    BleScanState.Canceled -> sendEvent(Canceled(EngagementRole.HOLDER, "Scan canceled"))
+                    BleScanState.Finished -> sendEvent(DebugEvent(EngagementRole.HOLDER, message ?: "Scan finished"))
+                    BleScanState.Error -> sendEvent(Error(EngagementRole.HOLDER, message ?: "Scan error"))
+                }
+            }
+        }
+    }
+
 
     fun isStarted() = started
 
