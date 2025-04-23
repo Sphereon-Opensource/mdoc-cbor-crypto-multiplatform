@@ -201,9 +201,9 @@ actual class AwsKmsCryptoProvider actual constructor(
 
         // Map the field size to the corresponding JWK "crv" value
         val (crv, alg) = when (fieldSize) {
-            256 -> "P-256" to JwaAlgorithm.ES256
-            384 -> "P-384" to JwaAlgorithm.ES384
-            521 -> "P-521" to JwaAlgorithm.ES512
+            256 -> JwaCurve.P_256 to JwaAlgorithm.ES256
+            384 -> JwaCurve.P_384 to JwaAlgorithm.ES384
+            521 -> JwaCurve.P_521 to JwaAlgorithm.ES512
             else -> throw IllegalArgumentException("Unsupported EC curve with field size $fieldSize")
         }
 
@@ -211,12 +211,12 @@ actual class AwsKmsCryptoProvider actual constructor(
             .withKid(keyId)
             .withKty(JwaKeyType.EC)
             .withAlg(alg)
+            .withCrv(crv)
             .withX(xEncoded)
             .withY(yEncoded)
             .withKeyOps(arrayOf(JoseKeyOperations.SIGN, JoseKeyOperations.VERIFY))
             .build()
     }
-
 
     override fun listKeys(): Array<IManagedKeyInfo<*>> {
         return runBlocking {
