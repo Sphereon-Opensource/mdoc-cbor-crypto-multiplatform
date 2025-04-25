@@ -1,6 +1,6 @@
 allprojects {
     group = "com.sphereon.kmp"
-    version = "0.2.8"
+    version = "0.2.9"
 
     val npmVersion by extra { getNpmVersion() }
 }
