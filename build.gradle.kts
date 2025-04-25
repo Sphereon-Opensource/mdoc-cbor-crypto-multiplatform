@@ -15,8 +15,16 @@ plugins {
 //    kotlin("jvm") apply false
     id("module.publication") apply false
     kotlin("jvm") version libs.versions.kotlin
-    alias(libs.plugins.gradleNode)
     alias(libs.plugins.npmPublish)
+}
+
+tasks.named<com.github.gradle.node.task.NodeSetupTask>("nodeSetup") {
+    doFirst {
+        println("➡ nodeSetup running")
+        println("➡ node download = ${project.extensions.getByType<com.github.gradle.node.NodeExtension>().download.get()}")
+        println("➡ node version = ${project.extensions.getByType<com.github.gradle.node.NodeExtension>().version.get()}")
+        println("➡ node distBaseUrl = ${project.extensions.getByType<com.github.gradle.node.NodeExtension>().distBaseUrl.get()}")
+    }
 }
 
 fun getNpmVersion(): String {
@@ -100,6 +108,8 @@ subprojects {
                 }
             }
         }
+
+
     }
 
 
@@ -110,6 +120,8 @@ subprojects {
         extensions.configure<com.github.gradle.node.NodeExtension> {
             version.set(nodeJsVersion)
             download.set(true)
+            workDir.set(layout.projectDirectory.dir(".gradle/nodejs"))
+            nodeProjectDir.set(layout.projectDirectory.dir(".gradle"))
         }
     }
 
@@ -125,14 +137,10 @@ subprojects {
             }
         }
 
-        val nodeDir = rootProject.layout.projectDirectory.dir(".gradle/nodejs/node-v$nodeJsVersion-$osName-x64")
+        val nodeDir = rootProject.layout.projectDirectory.dir("/opt/hostedtoolcache/node/$nodeJsVersion/x64")
 
         extensions.configure<NpmPublishExtension> {
             nodeHome.set(nodeDir.asFile)
         }
     }
-}
-
-tasks.withType<dev.petuska.npm.publish.task.NpmPublishTask>().configureEach {
-    dependsOn(tasks.named("nodeSetup"))
 }
