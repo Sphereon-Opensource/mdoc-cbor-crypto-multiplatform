@@ -18,11 +18,19 @@ jobs:
       - name: List root directory
         run: ls -la
 
-      - name: List .gradle directory
+      # 1) Force Gradle to download Node
+      - name: Debug Node download
         run: |
-          mkdir -p .gradle/nodejs
-          ls -la .gradle/nodejs || true
-          ls -la .gradle/nodejs/* || true
+          echo ">>> Triggering nodeSetup"
+          ./gradlew nodeSetup --console=plain
+
+          echo
+          echo ">>> Project-local nodejs folder (.gradle/nodejs):"
+          ls -la .gradle/nodejs || echo "(none here)"
+
+          echo
+          echo ">>> Gradle user-home nodejs folder (~/.gradle/nodejs):"
+          ls -la $HOME/.gradle/nodejs || echo "(none here)"
 
       - name: Publish
         run: ./gradlew build publish
