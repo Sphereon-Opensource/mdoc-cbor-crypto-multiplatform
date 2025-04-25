@@ -52,7 +52,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
 kotlin {
     kotlin.applyDefaultHierarchyTemplate()
 
-    jvmToolchain(13)
+    jvmToolchain(21)
     jvm {
         testRuns.named("test") {
             executionTask.configure {
