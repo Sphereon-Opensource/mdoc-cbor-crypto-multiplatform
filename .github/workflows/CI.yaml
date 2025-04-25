@@ -17,13 +17,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22.14.0'
-      - name: List /opt/hostedtoolcache
-        run: ls -la /opt/hostedtoolcache
-      - name: List /opt/hostedtoolcache/node
-        run: ls -la /opt/hostedtoolcache/node
-      - name: List /opt/hostedtoolcache/node/22.14.0
-        run: ls -la /opt/hostedtoolcache/node/22.14.0
+          node-version: '22.14.0' # match gradle/libs.versions.toml
 
       - name: Publish
         run: ./gradlew build publish

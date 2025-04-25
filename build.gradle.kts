@@ -2,7 +2,7 @@ import dev.petuska.npm.publish.extension.NpmPublishExtension
 
 allprojects {
     group = "com.sphereon.kmp"
-    version = "0.2.15"
+    version = "0.2.16"
 
     val npmVersion by extra { getNpmVersion() }
 }
@@ -16,15 +16,6 @@ plugins {
     id("module.publication") apply false
     kotlin("jvm") version libs.versions.kotlin
     alias(libs.plugins.npmPublish)
-}
-
-tasks.named<com.github.gradle.node.task.NodeSetupTask>("nodeSetup") {
-    doFirst {
-        println("➡ nodeSetup running")
-        println("➡ node download = ${project.extensions.getByType<com.github.gradle.node.NodeExtension>().download.get()}")
-        println("➡ node version = ${project.extensions.getByType<com.github.gradle.node.NodeExtension>().version.get()}")
-        println("➡ node distBaseUrl = ${project.extensions.getByType<com.github.gradle.node.NodeExtension>().distBaseUrl.get()}")
-    }
 }
 
 fun getNpmVersion(): String {
