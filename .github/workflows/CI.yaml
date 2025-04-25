@@ -22,8 +22,8 @@ jobs:
         run: ls -la /opt/hostedtoolcache
       - name: List /opt/hostedtoolcache/node
         run: ls -la /opt/hostedtoolcache/node
-      - name: List /opt/hostedtoolcache/node/22.1.0
-        run: ls -la /opt/hostedtoolcache/node/22.1.0
+      - name: List /opt/hostedtoolcache/node/22.14.0
+        run: ls -la /opt/hostedtoolcache/node/22.14.0
 
       - name: Publish
         run: ./gradlew build publish
