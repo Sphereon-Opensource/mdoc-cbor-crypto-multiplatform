@@ -1,4 +1,6 @@
-import dev.petuska.npm.publish.extension.NpmPublishExtension
+import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.tasks.bundling.Jar
+import org.gradle.kotlin.dsl.`maven-publish`
 
 plugins {
     `maven-publish`
@@ -45,34 +47,5 @@ signing {
     if (project.hasProperty("signing.gnupg.keyName")) {
         useGpgCmd()
         sign(publishing.publications)
-    }
-}
-
-plugins.withId("com.github.node-gradle.node") {
-    val libs = project.extensions.getByType<VersionCatalogsExtension>().named("libs")
-    val nodeJsVersion = libs.findVersion("nodejs").get().requiredVersion
-
-    extensions.configure<com.github.gradle.node.NodeExtension> {
-        version.set(nodeJsVersion)
-        download.set(true)
-    }
-}
-
-plugins.withId("dev.petuska.npm.publish") {
-    val libs = project.extensions.getByType<VersionCatalogsExtension>().named("libs")
-    val nodeJsVersion = libs.findVersion("nodejs").get().requiredVersion
-    val osName = System.getProperty("os.name").let {
-        when {
-            it.startsWith("Windows") -> "win"
-            it.startsWith("Mac") -> "darwin"
-            it.startsWith("Linux") -> "linux"
-            else -> error("Unsupported OS: $it")
-        }
-    }
-
-    val nodeDir = rootProject.layout.projectDirectory.dir(".gradle/nodejs/node-v$nodeJsVersion-$osName-x64")
-
-    extensions.configure<NpmPublishExtension> {
-        nodeHome.set(nodeDir.get().asFile)
     }
 }
