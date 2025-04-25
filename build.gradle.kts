@@ -13,7 +13,8 @@ plugins {
 //    kotlin("jvm") apply false
     id("module.publication") apply false
     kotlin("jvm") version libs.versions.kotlin
-    alias(libs.plugins.npmPublish) apply false
+    alias(libs.plugins.gradleNode)
+    alias(libs.plugins.npmPublish)
 }
 
 fun getNpmVersion(): String {
@@ -70,6 +71,10 @@ kotlin {
     }
 }
 
+node {
+    version.set("22.14.0")
+    download.set(true)      // Downloads Node into .gradle/nodejs
+}
 
 subprojects {
 
