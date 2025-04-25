@@ -1,6 +1,6 @@
 allprojects {
     group = "com.sphereon.kmp"
-    version = "0.2.9"
+    version = "0.2.10"
 
     val npmVersion by extra { getNpmVersion() }
 }
@@ -72,7 +72,8 @@ kotlin {
 }
 
 node {
-    version.set("22.14.0")
+    val nodeJsVersion = libs.versions.nodejs.get()
+    version.set(nodeJsVersion)
     download.set(true)      // Downloads Node into .gradle/nodejs
 }
 

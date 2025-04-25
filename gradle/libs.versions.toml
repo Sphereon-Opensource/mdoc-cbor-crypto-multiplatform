@@ -20,6 +20,7 @@ gradleNode = "7.1.0"
 serialization = "1.8.0"
 whyoleg-cryptography = "0.4.0"
 slf4j = "2.0.17"
+nodejs = "22.14.0"
 
 [libraries]
 junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit-jupiter-engine" }
