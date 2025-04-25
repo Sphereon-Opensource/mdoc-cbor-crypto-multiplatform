@@ -103,19 +103,6 @@ subprojects {
 
     }
 
-
-    plugins.withId("com.github.node-gradle.node") {
-        val libs = project.extensions.getByType<VersionCatalogsExtension>().named("libs")
-        val nodeJsVersion = libs.findVersion("nodejs").get().requiredVersion
-
-        extensions.configure<com.github.gradle.node.NodeExtension> {
-            version.set(nodeJsVersion)
-            download.set(true)
-            workDir.set(layout.projectDirectory.dir(".gradle/nodejs"))
-            nodeProjectDir.set(layout.projectDirectory.dir(".gradle"))
-        }
-    }
-
     plugins.withId("dev.petuska.npm.publish") {
         val libs = project.extensions.getByType<VersionCatalogsExtension>().named("libs")
         val nodeJsVersion = libs.findVersion("nodejs").get().requiredVersion
