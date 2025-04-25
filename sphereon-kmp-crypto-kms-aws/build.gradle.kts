@@ -9,6 +9,8 @@ plugins {
     alias(libs.plugins.npmPublish)
 }
 
+val shouldRunAwsKmsTestsProvider = System.getenv("AWS_RUN_TESTS").equals("true", ignoreCase = true)
+
 kotlin {
     kotlin.applyDefaultHierarchyTemplate()
 
@@ -17,6 +19,7 @@ kotlin {
         testRuns.named("test") {
             executionTask.configure {
                 useJUnitPlatform()
+                enabled = shouldRunAwsKmsTestsProvider
             }
         }
     }

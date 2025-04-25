@@ -13,6 +13,8 @@ plugins {
     alias(libs.plugins.buildkonfig)
 }
 
+val shouldRunAzureKmsTestsProvider = System.getenv("AZURE_KEYVAULT_RUN_TESTS").equals("true", ignoreCase = true)
+
 rootProject.plugins.withType<org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootPlugin> {
     rootProject.the<org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootExtension>().download = false
     // "true" for default behavior
@@ -58,6 +60,7 @@ kotlin {
         testRuns.named("test") {
             executionTask.configure {
                 useJUnitPlatform()
+                enabled = shouldRunAzureKmsTestsProvider
             }
         }
     }
@@ -76,6 +79,7 @@ kotlin {
 
             testTask {
                 // useMocha()
+                enabled = shouldRunAzureKmsTestsProvider
             } // To run tests with Node.js.
 
         }
@@ -83,6 +87,7 @@ kotlin {
 //            useEsModules() // Enables ES2015 modules
 
             testTask {
+                enabled = shouldRunAzureKmsTestsProvider
                 // useMocha()
             }
         }
