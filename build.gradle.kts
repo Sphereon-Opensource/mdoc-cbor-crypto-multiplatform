@@ -71,12 +71,6 @@ kotlin {
     }
 }
 
-node {
-    val nodeJsVersion = libs.versions.nodejs.get()
-    version.set(nodeJsVersion)
-    download.set(true)      // Downloads Node into .gradle/nodejs
-}
-
 subprojects {
 
     plugins.withType<MavenPublishPlugin> {

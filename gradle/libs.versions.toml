@@ -54,6 +54,8 @@ encoding-base64 = { module = "io.matthewnelson.encoding:base64", version.ref = "
 kache = { module = "com.mayakapps.kache:kache", version.ref = "kache" }
 kable-core = { module = "com.juul.kable:kable-core", version.ref = "kable"}
 slf4j-simple = {module = "org.slf4j:slf4j-simple", version.ref = "slf4j"}
+gradleNodeLib = { module = "com.github.node-gradle:gradle-node-plugin", version.ref = "gradleNode" }
+npmPublishLib = { module = "dev.petuska:npm-publish-gradle-plugin", version.ref = "npmPublish" }
 
 [plugins]
 npmPublish = { id = "dev.petuska.npm.publish", version.ref = "npmPublish" }

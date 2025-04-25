@@ -188,18 +188,6 @@ dependencies {
 
 
 npmPublish {
-    val nodeJsVersion = libs.versions.nodejs.get()
-    val osName = System.getProperty("os.name").let {
-        when {
-            it.startsWith("Windows") -> "win"
-            it.startsWith("Mac") -> "darwin"
-            it.startsWith("Linux") -> "linux"
-            else -> throw GradleException("Unsupported OS: $it")
-        }
-    }
-    val nodeDir = file("${ getLayout().buildDirectory}/nodejs/node-v$nodeJsVersion-$osName-x64")
-    nodeHome.set(nodeDir)
-
     registries {
         register("npmjs") {
             uri.set("https://registry.npmjs.org")
