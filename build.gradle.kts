@@ -119,15 +119,6 @@ subprojects {
     plugins.withId("dev.petuska.npm.publish") {
         val libs = project.extensions.getByType<VersionCatalogsExtension>().named("libs")
         val nodeJsVersion = libs.findVersion("nodejs").get().requiredVersion
-        val osName = System.getProperty("os.name").let {
-            when {
-                it.startsWith("Windows") -> "win"
-                it.startsWith("Mac") -> "darwin"
-                it.startsWith("Linux") -> "linux"
-                else -> error("Unsupported OS: $it")
-            }
-        }
-
         val nodeDir = rootProject.layout.projectDirectory.dir("/opt/hostedtoolcache/node/$nodeJsVersion/x64")
 
         extensions.configure<NpmPublishExtension> {
