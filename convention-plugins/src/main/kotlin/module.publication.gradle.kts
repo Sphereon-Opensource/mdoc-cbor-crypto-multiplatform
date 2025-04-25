@@ -70,7 +70,7 @@ plugins.withId("dev.petuska.npm.publish") {
         }
     }
 
-    val nodeDir = layout.buildDirectory.dir("nodejs/node-v$nodeJsVersion-$osName-x64")
+    val nodeDir = rootProject.layout.projectDirectory.dir(".gradle/nodejs/node-v$nodeJsVersion-$osName-x64")
 
     extensions.configure<NpmPublishExtension> {
         nodeHome.set(nodeDir.get().asFile)
