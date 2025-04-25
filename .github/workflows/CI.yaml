@@ -15,6 +15,15 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
+      - name: List root directory
+        run: ls -la
+
+      - name: List .gradle directory
+        run: |
+          mkdir -p .gradle/nodejs
+          ls -la .gradle/nodejs || true
+          ls -la .gradle/nodejs/* || true
+
       - name: Publish
         run: ./gradlew build publish
         env:
