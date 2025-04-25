@@ -133,3 +133,6 @@ subprojects {
     }
 }
 
+tasks.withType<dev.petuska.npm.publish.task.NpmPublishTask>().configureEach {
+    dependsOn(tasks.named("nodeSetup"))
+}
