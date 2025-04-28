@@ -7,7 +7,6 @@ plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
     id("io.kotest.multiplatform")
-    id("module.publication")
     id("maven-publish")
     alias(libs.plugins.npmPublish)
     alias(libs.plugins.buildkonfig)
@@ -83,14 +82,14 @@ kotlin {
             } // To run tests with Node.js.
 
         }
-        browser {
-//            useEsModules() // Enables ES2015 modules
-
-            testTask {
-                enabled = shouldRunAzureKmsTestsProvider
-                // useMocha()
-            }
-        }
+//        browser {
+////            useEsModules() // Enables ES2015 modules
+//
+//            testTask {
+////                enabled = shouldRunAzureKmsTestsProvider
+//                // useMocha()
+//            }
+//        }
 
         binaries.library()
         generateTypeScriptDefinitions()

@@ -212,6 +212,7 @@ actual class AwsKmsCryptoProvider actual constructor(
             .withKty(JwaKeyType.EC)
             .withAlg(alg)
             .withCrv(crv)
+            .withUse(JwkUse.sig.value)
             .withX(xEncoded)
             .withY(yEncoded)
             .withKeyOps(arrayOf(JoseKeyOperations.SIGN, JoseKeyOperations.VERIFY))

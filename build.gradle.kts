@@ -2,7 +2,7 @@ import dev.petuska.npm.publish.extension.NpmPublishExtension
 
 allprojects {
     group = "com.sphereon.kmp"
-    version = "0.2.16"
+    version = "0.2.17-SNAPSHOT"
 
     val npmVersion by extra { getNpmVersion() }
 }
@@ -12,8 +12,6 @@ plugins {
     kotlin("plugin.serialization") version libs.versions.kotlin apply false
     id("io.kotest.multiplatform") version libs.versions.kotest apply false
 //    id("com.google.devtools.ksp") version "2.0.0-RC3-1.0.20"
-//    kotlin("jvm") apply false
-    id("module.publication") apply false
     kotlin("jvm") version libs.versions.kotlin
     alias(libs.plugins.npmPublish)
 }
@@ -48,10 +46,6 @@ repositories {
     mavenLocal()
     mavenCentral()
     gradlePluginPortal()
-    maven {
-        url = uri("https://raw.githubusercontent.com/a-sit-plus/gradle-conventions-plugin/mvn/repo")
-        name = "aspConventions"
-    }
     maven {
         url = uri("https://oss.sonatype.org/content/repositories/snapshots")
         name = "bigNum"

@@ -19,10 +19,7 @@ import com.azure.security.keyvault.keys.models.KeyVaultKey
 import com.sphereon.crypto.SignClientException
 import com.sphereon.crypto.generic.Curve
 import com.sphereon.crypto.generic.KeyOperations
-import com.sphereon.crypto.jose.JoseKeyOperations
-import com.sphereon.crypto.jose.JwaAlgorithm
-import com.sphereon.crypto.jose.JwaKeyType
-import com.sphereon.crypto.jose.Jwk
+import com.sphereon.crypto.jose.*
 import com.sphereon.kmp.encodeToBase64
 import java.time.Duration
 
@@ -119,6 +116,8 @@ fun KeyVaultKey.toJwk(): Jwk {
         .withAlg(mapJwkToAlgorithm(jsonWebKey)) // Algorithm
         .withX(jsonWebKey.x?.encodeToBase64(true))
         .withY(jsonWebKey.y?.encodeToBase64(true))
+        .withCrv(JwaCurve.Static.fromValue(jsonWebKey.curveName.toString()))
+        .withUse("sig")
         .withKeyOps(jsonWebKey.keyOps?.map { JoseKeyOperations.Static.fromValue(it.toKeyOperations().jose.value) }
             ?.toTypedArray())
         .build()
