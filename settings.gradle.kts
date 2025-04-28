@@ -2,8 +2,6 @@ rootProject.name = "sphereon-kmp"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {
-    includeBuild("convention-plugins")
-
     repositories {
         mavenLocal()
         google {
@@ -48,9 +46,6 @@ dependencyResolutionManagement {
             from("aws.sdk.kotlin:version-catalog:1.4.31")
         }
     }
-}
-plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version("0.8.0")
 }
 
 include(
