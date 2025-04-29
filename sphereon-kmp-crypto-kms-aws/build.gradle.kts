@@ -4,6 +4,7 @@ plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
     id("io.kotest.multiplatform")
+    id("maven-publish")
     alias(libs.plugins.buildkonfig)
     alias(libs.plugins.npmPublish)
 }

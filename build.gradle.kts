@@ -2,7 +2,7 @@ import dev.petuska.npm.publish.extension.NpmPublishExtension
 
 allprojects {
     group = "com.sphereon.kmp"
-    version = "0.2.17-SNAPSHOT"
+    version = "0.2.18-SNAPSHOT"
 
     val npmVersion by extra { getNpmVersion() }
 }
