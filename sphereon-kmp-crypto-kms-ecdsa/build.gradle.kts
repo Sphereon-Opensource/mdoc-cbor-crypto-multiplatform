@@ -5,6 +5,7 @@ import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootExtension
 plugins {
     alias(libs.plugins.npmPublish)
     kotlin("multiplatform")
+    id("maven-publish")
     kotlin("plugin.serialization")
     id("io.kotest.multiplatform")
 }
