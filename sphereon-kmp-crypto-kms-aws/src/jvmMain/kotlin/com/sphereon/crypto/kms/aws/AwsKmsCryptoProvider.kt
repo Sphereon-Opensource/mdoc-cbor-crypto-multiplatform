@@ -12,6 +12,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.math.BigInteger
 import java.security.KeyFactory
+import java.security.MessageDigest
 import java.security.interfaces.ECPublicKey
 import java.security.spec.X509EncodedKeySpec
 import java.util.*
@@ -110,10 +111,14 @@ actual class AwsKmsCryptoProvider actual constructor(
                 ?: throw IllegalArgumentException("Key does not have a signature algorithm set")
         }
 
+        // Create a digest of the input data
+        val hashedInput = MessageDigest.getInstance(algorithm.digestAlgorithm?.name).digest(input)
+
         val client = getAWSKmsClient()
         val signResponse = client.sign(SignRequest {
             this.keyId = determineAwsKeyId(keyInfo)
-            message = input
+            message = hashedInput
+            messageType = MessageType.Digest
             this.signingAlgorithm = algorithm.toSigningAlgorithmSpec()
         })
 
@@ -125,15 +130,25 @@ actual class AwsKmsCryptoProvider actual constructor(
         input: ByteArray,
         signature: ByteArray
     ): Boolean {
-        val algorithm = keyInfo.signatureAlgorithm
+        var algorithm = keyInfo.signatureAlgorithm
+        if (algorithm == null) {
+            // No alg supplied. Although the AWS SDK lists the signature param as optional it really is not. So let's lookup the key in this case
+            val key = getKey(keyInfo)
+            algorithm = key.signatureAlgorithm
+                ?: throw IllegalArgumentException("Key does not have a signature algorithm set")
+        }
 
         val client = getAWSKmsClient()
         try {
+            // Create a digest of the input data
+            val hashedInput = MessageDigest.getInstance(algorithm.digestAlgorithm?.name).digest(input)
+
             val verifyResponse = client.verify(VerifyRequest {
                 this.keyId = determineAwsKeyId(keyInfo)
-                message = input
+                message = hashedInput
+                messageType = MessageType.Digest
                 this.signature = signature
-                this.signingAlgorithm = algorithm?.toSigningAlgorithmSpec()
+                this.signingAlgorithm = algorithm.toSigningAlgorithmSpec()
             })
             return verifyResponse.signatureValid
         } catch (e: KmsInvalidSignatureException) {
