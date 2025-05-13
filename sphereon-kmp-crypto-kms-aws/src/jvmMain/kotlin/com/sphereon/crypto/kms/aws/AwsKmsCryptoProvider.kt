@@ -40,11 +40,7 @@ actual class AwsKmsCryptoProvider actual constructor(
         val signingAlgorithm = alg ?: SignatureAlgorithm.ECDSA_SHA256
 
         if (!isSupportedSignatureAlgorithm(signingAlgorithm)) {
-            val algName = when (signingAlgorithm) {
-                SignatureAlgorithm.ED25519 -> "Ed25519"
-                else -> signingAlgorithm.toString()
-            }
-            throw IllegalArgumentException("Signature algorithm $algName is not supported by AWS KMS")
+            throw IllegalArgumentException("Signature algorithm ${signingAlgorithm.cryptoAlgorithm.name} is not supported by AWS KMS")
         }
 
         // Map signature algorithm to key spec and curve
@@ -62,16 +58,18 @@ actual class AwsKmsCryptoProvider actual constructor(
             this.keySpec = keySpec
         })
 
-        val kid = createKeyResponse.keyMetadata?.keyId
-            ?: throw IllegalStateException("Failed to retrieve key ID after creation")
+        val kid = createKeyResponse.keyMetadata?.keyId ?: throw IllegalStateException("Failed to retrieve key ID after creation")
 
-        if (kmsKeyRef != null && (createKeyResponse.keyMetadata?.arn != null || createKeyResponse.keyMetadata?.keyId != null)) {
-            val aliasResponse = client.createAlias(
-                CreateAliasRequest {
-                    this.aliasName = if (kmsKeyRef.startsWith("alias/")) kmsKeyRef else "alias/$kmsKeyRef"
-                    this.targetKeyId = createKeyResponse.keyMetadata?.keyId ?: createKeyResponse.keyMetadata?.arn
-                })
-        }
+        // generate random keyref if none is passed
+        val validatedKeyRef = kmsKeyRef ?: "${awsConfig.applicationId}-${System.currentTimeMillis()}"
+        val formattedKeyRef = if (validatedKeyRef.startsWith("alias/")) validatedKeyRef else "alias/$validatedKeyRef"
+
+        // Always create an alias for the key, either with the provided kmsKeyRef or the generated one
+        client.createAlias(
+            CreateAliasRequest {
+                this.aliasName = formattedKeyRef
+                this.targetKeyId = kid
+            })
 
 
         // Get public key in DER format
@@ -81,7 +79,7 @@ actual class AwsKmsCryptoProvider actual constructor(
         val publicKeyDer: ByteArray = getPublicKeyResponse.publicKey
             ?: throw IllegalStateException("Public key not found")
 
-        return toManagedKeyPair(publicKeyDer, kid, kmsKeyRef ?: kid)
+        return toManagedKeyPair(publicKeyDer = publicKeyDer, kid = kid, kmsKeyRef = formattedKeyRef)
     }
 
     private fun toManagedKeyPair(publicKeyDer: ByteArray, kid: String, kmsKeyRef: String): ManagedKeyPair {
@@ -248,20 +246,64 @@ actual class AwsKmsCryptoProvider actual constructor(
     override fun getKey(keyInfo: IKeyInfo<*>): IManagedKeyInfo<*> {
         return runBlocking {
             getAWSKmsClient().use { client ->
+                val awsKeyId = determineAwsKeyId(keyInfo)
+                val response = client.getPublicKey(GetPublicKeyRequest { keyId = awsKeyId })
+                val publicKey = response.publicKey
+                    ?: throw IllegalArgumentException("Public key not found for key ID $awsKeyId")
 
-                client.getPublicKey(GetPublicKeyRequest { keyId = determineAwsKeyId(keyInfo) }).publicKey?.let {
+                // Extract the actual key ID from the response, removing ARN prefix if present
+                val actualKeyId = extractKeyIdFromArn(response.keyId ?: keyInfo.kid ?: awsKeyId)
 
-                    toManagedKeyPair(
-                        it,
-                        keyInfo.kid!!,
-                        keyInfo.kmsKeyRef!!
-                    ).joseToManagedKeyInfo()
-                }
-                    ?: throw IllegalArgumentException(
-                        "Key with ID ${keyInfo.kmsKeyRef} not found in AWS KMS"
-                    )
+                // Determine the key reference (alias or key ID)
+                val kmsKeyRef = determineKeyReference(client, keyInfo, actualKeyId, defaultKeyId = awsKeyId)
+
+                // Create the managed key pair and convert to managed key info
+                toManagedKeyPair(publicKey, actualKeyId, kmsKeyRef).joseToManagedKeyInfo()
             }
         }
+    }
+
+    /**
+     * Extracts the key ID from an ARN if it's in ARN format
+     */
+    private fun extractKeyIdFromArn(keyId: String): String {
+        return if (keyId.startsWith("arn:aws:kms:") && keyId.contains(":key/")) {
+            keyId.substringAfterLast("/")
+        } else {
+            keyId
+        }
+    }
+
+    /**
+     * Determines the key reference (alias or key ID) to use
+     */
+    private suspend fun determineKeyReference(
+        client: KmsClient,
+        keyInfo: IKeyInfo<*>,
+        keyId: String,
+        defaultKeyId: String
+    ): String {
+        // If kmsKeyRef is provided, use it
+        val kmsKeyRef = keyInfo.kmsKeyRef
+        if (kmsKeyRef != null) {
+            return kmsKeyRef
+        }
+
+        // If looking up by kid (UUID), try to find an alias
+        val kid = keyInfo.kid
+        if (kid != null) {
+            val aliases = client.listAliases(ListAliasesRequest { 
+                this.keyId = keyId 
+            }).aliases ?: emptyList()
+
+            // Return the first alias if available
+            if (aliases.isNotEmpty()) {
+                return aliases[0].aliasName ?: defaultKeyId
+            }
+        }
+
+        // Default to the key ID
+        return defaultKeyId
     }
 
     override fun storeKey(keyInfo: IResolvedKeyInfo<*>, kms: String, kmsKeyRef: String): IManagedKeyInfo<*> {
@@ -285,10 +327,60 @@ actual class AwsKmsCryptoProvider actual constructor(
     }
 }
 
+/**
+ * Determines the AWS KMS key ID to use based on the provided key information.
+ *
+ * AWS KMS supports the following key identifier formats:
+ * - Key ID: 1234abcd-12ab-34cd-56ef-1234567890ab
+ * - Key ARN: arn:aws:kms:us-east-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab
+ * - Alias name: alias/ExampleAlias
+ * - Alias ARN: arn:aws:kms:us-east-2:111122223333:alias/ExampleAlias
+ *
+ * @param keyInfo The key information containing kid and/or kmsKeyRef
+ * @return The appropriate AWS KMS key identifier
+ * @throws IllegalArgumentException if no key reference is provided
+ */
 fun determineAwsKeyId(keyInfo: IKeyInfo<*>): String {
-    val keyIdArg = keyInfo.kmsKeyRef ?: keyInfo.kid ?: throw IllegalArgumentException("KMS key reference is required")
-    return (if (keyInfo.kmsKeyRef == keyInfo.kid || keyInfo.kmsKeyRef == null || keyIdArg.startsWith("alias/")) keyIdArg else "alias/$keyIdArg").also {
+    val keyIdArg =  keyInfo.kmsKeyRef ?: keyInfo.kid ?: throw IllegalArgumentException("KMS key reference is required")
+
+    // If the key ID is already in one of the valid formats, return it as is
+    if (isValidAwsKeyFormat(keyIdArg)) {
+        return keyIdArg
+    }
+
+    // Otherwise, assume it's an alias name without the "alias/" prefix
+    return "alias/$keyIdArg".also {
         logger.debug("Determined key ID for keyref: ${keyInfo.kmsKeyRef}, kid: ${keyInfo.kid} to be $it")
     }
 }
 
+/**
+ * Checks if the provided key identifier is in a valid AWS KMS format.
+ *
+ * @param keyId The key identifier to check
+ * @return true if the key identifier is in a valid format, false otherwise
+ */
+private fun isValidAwsKeyFormat(keyId: String): Boolean {
+    // Check if it's a Key ARN
+    if (keyId.startsWith("arn:aws:kms:") && keyId.contains(":key/")) {
+        return true
+    }
+
+    // Check if it's an Alias ARN
+    if (keyId.startsWith("arn:aws:kms:") && keyId.contains(":alias/")) {
+        return true
+    }
+
+    // Check if it's an Alias name
+    if (keyId.startsWith("alias/")) {
+        return true
+    }
+
+    // Check if it's a Key ID (UUID format)
+    val uuidPattern = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+    if (keyId.matches(Regex(uuidPattern, RegexOption.IGNORE_CASE))) {
+        return true
+    }
+
+    return false
+}
