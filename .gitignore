@@ -47,3 +47,6 @@ bin/
 
 .idea
 .kotlin
+
+.env.local
+kotlin-js-store/

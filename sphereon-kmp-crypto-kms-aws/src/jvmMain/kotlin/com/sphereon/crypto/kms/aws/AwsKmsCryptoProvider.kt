@@ -1,7 +1,9 @@
 package com.sphereon.crypto.kms.aws
 
+import aws.sdk.kotlin.runtime.auth.credentials.StaticCredentialsProvider
 import aws.sdk.kotlin.services.kms.KmsClient
 import aws.sdk.kotlin.services.kms.model.*
+import aws.smithy.kotlin.runtime.auth.awscredentials.Credentials
 import com.sphereon.crypto.*
 import com.sphereon.crypto.generic.*
 import com.sphereon.crypto.jose.*
@@ -27,6 +29,12 @@ actual class AwsKmsCryptoProvider actual constructor(
         return withContext(Dispatchers.IO) {
             KmsClient {
                 region = awsConfig.region
+                credentialsProvider = StaticCredentialsProvider(
+                    Credentials(
+                        accessKeyId = awsConfig.credentialOpts.accessKeyCredentialOpts!!.accessKeyId,
+                        secretAccessKey = awsConfig.credentialOpts.accessKeyCredentialOpts!!.secretAccessKey,
+                    )
+                )
             }
         }
     }
