@@ -114,7 +114,7 @@ actual class AwsKmsCryptoProvider actual constructor(
             // No alg supplied. Although the AWS SDK lists the signature param as optional it really is not. So let's lookup the key in this case
             val key = getKey(keyInfo)
             algorithm = key.signatureAlgorithm
-                ?: throw IllegalArgumentException("Key does not have a signature algorithm set")
+                ?: throw IllegalArgumentException("No signature algorithm provided and the supplied key also does not have a signature algorithm set")
         }
 
         // Create a digest of the input data
@@ -127,7 +127,21 @@ actual class AwsKmsCryptoProvider actual constructor(
             messageType = MessageType.Digest
             this.signingAlgorithm = algorithm.toSigningAlgorithmSpec()
         })
-        return signResponse.signature?.let { EcdsaEsSignatureConverter.toJoseRaw(it) } ?: throw IllegalStateException("Failed to create a  signature with the AWS KMS")
+        if (!listOf(SigningAlgorithmSpec.EcdsaSha256, SigningAlgorithmSpec.EcdsaSha384, SigningAlgorithmSpec.EcdsaSha512).contains(signResponse.signingAlgorithm)) {
+            throw IllegalArgumentException("Unsupported signing algorithm: ${signResponse.signingAlgorithm}. Only ECdSA is supported currently")
+        }
+        val keySize = when (signResponse.signingAlgorithm) {
+            SigningAlgorithmSpec.EcdsaSha256 -> 32
+            SigningAlgorithmSpec.EcdsaSha384 -> 48
+            SigningAlgorithmSpec.EcdsaSha512 -> 64
+            // Cannot happend because of the expression above, but the compiler does not know
+            else -> {
+                throw IllegalArgumentException("Unsupported signing algorithm: ${signResponse.signingAlgorithm}")
+            }
+        }
+        return signResponse.signature?.let { EcdsaEsSignatureConverter.toJoseRaw(it, keySize) } ?: throw IllegalStateException("Failed to create a  signature with the AWS KMS")
+
+
     }
 
     override suspend fun isValidRawSignatureAsync(
@@ -207,6 +221,7 @@ actual class AwsKmsCryptoProvider actual constructor(
                         System.arraycopy(bytes, 0, this, length - bytes.size, bytes.size)
                     }
                 }
+
                 else -> bytes.copyOfRange(bytes.size - length, bytes.size)
             }
         }
@@ -299,8 +314,8 @@ actual class AwsKmsCryptoProvider actual constructor(
         // If looking up by kid (UUID), try to find an alias
         val kid = keyInfo.kid
         if (kid != null) {
-            val aliases = client.listAliases(ListAliasesRequest { 
-                this.keyId = keyId 
+            val aliases = client.listAliases(ListAliasesRequest {
+                this.keyId = keyId
             }).aliases ?: emptyList()
 
             // Return the first alias if available
@@ -320,7 +335,8 @@ actual class AwsKmsCryptoProvider actual constructor(
     override fun deleteKey(keyInfo: IKeyInfo<*>): Boolean {
         return runBlocking {
             getAWSKmsClient().use { client ->
-                val keyId = if (keyInfo.kid != null) keyInfo.kid else getKey(keyInfo).kid ?: determineAwsKeyId(keyInfo)  // We fetch the key first, since deletion can only happen via kid and not an alias!
+                val keyId = if (keyInfo.kid != null) keyInfo.kid else getKey(keyInfo).kid
+                    ?: determineAwsKeyId(keyInfo)  // We fetch the key first, since deletion can only happen via kid and not an alias!
                 client.scheduleKeyDeletion(ScheduleKeyDeletionRequest {
                     this.keyId = keyId
                     pendingWindowInDays = 7
@@ -348,7 +364,7 @@ actual class AwsKmsCryptoProvider actual constructor(
  * @throws IllegalArgumentException if no key reference is provided
  */
 fun determineAwsKeyId(keyInfo: IKeyInfo<*>): String {
-    val keyIdArg =  keyInfo.kmsKeyRef ?: keyInfo.kid ?: throw IllegalArgumentException("KMS key reference is required")
+    val keyIdArg = keyInfo.kmsKeyRef ?: keyInfo.kid ?: throw IllegalArgumentException("KMS key reference is required")
 
     // If the key ID is already in one of the valid formats, return it as is
     if (isValidAwsKeyFormat(keyIdArg)) {
