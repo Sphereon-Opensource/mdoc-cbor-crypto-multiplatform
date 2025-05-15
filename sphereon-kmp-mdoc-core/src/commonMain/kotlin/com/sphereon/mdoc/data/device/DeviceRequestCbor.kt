@@ -1,0 +1,144 @@
+package com.sphereon.mdoc.data.device
+
+import com.sphereon.cbor.AnyCborItem
+import com.sphereon.cbor.CDDL
+import com.sphereon.cbor.CborArray
+import com.sphereon.cbor.CborBuilder
+import com.sphereon.cbor.CborByteString
+import com.sphereon.cbor.CborMap
+import com.sphereon.cbor.CborString
+import com.sphereon.cbor.CborView
+import com.sphereon.cbor.StringLabel
+import com.sphereon.cbor.cborSerializer
+import com.sphereon.cbor.cddl_tstr
+import com.sphereon.json.JsonView
+import com.sphereon.json.mdocJsonSerializer
+import com.sphereon.json.oid4vpJsonSerializer
+import com.sphereon.kmp.Encoding
+import com.sphereon.kmp.decodeFrom
+import com.sphereon.kmp.encodeTo
+import com.sphereon.mdoc.oid4vp.IOid4VPPresentationDefinition
+import com.sphereon.mdoc.oid4vp.Oid4VPPresentationDefinition
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlin.js.JsExport
+import kotlin.js.JsName
+
+/**
+ * 8.3.2.1.2.1 Device retrieval mdoc request
+ */
+@JsExport
+data class DeviceRequestJson(
+    val version: cddl_tstr,
+    val docRequests: MutableList<DocRequestJson>
+) : JsonView() {
+    override fun toJsonString() = mdocJsonSerializer.encodeToString(this)
+    override fun toCbor(): DeviceRequestCbor {
+        TODO("Not yet implemented")
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is DeviceRequestJson) return false
+
+        if (version != other.version) return false
+        if (docRequests != other.docRequests) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = version.hashCode()
+        result = 31 * result + docRequests.hashCode()
+        return result
+    }
+
+    override fun toString(): String {
+        return "DeviceRequestSimple(version='$version', docRequests=$docRequests)"
+    }
+
+
+}
+
+/**
+ * 8.3.2.1.2.1 Device retrieval mdoc request
+ */
+@JsExport
+data class DeviceRequestCbor(
+    /**
+     * version is the version for the DeviceRequest structure: in the current version of this document its value
+     * shall be “1.0”. If
+     */
+    val version: CborString = CborString("1.0"),
+
+    /**
+     * docRequests contains an array of all requested documents.
+     */
+    val docRequests: Array<DocRequestCbor>? = null,
+
+    val oid4vpRequest: Oid4VPPresentationDefinition? = null,
+
+    ) : CborView<DeviceRequestCbor, DeviceRequestJson, CborMap<StringLabel, AnyCborItem>>(CDDL.map) {
+
+    val hasOid4vpRequest: Boolean = oid4vpRequest != null
+    val hasDocRequest: Boolean = !docRequests.isNullOrEmpty()
+    override fun cborBuilder(): CborBuilder<DeviceRequestCbor> =
+        CborMap.Static.builder(this)
+            .put(Static.VERSION, version, optional = false)
+            .put(
+                Static.DOC_REQUESTS, docRequests?.let { CborArray(it.map { req -> req.toCbor() }.toMutableList()) },
+                optional = true
+            )
+            .put(Static.OID4VP_REQUEST, CborByteString(oid4vpJsonSerializer.encodeToString(oid4vpRequest).decodeFrom(Encoding.UTF8)), optional = true)
+            .end()
+
+
+    override fun toJson(): DeviceRequestJson {
+        TODO("Not yet implemented")
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is DeviceRequestCbor) return false
+
+        if (version != other.version) return false
+        if (docRequests != other.docRequests) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = version.hashCode()
+        result = 31 * result + docRequests.hashCode()
+        return result
+    }
+
+    override fun toString(): String {
+        return "DeviceRequestCbor(version=$version, docRequests=$docRequests)"
+    }
+
+
+    object Static {
+        val VERSION = StringLabel("version")
+        val DOC_REQUESTS = StringLabel("docRequests")
+        val OID4VP_REQUEST = StringLabel("oid4vpRequest")
+
+        @JsName("fromCborItem")
+        fun fromCborItem(m: CborMap<StringLabel, AnyCborItem>): DeviceRequestCbor {
+            return DeviceRequestCbor(
+                VERSION.required(m),
+                DOC_REQUESTS.optional<CborArray<CborMap<StringLabel, AnyCborItem>>>(m)?.value?.map {
+                    DocRequestCbor.Static.fromCborItem(it)
+                }?.toTypedArray(),
+                OID4VP_REQUEST.optional<CborByteString>(m)?.value?.let { oid4vpJsonSerializer.decodeFromString(it.encodeTo(Encoding.UTF8)) }
+            )
+        }
+
+        @JsName("cborDecode")
+        fun cborDecode(encoded: ByteArray): DeviceRequestCbor = fromCborItem(cborSerializer.decode(encoded))
+    }
+
+    class Builder
+
+}
+

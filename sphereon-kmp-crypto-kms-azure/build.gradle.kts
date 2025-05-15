@@ -1,0 +1,188 @@
+import com.codingfeline.buildkonfig.compiler.FieldSpec
+import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnLockMismatchReport
+import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootExtension
+
+plugins {
+//    alias(libs.plugins.androidLibrary)
+    kotlin("multiplatform")
+    kotlin("plugin.serialization")
+    id("io.kotest.multiplatform")
+    id("maven-publish")
+    alias(libs.plugins.npmPublish)
+    alias(libs.plugins.buildkonfig)
+}
+
+val shouldRunAzureKmsTestsProvider = System.getenv("AZURE_KEYVAULT_RUN_TESTS").equals("true", ignoreCase = true)
+
+rootProject.plugins.withType<org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootPlugin> {
+    rootProject.the<org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootExtension>().download = false
+    // "true" for default behavior
+}
+rootProject.plugins.withType<org.jetbrains.kotlin.gradle.targets.js.yarn.YarnPlugin> {
+    rootProject.the<YarnRootExtension>().download = false
+    // "true" for default behavior
+}
+rootProject.plugins.withType(org.jetbrains.kotlin.gradle.targets.js.yarn.YarnPlugin::class.java) {
+    rootProject.the<YarnRootExtension>().yarnLockMismatchReport =
+        YarnLockMismatchReport.WARNING // NONE | FAIL
+    rootProject.the<YarnRootExtension>().reportNewYarnLock = false // true
+    rootProject.the<YarnRootExtension>().yarnLockAutoReplace = true // true
+}
+
+/*
+ksp {
+    arg("erasePackage", "true")
+}*/
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    gradlePluginPortal()
+    maven {
+        url = uri("https://oss.sonatype.org/content/repositories/snapshots")
+        name = "bigNum"
+    }
+    maven(url = "https://raw.githubusercontent.com/Deezer/KustomExport/mvn-repo")
+}
+
+/*
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+    kotlinOptions.freeCompilerArgs += "-opt-in=kotlin.js.ExperimentalJsExport"
+}
+*/
+
+kotlin {
+    kotlin.applyDefaultHierarchyTemplate()
+
+    jvmToolchain(21)
+    jvm {
+        testRuns.named("test") {
+            executionTask.configure {
+                useJUnitPlatform()
+                enabled = shouldRunAzureKmsTestsProvider
+            }
+        }
+    }
+    /*  androidTarget {
+          publishLibraryVariants("release")
+          compilations.all {
+              kotlinOptions {
+                  jvmTarget = JavaVersion.VERSION_17.toString()
+              }
+          }
+      }*/
+    js(IR) {
+        moduleName = "@sphereon/kmp-crypto-kms-azure"
+        nodejs {
+//            useEsModules() // Enables ES2015 modules
+
+            testTask {
+                // useMocha()
+                enabled = shouldRunAzureKmsTestsProvider
+            } // To run tests with Node.js.
+
+        }
+//        browser {
+////            useEsModules() // Enables ES2015 modules
+//
+//            testTask {
+////                enabled = shouldRunAzureKmsTestsProvider
+//                // useMocha()
+//            }
+//        }
+
+        binaries.library()
+        generateTypeScriptDefinitions()
+    }
+    /*
+    val hostOs = System.getProperty("os.name")
+    val isArm64 = System.getProperty("os.arch") == "aarch64"
+    val isMingwX64 = hostOs.startsWith("Windows")
+    val nativeTarget = when {
+        hostOs == "Mac OS X" && isArm64 -> macosArm64("native")
+        hostOs == "Mac OS X" && !isArm64 -> macosX64("native")
+        hostOs == "Linux" && isArm64 -> linuxArm64("native")
+        hostOs == "Linux" && !isArm64 -> linuxX64("native")
+        isMingwX64 -> mingwX64("native")
+        else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
+    }*/
+
+    sourceSets {
+        all {
+            languageSettings.optIn("kotlin.js.ExperimentalJsExport")
+            languageSettings.optIn("kotlinx.serialization.ExperimentalSerializationApi")
+            languageSettings.optIn("kotlin.ExperimentalUnsignedTypes")
+        }
+        val commonMain by getting {
+            dependencies {
+                implementation(projects.sphereonKmpCommon)
+                implementation(projects.sphereonKmpCbor)
+                implementation(projects.sphereonKmpCrypto)
+                implementation(libs.kotlinx.datetime)
+                implementation(libs.kotlinx.serialization.core)
+                implementation(libs.kotlinx.serialization.json)
+                implementation(libs.kotlinx.coroutines.core)
+                implementation(libs.whyoleg.cryptography.core)
+                implementation(libs.kotlinx.io.core)
+                implementation(libs.kermit)
+                implementation(libs.kable.core)
+            }
+        }
+        val commonTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+                implementation(libs.kotlinx.coroutines.test)
+            }
+        }
+        val jvmMain by getting {
+            dependencies {
+                implementation(project.dependencies.platform("com.azure:azure-sdk-bom:1.2.4"))
+                implementation("com.azure:azure-identity")
+                implementation("com.azure:azure-security-keyvault-administration")
+                implementation("com.azure:azure-security-keyvault-certificates")
+                implementation("com.azure:azure-security-keyvault-keys")
+            }
+        }
+        val jvmTest by getting {
+            dependencies {
+                implementation(libs.whyoleg.cryptography.provider.jdk)
+            }
+        }
+        val jsMain by getting {
+            dependencies {
+                implementation(npm("@azure/identity", "4.5.0"))
+                implementation(npm("@azure/keyvault-keys", "4.9.0"))
+                implementation(npm("@azure/keyvault-secrets", "4.9.0"))
+            }
+        }
+
+        val jsTest by getting {
+            dependencies {
+                implementation(libs.kotest.assertions.core)
+                implementation(libs.kotest.framework.engine)
+                implementation(libs.kotest.framework.datatest)
+                implementation(libs.kotest.property)
+                implementation(libs.whyoleg.cryptography.provider.webcrypto)
+
+            }
+        }
+        /* val nativeMain by getting {
+             dependencies {}
+         }
+         val nativeTest by getting*/
+    }
+}
+
+buildkonfig {
+    packageName = "com.sphereon.crypto.kms.azure"
+    defaultConfigs {
+        buildConfigField(FieldSpec.Type.STRING, "AZURE_KEYVAULT_URL",
+            System.getenv("AZURE_KEYVAULT_URL"), nullable = true)
+        buildConfigField(FieldSpec.Type.STRING, "AZURE_KEYVAULT_TENANT_ID",
+            System.getenv("AZURE_KEYVAULT_TENANT_ID"), nullable = true)
+        buildConfigField(FieldSpec.Type.STRING, "AZURE_KEYVAULT_CLIENT_ID",
+            System.getenv("AZURE_KEYVAULT_CLIENT_ID"), nullable = true)
+        buildConfigField(FieldSpec.Type.STRING, "AZURE_KEYVAULT_CLIENT_SECRET",
+            System.getenv("AZURE_KEYVAULT_CLIENT_SECRET"), nullable = true)
+    }
+}

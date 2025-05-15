@@ -2,7 +2,7 @@
 <h1 align="center">
   <br>
 <a href="https://www.sphereon.com"><img src="https://sphereon.com/content/themes/sphereon/assets/img/logo.svg" alt="Sphereon" width="400"></a>
-  <br>Multi platform mDL/mdoc and CBOR library
+  <br>Multi platform mDL/mdoc, crypto and CBOR
   <br>
 </h1>
 
@@ -19,6 +19,20 @@ Certain functions are delegate to native platform functions and you will have to
 this to not make to many assumptions on crypto libraries. The library does support generic Cose and Jose keys, but only
 for transport, not for signing/verification. For these operation we delegate to a service you will need to provide.
 Having said that we provide some implementations you could register/use on your platform.
+
+# CBOR
+
+A multi-platform CBOR library. The goal is that this library is to be able to work with CBOR data. It can be used natively on Android, iOS,
+apple, linux, windows as well as in JVMs and Javascript/Typescript.
+
+# Crypto JOSE/COSE
+
+A multi-platform JOSE/COSE library. The goal is that this library is to be able to convert COSE/CBOR keys and JOSE JWKs and other primitives into
+one-another. The library also has support for X.509 Certificate chain validations. It can be used natively on Android, iOS,
+apple, linux, windows as well as in JVMs and Javascript/Typescript. See
+the [crypto README](./sphereon-kmp-crypto/README.md) for more information.
+
+# MDL and Mdoc
 
 # CBOR and Json views explained
 
@@ -73,5 +87,7 @@ calling `toJson()` on them to make them easier for developers to deal with. So t
 There is one caveat for certain JSON properties. Whenever we use polymorphic values, there typically is a need to
 provide the CDDL value as well. This has to do with the fact that we otherwise would lose information when going from
 JSON to CBOR. For instance dates in CBOR can be expressed using strings and numbers. Then there are long and short
-dates. So whenever we encounter a JSON number, we would now know how to map that to Cbor. Of course this is only
-applicable to where polymorphism is possible for a property.
+dates. So whenever we encounter a JSON number or string, we would not know how to map that to Cbor. Of course this is
+only
+applicable to where polymorphism is possible for a property. In these cases the CDDL value is made mandatory. These are
+the only places where the CBOR types seep into the JSON types.

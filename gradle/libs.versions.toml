@@ -1,0 +1,61 @@
+[versions]
+agp = "8.9.0"
+android-minSdk = "24"
+android-compileSdk = "34"
+base64 = "2.4.0"
+buildkonfig = "0.17.0"
+coroutines = "1.9.0"
+datetime = "0.6.2"
+io = "0.7.0"
+junit-jupiter-engine = "5.12.0"
+nexus-publish = "2.0.0"
+kermit = "2.0.4"
+kable = "0.34.0"
+kache = "2.1.0"
+kotest = "5.9.1"
+kotlin = "2.1.20"
+kotlincrypto = "0.7.0"
+npmPublish = "3.5.3"
+serialization = "1.8.0"
+whyoleg-cryptography = "0.4.0"
+slf4j = "2.0.17"
+nodejs = "22.14.0"
+
+[libraries]
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit-jupiter-engine" }
+kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+nexus-publish = { module = "io.github.gradle-nexus.publish-plugin:io.github.gradle-nexus.publish-plugin.gradle.plugin", version.ref = "nexus-publish" }
+kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
+kotest-framework-engine = { module = "io.kotest:kotest-framework-engine", version.ref = "kotest" }
+kotest-framework-datatest = { module = "io.kotest:kotest-framework-datatest", version.ref = "kotest" }
+kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
+kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
+kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "serialization" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
+kotlinx-serialization-cbor = { module = "org.jetbrains.kotlinx:kotlinx-serialization-cbor", version.ref = "serialization" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
+kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "io" }
+kotlincrypto-core-digest = { module = "org.kotlincrypto.core:digest", version.ref = "kotlincrypto" }
+kotlincrypto-hash-sha2 = { module = "org.kotlincrypto.hash:sha2", version.ref = "kotlincrypto" }
+kotlincrypto-hash-sha3 = { module = "org.kotlincrypto.hash:sha3", version.ref = "kotlincrypto" }
+whyoleg-cryptography-core = { module = "dev.whyoleg.cryptography:cryptography-core", version.ref = "whyoleg-cryptography" }
+whyoleg-cryptography-serialization-pem = { module = "dev.whyoleg.cryptography:cryptography-serialization-pem", version.ref = "whyoleg-cryptography" }
+whyoleg-cryptography-serialization-asn1 = { module = "dev.whyoleg.cryptography:cryptography-serialization-asn1", version.ref = "whyoleg-cryptography" }
+whyoleg-cryptography-serialization-asn1-modules = { module = "dev.whyoleg.cryptography:cryptography-serialization-asn1-modules", version.ref = "whyoleg-cryptography" }
+whyoleg-cryptography-random = { module = "dev.whyoleg.cryptography:cryptography-random", version.ref = "whyoleg-cryptography" }
+whyoleg-cryptography-provider-webcrypto = { module = "dev.whyoleg.cryptography:cryptography-provider-webcrypto", version.ref = "whyoleg-cryptography" }
+whyoleg-cryptography-provider-jdk = { module = "dev.whyoleg.cryptography:cryptography-provider-jdk", version.ref = "whyoleg-cryptography" }
+kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
+encoding-base64 = { module = "io.matthewnelson.encoding:base64", version.ref = "base64" }
+kache = { module = "com.mayakapps.kache:kache", version.ref = "kache" }
+kable-core = { module = "com.juul.kable:kable-core", version.ref = "kable"}
+slf4j-simple = {module = "org.slf4j:slf4j-simple", version.ref = "slf4j"}
+
+[plugins]
+npmPublish = { id = "dev.petuska.npm.publish", version.ref = "npmPublish" }
+androidLibrary = { id = "com.android.library", version.ref = "agp" }
+kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+buildkonfig = { id = "com.codingfeline.buildkonfig", version.ref = "buildkonfig"}
