@@ -127,8 +127,7 @@ actual class AwsKmsCryptoProvider actual constructor(
             messageType = MessageType.Digest
             this.signingAlgorithm = algorithm.toSigningAlgorithmSpec()
         })
-
-        return signResponse.signature!!
+        return signResponse.signature?.let { EcdsaEsSignatureConverter.toJoseRaw(it) } ?: throw IllegalStateException("Failed to create a  signature with the AWS KMS")
     }
 
     override suspend fun isValidRawSignatureAsync(
